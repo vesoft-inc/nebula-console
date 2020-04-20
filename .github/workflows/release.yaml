@@ -1,3 +1,10 @@
+name: release
+
+on:
+  release:
+    types:
+      - published
+
 jobs:
   package:
     name: package and upload release assets
