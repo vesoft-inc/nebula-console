@@ -1,0 +1,51 @@
+name: build
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+  pull_request:
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - linux
+          - darwin
+          - windows
+        arch:
+          - amd64
+          - arm
+        exclude:
+          - os: darwin
+            arch: arm
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: setup-go 1.14
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.14
+      - name: build
+        run: |
+          go build
+        env:
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
+      - name: test
+        if: matrix.os == 'linux' && matrix.arch == 'amd64'
+        run: |
+          set -e
+          ./nebula-console2.0 -e 'exit'
+          ./nebula-console2.0 -f demo.nGQL
