@@ -130,14 +130,14 @@ type TableRows = [][]string
 
 func (t Table) printRow(row []string, colSpec TableSpec) {
 	for i, col := range row {
-		colString := "|" + strings.Repeat(" ", int(t.align)) + col;
+		colString := t.colDelimiter + strings.Repeat(" ", int(t.align)) + col;
 		length := uint(len(col))
 		if length < colSpec[i] + t.align {
 			colString = colString + strings.Repeat(" ", int(colSpec[i]+t.align - length))
 		}
 		fmt.Print(colString)
 	}
-	fmt.Println("|")
+	fmt.Println(t.colDelimiter)
 }
 
 func (t Table) PrintTable(table *graph.DataSet) {
