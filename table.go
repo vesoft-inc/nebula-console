@@ -41,9 +41,10 @@ func val2String(value *common.Value, depth uint) string {
 	} else if value.IsSetTVal() {  // yyyy-mm-dd HH:MM:SS:MS TZ
 		datetime := value.GetTVal()
 		// TODO(shylock) timezone
-		str := fmt.Sprintf("%d-%d-%d %d:%d:%d:%d",
+		str := fmt.Sprintf("%d-%d-%d %d:%d:%d:%d UTC%d",
 			datetime.GetYear(), datetime.GetMonth(), datetime.GetDay(),
-			datetime.GetHour(), datetime.GetMinute(), datetime.GetSec(), datetime.GetMicrosec())
+			datetime.GetHour(), datetime.GetMinute(), datetime.GetSec(), datetime.GetMicrosec(),
+			datetime.GetTimezone())
 		return str
 	} else if value.IsSetVVal() {  // Vertex
 		// VId only
