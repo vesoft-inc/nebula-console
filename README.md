@@ -1,4 +1,4 @@
-# Nebula Graph Console 2.0
+# Nebula Graph Console
 
 The console for Nebula Graph 2.0
 
@@ -8,9 +8,9 @@ Install golang by https://golang.org/doc/install, then try `go build`
 
 # Usage
 
-Check options for `./nebula-console2.0 -h`, try `./nebula-console2.0` in interactive mode directly.
-And try `./nebula-console2.0 -e 'exit'` for the direct script mode.
-And try `./nebula-console2.0 -f demo.nGQL` for the script file mode.
+Check options for `./nebula-console -h`, try `./nebula-console` in interactive mode directly.
+And try `./nebula-console -e 'exit'` for the direct script mode.
+And try `./nebula-console -f demo.nGQL` for the script file mode.
 
 # Feature
 
