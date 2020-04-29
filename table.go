@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	common "github.com/shylock-hg/nebula-go2.0/nebula"
-	graph "github.com/shylock-hg/nebula-go2.0/nebula/graph"
 )
 
 func val2String(value *common.Value, depth uint) string {
@@ -146,7 +145,7 @@ func (t Table) printRow(row []string, colSpec TableSpec) {
 	fmt.Println(t.colDelimiter)
 }
 
-func (t Table) PrintTable(table *graph.DataSet) {
+func (t Table) PrintTable(table *common.DataSet) {
 	columnSize := len(table.GetColumnNames())
 	rowSize := len(table.GetRows())
 	tableSpec := make(TableSpec, columnSize)
