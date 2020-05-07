@@ -31,6 +31,7 @@ func val2String(value *common.Value, depth uint) string {
 		case common.NullType_BAD_TYPE:
 			return "BAD_TYPE"
 		}
+		return "NULL"
 	} else if value.IsSetBVal() {  // bool
 		return strconv.FormatBool(value.GetBVal())
 	} else if value.IsSetIVal() {  // int64
