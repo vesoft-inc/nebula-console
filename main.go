@@ -11,9 +11,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
-	"path/filepath"
 
 	ngdb "github.com/shylock-hg/nebula-go2.0"
 	graph "github.com/shylock-hg/nebula-go2.0/nebula/graph"
@@ -24,7 +24,7 @@ const Version = "v2.0.0-alpha"
 
 func welcome(interactive bool) {
 	if !interactive {
-		return;
+		return
 	}
 	fmt.Printf("Welcome to Nebula Graph %s!", Version)
 	fmt.Println()
@@ -32,7 +32,7 @@ func welcome(interactive bool) {
 
 func bye(username string, interactive bool) {
 	if !interactive {
-		return;
+		return
 	}
 	fmt.Printf("Bye %s!", username)
 	fmt.Println()
@@ -56,14 +56,12 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 		fmt.Println()
 		return
 	}
-	// Show tables
+	// Show table
 	if resp.GetData() != nil {
-		for _, table := range resp.GetData() {
-			t.PrintTable(table)
-		}
+		t.PrintTable(resp.GetData())
 	}
 	// Show time
-	fmt.Printf("time spent %d/%d us", resp.GetLatencyInUs(), duration/*ns*//1000)
+	fmt.Printf("time spent %d/%d us", resp.GetLatencyInUs(), duration /*ns*/ /1000)
 	fmt.Println()
 }
 
@@ -74,7 +72,7 @@ func loop(client *ngdb.GraphClient, c Cli) error {
 	for true {
 		line, err, exit := c.ReadLine()
 		lineString := string(line)
-		if  exit {
+		if exit {
 			return err
 		}
 		if len(line) == 0 {
@@ -121,7 +119,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("Get executable failed: %s", err.Error())
 		}
-		historyHome = filepath.Dir(ex)  // Set to executable folder
+		historyHome = filepath.Dir(ex) // Set to executable folder
 	}
 
 	client, err := ngdb.NewClient(fmt.Sprintf("%s:%d", *address, *port))

@@ -1,5 +1,5 @@
 github.com/facebook/fbthrift v0.0.0-20190922225929-2f9839604e25/go.mod h1:2tncLx5rmw69e5kMBv/yJneERbzrr1yr5fdlnTbu8lU=
-github.com/shylock-hg/nebula-go2.0 v0.0.0-20200429074323-6e99c9626d70 h1:qiKJlyL2a26J/IuL/jCKA0QSBc0xYfYB/OJOz5wmZWA=
-github.com/shylock-hg/nebula-go2.0 v0.0.0-20200429074323-6e99c9626d70/go.mod h1:bmTSe/YsGXWW2ULQwVaQVLcX+sSHBqRzqrs9Ye9aziU=
+github.com/shylock-hg/nebula-go2.0 v0.0.0-20200615034322-8ec346db65df h1:PTOj9Sr+iZPZONABivoCkPZkK6x2iTFvPSMQ/EPpRg8=
+github.com/shylock-hg/nebula-go2.0 v0.0.0-20200615034322-8ec346db65df/go.mod h1:bmTSe/YsGXWW2ULQwVaQVLcX+sSHBqRzqrs9Ye9aziU=
 github.com/shylock-hg/readline v0.0.0-20200430095752-231c9c206fda h1:AnD/M3s5uxwyfZC2V7c9Hn6sN0r6uxkY/zy5OIB6DsY=
 github.com/shylock-hg/readline v0.0.0-20200430095752-231c9c206fda/go.mod h1:N8BfLU/tnxlUh3CcfOUr5aBi0vaTEJSaJljdm9TI1d4=
