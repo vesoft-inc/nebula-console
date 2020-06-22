@@ -7,8 +7,9 @@
 package main
 
 import (
-	"strconv"
+	"bytes"
 	"fmt"
+	"strconv"
 	"strings"
 
 	common "github.com/shylock-hg/nebula-go2.0/nebula"
@@ -16,11 +17,11 @@ import (
 
 func val2String(value *common.Value, depth uint) string {
 	// TODO(shylock) get golang runtime limit
-	if depth == 0 {  // Avoid too deep recursive
+	if depth == 0 { // Avoid too deep recursive
 		return "..."
 	}
 
-	if value.IsSetNVal() {  // null
+	if value.IsSetNVal() { // null
 		switch value.GetNVal() {
 		case common.NullType___NULL__:
 			return "NULL"
@@ -32,34 +33,34 @@ func val2String(value *common.Value, depth uint) string {
 			return "BAD_TYPE"
 		}
 		return "NULL"
-	} else if value.IsSetBVal() {  // bool
+	} else if value.IsSetBVal() { // bool
 		return strconv.FormatBool(value.GetBVal())
-	} else if value.IsSetIVal() {  // int64
+	} else if value.IsSetIVal() { // int64
 		return strconv.FormatInt(value.GetIVal(), 10)
-	} else if value.IsSetFVal() {  // float64
+	} else if value.IsSetFVal() { // float64
 		return strconv.FormatFloat(value.GetFVal(), 'g', -1, 64)
-	} else if value.IsSetSVal() {  // string
+	} else if value.IsSetSVal() { // string
 		return "\"" + string(value.GetSVal()) + "\""
-	} else if value.IsSetDVal() {  // yyyy-mm-dd
+	} else if value.IsSetDVal() { // yyyy-mm-dd
 		date := value.GetDVal()
 		str := fmt.Sprintf("%d-%d-%d", date.GetYear(), date.GetMonth(), date.GetDay())
 		return str
-	} else if value.IsSetTVal() {  // yyyy-mm-dd HH:MM:SS:MS TZ
+	} else if value.IsSetTVal() { // yyyy-mm-dd HH:MM:SS:MS TZ
 		datetime := value.GetTVal()
 		str := fmt.Sprintf("%d-%d-%d %d:%d:%d:%d UTC%d",
 			datetime.GetYear(), datetime.GetMonth(), datetime.GetDay(),
 			datetime.GetHour(), datetime.GetMinute(), datetime.GetSec(), datetime.GetMicrosec(),
 			datetime.GetTimezone())
 		return str
-	} else if value.IsSetVVal() {  // Vertex
+	} else if value.IsSetVVal() { // Vertex
 		// VId only
 		return string(value.GetVVal().GetVid())
-	} else if value.IsSetEVal() {  // Edge
+	} else if value.IsSetEVal() { // Edge
 		// src-[TypeName]->dst@ranking
 		edge := value.GetEVal()
 		return fmt.Sprintf("%s-[%s]->%s@%d", string(edge.GetSrc()), edge.GetName(), string(edge.GetDst()),
 			edge.GetRanking())
-	} else if value.IsSetPVal() {  // Path
+	} else if value.IsSetPVal() { // Path
 		// src-[TypeName]->dst@ranking-[TypeName]->dst@ranking ...
 		p := value.GetPVal()
 		str := string(p.GetSrc().GetVid())
@@ -68,38 +69,50 @@ func val2String(value *common.Value, depth uint) string {
 			str += pStr
 		}
 		return str
-	} else if value.IsSetLVal() {  // List
+	} else if value.IsSetLVal() { // List
 		// TODO(shylock) optimize the recursive
 		l := value.GetLVal()
-		str := "["
+		var buffer bytes.Buffer
+		buffer.WriteString("[")
 		for _, v := range l.GetValues() {
-			str += val2String(v, depth - 1)
-			str += ","
+			buffer.WriteString(val2String(v, depth-1))
+			buffer.WriteString(",")
 		}
-		str += "]"
-		return str
-	} else if value.IsSetMVal() {  // Map
+		if buffer.Len() > 1 {
+			buffer.UnreadRune() // remove last ,
+		}
+		buffer.WriteString("]")
+		return buffer.String()
+	} else if value.IsSetMVal() { // Map
 		// TODO(shylock) optimize the recursive
 		m := value.GetMVal()
-		str := "{"
+		var buffer bytes.Buffer
+		buffer.WriteString("{")
 		for k, v := range m.GetKvs() {
-			str += "\"" + k + "\""
-			str += ":"
-			str += val2String(v, depth - 1)
-			str += ","
+			buffer.WriteString("\"" + k + "\"")
+			buffer.WriteString(":")
+			buffer.WriteString(val2String(v, depth-1))
+			buffer.WriteString(",")
 		}
-		str += "}"
-		return str
-	} else if value.IsSetUVal() {  // Set
+		if buffer.Len() > 1 {
+			buffer.UnreadRune() // remove last ,
+		}
+		buffer.WriteString("}")
+		return buffer.String()
+	} else if value.IsSetUVal() { // Set
 		// TODO(shylock) optimize the recursive
 		s := value.GetUVal()
-		str := "{"
+		var buffer bytes.Buffer
+		buffer.WriteString("{")
 		for _, v := range s.GetValues() {
-			str += val2String(v, depth - 1)
-			str += ","
+			buffer.WriteString(val2String(v, depth-1))
+			buffer.WriteString(",")
 		}
-		str += "}"
-		return str
+		if buffer.Len() > 1 {
+			buffer.UnreadRune() // remove last ,
+		}
+		buffer.WriteString("}")
+		return buffer.String()
 	}
 	return ""
 }
@@ -120,9 +133,9 @@ func sum(a []uint) uint {
 }
 
 type Table struct {
-	align uint          // Each column align indent to boundary
-	headerChar string   // Header line characters
-	rowChar string      // Row line characters
+	align        uint   // Each column align indent to boundary
+	headerChar   string // Header line characters
+	rowChar      string // Row line characters
 	colDelimiter string // Column delemiter
 }
 
@@ -136,10 +149,10 @@ type TableRows = [][]string
 
 func (t Table) printRow(row []string, colSpec TableSpec) {
 	for i, col := range row {
-		colString := t.colDelimiter + strings.Repeat(" ", int(t.align)) + col;
+		colString := t.colDelimiter + strings.Repeat(" ", int(t.align)) + col
 		length := uint(len(col))
-		if length < colSpec[i] + t.align {
-			colString = colString + strings.Repeat(" ", int(colSpec[i]+t.align - length))
+		if length < colSpec[i]+t.align {
+			colString = colString + strings.Repeat(" ", int(colSpec[i]+t.align-length))
 		}
 		fmt.Print(colString)
 	}
@@ -165,7 +178,7 @@ func (t Table) PrintTable(table *common.DataSet) {
 	}
 
 	//                 value limit         + two indent              + '|' itself
-	totalLineLength := int(sum(tableSpec)) + columnSize * int(t.align) * 2  + columnSize + 1
+	totalLineLength := int(sum(tableSpec)) + columnSize*int(t.align)*2 + columnSize + 1
 	headerLine := strings.Repeat(t.headerChar, totalLineLength)
 	rowLine := strings.Repeat(t.rowChar, totalLineLength)
 	fmt.Println(headerLine)
