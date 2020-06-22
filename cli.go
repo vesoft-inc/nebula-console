@@ -7,12 +7,12 @@
 package main
 
 import (
-	"io"
 	"bufio"
 	"fmt"
-	"path"
+	"io"
 	"log"
 	"os"
+	"path"
 
 	readline "github.com/shylock-hg/readline"
 )
@@ -126,7 +126,7 @@ func promptString(space string, user string, isErr bool, isTTY bool) string {
 }
 
 type Cli interface {
-	ReadLine() (/*line*/ string, /*err*/ error, /*exit*/ bool)
+	ReadLine() ( /*line*/ string /*err*/, error /*exit*/, bool)
 	Interactive() bool
 	SetisErr(bool)
 	SetSpace(string)
@@ -135,7 +135,7 @@ type Cli interface {
 // interactive
 type iCli struct {
 	input *readline.Instance
-	user string
+	user  string
 	space string
 	isErr bool
 	isTTY bool
@@ -143,20 +143,20 @@ type iCli struct {
 
 func NewiCli(home string, user string) *iCli {
 	r, err := readline.NewEx(&readline.Config{
-			// See https://github.com/chzyer/readline/issues/169
-			Prompt:          nil,
-			HistoryFile:     path.Join(home, ".nebula_history"),
-			AutoComplete:    completer,
-			InterruptPrompt: "^C",
-			EOFPrompt:       "",
-			HistorySearchFold:   true,
-			FuncFilterInputRune: nil,
-		})
+		// See https://github.com/chzyer/readline/issues/169
+		Prompt:              nil,
+		HistoryFile:         path.Join(home, ".nebula_history"),
+		AutoComplete:        completer,
+		InterruptPrompt:     "^C",
+		EOFPrompt:           "",
+		HistorySearchFold:   true,
+		FuncFilterInputRune: nil,
+	})
 	if err != nil {
 		log.Fatalf("Create readline failed, %s.", err.Error())
 	}
 	isTTY := readline.IsTerminal(int(os.Stdout.Fd()))
-	icli := &iCli{r, user, "", false,isTTY}
+	icli := &iCli{r, user, "", false, isTTY}
 	icli.input.SetPrompt(func() []rune {
 		return []rune(promptString(icli.space, icli.user, icli.isErr, icli.isTTY))
 	})
