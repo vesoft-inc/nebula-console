@@ -53,13 +53,49 @@ func val2String(value *common.Value, depth uint) string {
 			datetime.GetTimezone())
 		return str
 	} else if value.IsSetVVal() { // Vertex
-		// VId only
-		return string(value.GetVVal().GetVid())
+		var buffer bytes.Buffer
+		vertex := value.GetVVal()
+		buffer.WriteString("(")
+		buffer.WriteString(string(vertex.GetVid()))
+		buffer.WriteString(")")
+		buffer.WriteString(" ")
+		filled := false
+		for _, tag := range vertex.GetTags() {
+			tagName := string(tag.GetName())
+			for k, v := range tag.GetProps() {
+				filled = true
+				buffer.WriteString(tagName)
+				buffer.WriteString(".")
+				buffer.WriteString(k)
+				buffer.WriteString(":")
+				buffer.WriteString(val2String(v, depth-1))
+				buffer.WriteString(",")
+			}
+		}
+		if filled {
+			// remove last ,
+			buffer.Truncate(buffer.Len() - 1)
+		}
+		return buffer.String()
 	} else if value.IsSetEVal() { // Edge
 		// src-[TypeName]->dst@ranking
 		edge := value.GetEVal()
-		return fmt.Sprintf("%s-[%s]->%s@%d", string(edge.GetSrc()), edge.GetName(), string(edge.GetDst()),
-			edge.GetRanking())
+		var buffer bytes.Buffer
+		filled := false
+		buffer.WriteString(fmt.Sprintf("%s-[%s]->%s@%d", string(edge.GetSrc()), edge.GetName(), string(edge.GetDst()),
+			edge.GetRanking()))
+		buffer.WriteString(" ")
+		for k, v := range edge.GetProps() {
+			filled = true
+			buffer.WriteString(k)
+			buffer.WriteString(":")
+			buffer.WriteString(val2String(v, depth-1))
+			buffer.WriteString(",")
+		}
+		if filled {
+			buffer.Truncate(buffer.Len() - 1)
+		}
+		return buffer.String()
 	} else if value.IsSetPVal() { // Path
 		// src-[TypeName]->dst@ranking-[TypeName]->dst@ranking ...
 		p := value.GetPVal()
