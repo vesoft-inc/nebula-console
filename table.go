@@ -79,7 +79,7 @@ func val2String(value *common.Value, depth uint) string {
 			buffer.WriteString(",")
 		}
 		if buffer.Len() > 1 {
-			buffer.UnreadRune() // remove last ,
+			buffer.Truncate(buffer.Len() - 1)
 		}
 		buffer.WriteString("]")
 		return buffer.String()
@@ -95,7 +95,7 @@ func val2String(value *common.Value, depth uint) string {
 			buffer.WriteString(",")
 		}
 		if buffer.Len() > 1 {
-			buffer.UnreadRune() // remove last ,
+			buffer.Truncate(buffer.Len() - 1)
 		}
 		buffer.WriteString("}")
 		return buffer.String()
@@ -109,7 +109,7 @@ func val2String(value *common.Value, depth uint) string {
 			buffer.WriteString(",")
 		}
 		if buffer.Len() > 1 {
-			buffer.UnreadRune() // remove last ,
+			buffer.Truncate(buffer.Len() - 1)
 		}
 		buffer.WriteString("}")
 		return buffer.String()
