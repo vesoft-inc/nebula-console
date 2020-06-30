@@ -52,7 +52,7 @@ var t = NewTable(2, "=", "-", "|")
 func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 	// Error
 	if resp.GetErrorCode() != graph.ErrorCode_SUCCEEDED {
-		fmt.Printf("[ERROR (%d)]", resp.GetErrorCode())
+		fmt.Printf("[ERROR (%d)]: %s", resp.GetErrorCode(), resp.GetErrorMsg())
 		fmt.Println()
 		return
 	}
