@@ -14,7 +14,7 @@ import (
 	"os"
 	"path"
 
-	readline "github.com/shylock-hg/readline"
+	readline "github.com/vesoft-inc/readline"
 )
 
 const ttyColorPrefix = "\033["

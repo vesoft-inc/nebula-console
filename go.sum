@@ -1,9 +1,6 @@
 github.com/facebook/fbthrift v0.0.0-20190922225929-2f9839604e25/go.mod h1:2tncLx5rmw69e5kMBv/yJneERbzrr1yr5fdlnTbu8lU=
 github.com/shylock-hg/nebula-go2.0 v0.0.0-20200615034322-8ec346db65df h1:PTOj9Sr+iZPZONABivoCkPZkK6x2iTFvPSMQ/EPpRg8=
 github.com/shylock-hg/nebula-go2.0 v0.0.0-20200615034322-8ec346db65df/go.mod h1:bmTSe/YsGXWW2ULQwVaQVLcX+sSHBqRzqrs9Ye9aziU=
-github.com/shylock-hg/readline v0.0.0-20200630032027-a9a281c85b33 h1:2ACp6tAxIpZTrHAmxRK3H803Dsva0iEHoVwZurCUaXc=
-github.com/shylock-hg/readline v0.0.0-20200630032027-a9a281c85b33/go.mod h1:N8BfLU/tnxlUh3CcfOUr5aBi0vaTEJSaJljdm9TI1d4=
-github.com/shylock-hg/readline v0.0.0-20200707112557-889240450af4 h1:OIkukKTgMHacT/7XahNUo7GUrLuVK2H3PbMVHqjGZ0Y=
-github.com/shylock-hg/readline v0.0.0-20200707112557-889240450af4/go.mod h1:N8BfLU/tnxlUh3CcfOUr5aBi0vaTEJSaJljdm9TI1d4=
-golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae h1:Ih9Yo4hSPImZOpfGuA4bR/ORKTAbhZo2AbWNRCnevdo=
+github.com/vesoft-inc/readline v0.0.0-20200707112557-889240450af4 h1:DiyiidZ9FBSwOZfslQeIPeCUo7AjJ59bj3UaTQEY7po=
+github.com/vesoft-inc/readline v0.0.0-20200707112557-889240450af4/go.mod h1:E6VDTX2OSL0so+MQj23uMHpp24E2gqbl5nVOSviDIkU=
 golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
