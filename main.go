@@ -15,8 +15,8 @@ import (
 	"strings"
 	"time"
 
-	ngdb "github.com/shylock-hg/nebula-go2.0"
-	graph "github.com/shylock-hg/nebula-go2.0/nebula/graph"
+	ngdb "github.com/vesoft-inc/nebula-go/v2"
+	graph "github.com/vesoft-inc/nebula-go/v2/nebula/graph"
 )
 
 const NebulaLabel = "Nebula-Console"

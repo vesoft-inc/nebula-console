@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	common "github.com/shylock-hg/nebula-go2.0/nebula"
+	common "github.com/vesoft-inc/nebula-go/v2/nebula"
 )
 
 func val2String(value *common.Value, depth uint) string {
@@ -207,7 +207,7 @@ func (t Table) PrintTable(table *common.DataSet) {
 	}
 	for i, row := range table.GetRows() {
 		tableRows[i] = make([]string, columnSize)
-		for j, col := range row.GetColumns() {
+		for j, col := range row.GetValues() {
 			tableRows[i][j] = val2String(col, 256)
 			tableSpec[j] = max(uint(len(tableRows[i][j])), tableSpec[j])
 		}
