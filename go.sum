@@ -1,9 +1,4 @@
 github.com/facebook/fbthrift v0.0.0-20190922225929-2f9839604e25/go.mod h1:2tncLx5rmw69e5kMBv/yJneERbzrr1yr5fdlnTbu8lU=
-github.com/shylock-hg/nebula-go v0.0.0-20200603022303-9c5ba2f96209 h1:lx4JffJX9d9R/vdb5SAeY/jngh5akU255Rd9TOrkgos=
-github.com/shylock-hg/nebula-go2.0 v0.0.0-20200615034322-8ec346db65df h1:PTOj9Sr+iZPZONABivoCkPZkK6x2iTFvPSMQ/EPpRg8=
-github.com/shylock-hg/nebula-go2.0 v0.0.0-20200615034322-8ec346db65df/go.mod h1:bmTSe/YsGXWW2ULQwVaQVLcX+sSHBqRzqrs9Ye9aziU=
-github.com/vesoft-inc/nebula-go v1.0.1-0.20200722013035-73eebb836e7e h1:dNPjuG6ngVNjuK1SUljR0M+AqhG+2sshsuKyyHl/cnM=
-github.com/vesoft-inc/nebula-go v1.0.1-0.20200722013035-73eebb836e7e/go.mod h1:dM1R7vZjYCXZ20Kie4KYGS0UHxVDNYmDeMgb1PFPDmw=
 github.com/vesoft-inc/nebula-go/v2 v2.0.0-20200722013035-73eebb836e7e h1:CV/gYc4QM4fyfpxfShsxQ8GgG2vu6u1fP9mhtIB17Sw=
 github.com/vesoft-inc/nebula-go/v2 v2.0.0-20200722013035-73eebb836e7e/go.mod h1:92I8vrIc2Rk7/oJO+1hTgjNhHiYfnsW2uu3Ofh0ECnI=
 github.com/vesoft-inc/readline v0.0.0-20200707112557-889240450af4 h1:DiyiidZ9FBSwOZfslQeIPeCUo7AjJ59bj3UaTQEY7po=
