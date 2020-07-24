@@ -1,0 +1,6 @@
+github.com/facebook/fbthrift v0.0.0-20190922225929-2f9839604e25/go.mod h1:2tncLx5rmw69e5kMBv/yJneERbzrr1yr5fdlnTbu8lU=
+github.com/vesoft-inc/nebula-go/v2 v2.0.0-20200722013035-73eebb836e7e h1:CV/gYc4QM4fyfpxfShsxQ8GgG2vu6u1fP9mhtIB17Sw=
+github.com/vesoft-inc/nebula-go/v2 v2.0.0-20200722013035-73eebb836e7e/go.mod h1:92I8vrIc2Rk7/oJO+1hTgjNhHiYfnsW2uu3Ofh0ECnI=
+github.com/vesoft-inc/readline v0.0.0-20200707112557-889240450af4 h1:DiyiidZ9FBSwOZfslQeIPeCUo7AjJ59bj3UaTQEY7po=
+github.com/vesoft-inc/readline v0.0.0-20200707112557-889240450af4/go.mod h1:E6VDTX2OSL0so+MQj23uMHpp24E2gqbl5nVOSviDIkU=
+golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
