@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-package main
+package cli
 
 import (
 	"bufio"
@@ -14,100 +14,18 @@ import (
 	"os"
 	"path"
 
-	readline "github.com/vesoft-inc/readline"
+	"github.com/vesoft-inc/nebula-console/completer"
+
+	"github.com/vesoft-inc/readline"
 )
+
+const NebulaLabel = "Nebula-Console"
 
 const ttyColorPrefix = "\033["
 const ttyColorSuffix = "m"
 const ttyColorRed = "31"
 const ttyColorBold = "1"
 const ttyColorReset = "0"
-
-var completer = readline.NewPrefixCompleter(
-	// show
-	readline.PcItem("SHOW",
-		readline.PcItem("HOSTS"),
-		readline.PcItem("SPACES"),
-		readline.PcItem("PARTS"),
-		readline.PcItem("TAGS"),
-		readline.PcItem("EDGES"),
-		readline.PcItem("USERS"),
-		readline.PcItem("ROLES"),
-		readline.PcItem("USER"),
-		readline.PcItem("CONFIGS"),
-	),
-
-	// describe
-	readline.PcItem("DESCRIBE",
-		readline.PcItem("TAG"),
-		readline.PcItem("EDGE"),
-		readline.PcItem("SPACE"),
-	),
-	readline.PcItem("DESC",
-		readline.PcItem("TAG"),
-		readline.PcItem("EDGE"),
-		readline.PcItem("SPACE"),
-	),
-	// get configs
-	readline.PcItem("GET",
-		readline.PcItem("CONFIGS"),
-	),
-	// create
-	readline.PcItem("CREATE",
-		readline.PcItem("SPACE"),
-		readline.PcItem("TAG"),
-		readline.PcItem("EDGE"),
-		readline.PcItem("USER"),
-	),
-	// drop
-	readline.PcItem("DROP",
-		readline.PcItem("SPACE"),
-		readline.PcItem("TAG"),
-		readline.PcItem("EDGE"),
-		readline.PcItem("USER"),
-	),
-	// alter
-	readline.PcItem("ALTER",
-		readline.PcItem("USER"),
-		readline.PcItem("TAG"),
-		readline.PcItem("EDGE"),
-	),
-
-	// insert
-	readline.PcItem("INSERT",
-		readline.PcItem("VERTEX"),
-		readline.PcItem("EDGE"),
-	),
-	// update
-	readline.PcItem("UPDATE",
-		readline.PcItem("CONFIGS"),
-		readline.PcItem("VERTEX"),
-		readline.PcItem("EDGE"),
-	),
-	// upsert
-	readline.PcItem("UPSERT",
-		readline.PcItem("VERTEX"),
-		readline.PcItem("EDGE"),
-	),
-	// delete
-	readline.PcItem("DELETE",
-		readline.PcItem("VERTEX"),
-		readline.PcItem("EDGE"),
-	),
-
-	// grant
-	readline.PcItem("GRANT",
-		readline.PcItem("ROLE"),
-	),
-	// revoke
-	readline.PcItem("REVOKE",
-		readline.PcItem("ROLE"),
-	),
-	// change password
-	readline.PcItem("CHANGE",
-		readline.PcItem("PASSWORD"),
-	),
-)
 
 func promptString(space string, user string, isErr bool, isTTY bool) string {
 	prompt := ""
@@ -146,7 +64,7 @@ func NewiCli(home string, user string) *iCli {
 		// See https://github.com/chzyer/readline/issues/169
 		Prompt:              nil,
 		HistoryFile:         path.Join(home, ".nebula_history"),
-		AutoComplete:        completer,
+		AutoComplete:        completer.NewCompleter(),
 		InterruptPrompt:     "^C",
 		EOFPrompt:           "",
 		HistorySearchFold:   true,

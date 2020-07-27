@@ -4,6 +4,7 @@ github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1 h1:q763qf9huN11kDQavWs
 github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1/go.mod h1:Q3SI9o4m/ZMnBNeIyt5eFwwo7qiLfzFZmjNmxjkiQlU=
 github.com/facebook/fbthrift v0.0.0-20190922225929-2f9839604e25 h1:dezRDs9oGYxeavyvcNg/Js+dK6kIvfzERoJ7K8Xkv14=
 github.com/facebook/fbthrift v0.0.0-20190922225929-2f9839604e25/go.mod h1:2tncLx5rmw69e5kMBv/yJneERbzrr1yr5fdlnTbu8lU=
+github.com/vesoft-inc/nebula-console v0.0.0-20200724021416-84db74a96687 h1:FjlK/SmiTKPHxm6RkZ28rj3RM3ZWgb+aWE397/Gwht4=
 github.com/vesoft-inc/nebula-go/v2 v2.0.0-20200722013035-73eebb836e7e h1:CV/gYc4QM4fyfpxfShsxQ8GgG2vu6u1fP9mhtIB17Sw=
 github.com/vesoft-inc/nebula-go/v2 v2.0.0-20200722013035-73eebb836e7e/go.mod h1:92I8vrIc2Rk7/oJO+1hTgjNhHiYfnsW2uu3Ofh0ECnI=
 github.com/vesoft-inc/readline v0.0.0-20200707112557-889240450af4 h1:DiyiidZ9FBSwOZfslQeIPeCUo7AjJ59bj3UaTQEY7po=

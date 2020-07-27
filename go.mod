@@ -1,6 +1,6 @@
-module vesoft-inc/nebula-console
+module github.com/vesoft-inc/nebula-console
 
-go 1.14
+go 1.13
 
 require (
 	github.com/chzyer/logex v1.1.10 // indirect

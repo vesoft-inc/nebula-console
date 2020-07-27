@@ -15,12 +15,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/vesoft-inc/nebula-console/cli"
+	"github.com/vesoft-inc/nebula-console/nebula"
 	ngdb "github.com/vesoft-inc/nebula-go/v2"
 	graph "github.com/vesoft-inc/nebula-go/v2/nebula/graph"
 )
 
-const NebulaLabel = "Nebula-Console"
-const Version = "v2.0.0-alpha"
+const (
+	Version = "v2.0.0-alpha"
+)
 
 func welcome(interactive bool) {
 	if !interactive {
@@ -47,7 +50,7 @@ func clientCmd(query string) bool {
 	return false
 }
 
-var t = NewTable(2, "=", "-", "|")
+var t = nebula.NewTable(2, "=", "-", "|")
 
 func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 	// Error
@@ -68,8 +71,8 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 // Loop the request util fatal or timeout
 // We treat one line as one query
 // Add line break yourself as `SHOW \<CR>HOSTS`
-func loop(client *ngdb.GraphClient, c Cli) error {
-	for true {
+func loop(client *ngdb.GraphClient, c cli.Cli) error {
+	for {
 		line, err, exit := c.ReadLine()
 		lineString := string(line)
 		if exit {
@@ -99,7 +102,6 @@ func loop(client *ngdb.GraphClient, c Cli) error {
 		c.SetisErr(resp.GetErrorCode() != graph.ErrorCode_SUCCEEDED)
 		fmt.Println()
 	}
-	return nil
 }
 
 func main() {
@@ -139,15 +141,15 @@ func main() {
 	// Loop the request
 	var exit error = nil
 	if interactive {
-		exit = loop(client, NewiCli(historyHome, *username))
+		exit = loop(client, cli.NewiCli(historyHome, *username))
 	} else if *script != "" {
-		exit = loop(client, NewnCli(strings.NewReader(*script)))
+		exit = loop(client, cli.NewnCli(strings.NewReader(*script)))
 	} else if *file != "" {
 		fd, err := os.Open(*file)
 		if err != nil {
 			log.Fatalf("Open file %s failed, %s", *file, err.Error())
 		}
-		exit = loop(client, NewnCli(fd))
+		exit = loop(client, cli.NewnCli(fd))
 		fd.Close()
 	}
 
