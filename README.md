@@ -4,7 +4,12 @@ The console for Nebula Graph 2.0
 
 # Build
 
-Install golang by https://golang.org/doc/install, then try `go build`
+Install golang by https://golang.org/doc/install, then build by following commands:
+
+```shell
+$ cd nebula-console
+$ make
+```
 
 # Usage
 

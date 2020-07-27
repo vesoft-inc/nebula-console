@@ -4,23 +4,28 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-package nebula
+package printer
 
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
+	"github.com/jedib0t/go-pretty/table"
 	common "github.com/vesoft-inc/nebula-go/v2/nebula"
+	graph "github.com/vesoft-inc/nebula-go/v2/nebula/graph"
 )
 
-func val2String(value *common.Value, depth uint) string {
-	// TODO(shylock) get golang runtime limit
-	if depth == 0 { // Avoid too deep recursive
-		return "..."
-	}
+var writer table.Writer
 
+func init() {
+	writer := table.NewWriter()
+	writer.SetOutputMirror(os.Stdout)
+}
+
+func valueToString(value *common.Value, depth uint) string {
 	if value.IsSetNVal() { // null
 		switch value.GetNVal() {
 		case common.NullType___NULL__:
@@ -68,7 +73,7 @@ func val2String(value *common.Value, depth uint) string {
 				buffer.WriteString(".")
 				buffer.WriteString(k)
 				buffer.WriteString(":")
-				buffer.WriteString(val2String(v, depth-1))
+				buffer.WriteString(valueToString(v, depth-1))
 				buffer.WriteString(",")
 			}
 		}
@@ -89,7 +94,7 @@ func val2String(value *common.Value, depth uint) string {
 			filled = true
 			buffer.WriteString(k)
 			buffer.WriteString(":")
-			buffer.WriteString(val2String(v, depth-1))
+			buffer.WriteString(valueToString(v, depth-1))
 			buffer.WriteString(",")
 		}
 		if filled {
@@ -111,7 +116,7 @@ func val2String(value *common.Value, depth uint) string {
 		var buffer bytes.Buffer
 		buffer.WriteString("[")
 		for _, v := range l.GetValues() {
-			buffer.WriteString(val2String(v, depth-1))
+			buffer.WriteString(valueToString(v, depth-1))
 			buffer.WriteString(",")
 		}
 		if buffer.Len() > 1 {
@@ -127,7 +132,7 @@ func val2String(value *common.Value, depth uint) string {
 		for k, v := range m.GetKvs() {
 			buffer.WriteString("\"" + k + "\"")
 			buffer.WriteString(":")
-			buffer.WriteString(val2String(v, depth-1))
+			buffer.WriteString(valueToString(v, depth-1))
 			buffer.WriteString(",")
 		}
 		if buffer.Len() > 1 {
@@ -141,7 +146,7 @@ func val2String(value *common.Value, depth uint) string {
 		var buffer bytes.Buffer
 		buffer.WriteString("{")
 		for _, v := range s.GetValues() {
-			buffer.WriteString(val2String(v, depth-1))
+			buffer.WriteString(valueToString(v, depth-1))
 			buffer.WriteString(",")
 		}
 		if buffer.Len() > 1 {
@@ -168,62 +173,82 @@ func sum(a []uint) uint {
 	return s
 }
 
-type Table struct {
-	align        uint   // Each column align indent to boundary
-	headerChar   string // Header line characters
-	rowChar      string // Row line characters
-	colDelimiter string // Column delemiter
-}
+func PrintDataSet(dataset *common.DataSet) {
+	var header table.Row
+	for _, columName := range dataset.GetColumnNames() {
+		header = append(header, columName)
+	}
+	writer.AppendHeader(header)
 
-func NewTable(align uint, header string, row string, delemiter string) Table {
-	return Table{align, header, row, delemiter}
-}
-
-// Columns width
-type TableSpec = []uint
-type TableRows = [][]string
-
-func (t Table) printRow(row []string, colSpec TableSpec) {
-	for i, col := range row {
-		colString := t.colDelimiter + strings.Repeat(" ", int(t.align)) + col
-		length := uint(len(col))
-		if length < colSpec[i]+t.align {
-			colString = colString + strings.Repeat(" ", int(colSpec[i]+t.align-length))
+	for _, row := range dataset.GetRows() {
+		var newRow table.Row
+		for _, column := range row.GetValues() {
+			newRow = append(newRow, valueToString(column, 256))
 		}
-		fmt.Print(colString)
+		writer.AppendRow(newRow)
 	}
-	fmt.Println(t.colDelimiter)
+
+	writer.Render()
 }
 
-func (t Table) PrintTable(table *common.DataSet) {
-	columnSize := len(table.GetColumnNames())
-	rowSize := len(table.GetRows())
-	tableSpec := make(TableSpec, columnSize)
-	tableRows := make(TableRows, rowSize)
-	tableHeader := make([]string, columnSize)
-	for i, header := range table.GetColumnNames() {
-		tableSpec[i] = uint(len(header))
-		tableHeader[i] = string(header)
-	}
-	for i, row := range table.GetRows() {
-		tableRows[i] = make([]string, columnSize)
-		for j, col := range row.GetValues() {
-			tableRows[i][j] = val2String(col, 256)
-			tableSpec[j] = max(uint(len(tableRows[i][j])), tableSpec[j])
+func PrintPlanDesc(planDesc *graph.PlanDescription) {
+	planNodeDescs := planDesc.GetPlanNodeDescs()
+
+	header := table.Row{"id", "name", "dependencies", "output_var"}
+	hasBranchInfo, hasProfilingData, hasDescription := false, false, false
+	for _, planNodeDesc := range planNodeDescs {
+		var row table.Row
+		row = append(row, planNodeDesc.GetId(), planNodeDesc.GetName())
+
+		if planNodeDesc.IsSetDependencies() {
+			deps := make([]string, len(planNodeDesc.GetDependencies()))
+			for _, dep := range planNodeDesc.GetDependencies() {
+				deps = append(deps, fmt.Sprintf("%d", dep))
+			}
+			row = append(row, strings.Join(deps, ","))
+		} else {
+			row = append(row, "")
+		}
+
+		row = append(row, planNodeDesc.GetOutputVar())
+
+		if planNodeDesc.IsSetBranchInfo() {
+			if !hasBranchInfo {
+				hasBranchInfo = true
+				header = append(header, "branch_info")
+			}
+			branchInfo := planNodeDesc.GetBranchInfo()
+			row = append(row, fmt.Sprintf("do_branch: %b, cond_node_id: %d",
+				branchInfo.GetIsDoBranch(), branchInfo.GetConditionNodeID()))
+		}
+
+		if planNodeDesc.IsSetProfiles() {
+			if !hasProfilingData {
+				hasProfilingData = true
+				header = append(header, "profiling_data")
+			}
+
+			strArr := make([]string, len(planNodeDesc.GetProfiles()))
+			for i, profile := range planNodeDesc.GetProfiles() {
+				s := fmt.Sprintf("version: %d, num_rows: %d, exec_duration: %dus, total_duration: %dus",
+					i, profile.GetRows(), profile.GetExecDurationInUs(), profile.GetTotalDurationInUs())
+				strArr = append(strArr, s)
+			}
+			row = append(row, strings.Join(strArr, ";"))
+		}
+
+		if planNodeDesc.IsSetDescription() {
+			if !hasDescription {
+				hasDescription = true
+				header = append(header, "description")
+			}
+			desc := planNodeDesc.GetDescription()
+			var str []string
+			for k, v := range desc {
+				str = append(str, fmt.Sprintf("%s: %s", k, v))
+			}
+			row = append(row, strings.Join(str, ","))
 		}
 	}
-
-	//                 value limit         + two indent              + '|' itself
-	totalLineLength := int(sum(tableSpec)) + columnSize*int(t.align)*2 + columnSize + 1
-	headerLine := strings.Repeat(t.headerChar, totalLineLength)
-	rowLine := strings.Repeat(t.rowChar, totalLineLength)
-	fmt.Println(headerLine)
-	t.printRow(tableHeader, tableSpec)
-	fmt.Println(headerLine)
-	for _, row := range tableRows {
-		t.printRow(row, tableSpec)
-		fmt.Println(rowLine)
-	}
-	fmt.Printf("Got %d rows, %d columns.", rowSize, columnSize)
-	fmt.Println()
+	writer.AppendHeader(header)
 }

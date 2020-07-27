@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/vesoft-inc/nebula-console/cli"
-	"github.com/vesoft-inc/nebula-console/nebula"
+	"github.com/vesoft-inc/nebula-console/printer"
 	ngdb "github.com/vesoft-inc/nebula-go/v2"
 	graph "github.com/vesoft-inc/nebula-go/v2/nebula/graph"
 )
@@ -50,8 +50,6 @@ func clientCmd(query string) bool {
 	return false
 }
 
-var t = nebula.NewTable(2, "=", "-", "|")
-
 func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 	// Error
 	if resp.GetErrorCode() != graph.ErrorCode_SUCCEEDED {
@@ -60,8 +58,12 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 		return
 	}
 	// Show table
-	if resp.GetData() != nil {
-		t.PrintTable(resp.GetData())
+	if resp.IsSetData() {
+		printer.PrintDataSet(resp.GetData())
+	}
+
+	if resp.IsSetPlanDesc() {
+		printer.PrintPlanDesc(resp.GetPlanDesc())
 	}
 	// Show time
 	fmt.Printf("time spent %d/%d us", resp.GetLatencyInUs(), duration /*ns*/ /1000)
