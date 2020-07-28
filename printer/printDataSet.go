@@ -10,11 +10,8 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
-	"strings"
 
-	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/vesoft-inc/nebula-go/v2/nebula"
-	"github.com/vesoft-inc/nebula-go/v2/nebula/graph"
 )
 
 func valueToString(value *nebula.Value, depth uint) string {
@@ -148,97 +145,4 @@ func valueToString(value *nebula.Value, depth uint) string {
 		return buffer.String()
 	}
 	return ""
-}
-
-func PrintDataSet(dataset *nebula.DataSet) {
-	writer := table.NewWriter()
-
-	var header []interface{}
-	for _, columName := range dataset.GetColumnNames() {
-		header = append(header, string(columName))
-	}
-	writer.AppendHeader(table.Row(header))
-
-	for _, row := range dataset.GetRows() {
-		var newRow []interface{}
-		for _, column := range row.GetValues() {
-			newRow = append(newRow, valueToString(column, 256))
-		}
-		writer.AppendRow(table.Row(newRow))
-		writer.AppendSeparator()
-	}
-
-	fmt.Println(writer.Render())
-}
-
-func printPlanDescByRow(planDesc *graph.PlanDescription) {
-	writer := table.NewWriter()
-
-	planNodeDescs := planDesc.GetPlanNodeDescs()
-
-	var header []interface{}
-	header = append(header, "id", "name", "dependencies", "output_var")
-	hasBranchInfo, hasProfilingData, hasDescription := false, false, false
-	var rows []table.Row
-	for _, planNodeDesc := range planNodeDescs {
-		var row []interface{}
-		row = append(row, planNodeDesc.GetId(), string(planNodeDesc.GetName()))
-
-		if planNodeDesc.IsSetDependencies() {
-			var deps []string
-			for _, dep := range planNodeDesc.GetDependencies() {
-				deps = append(deps, fmt.Sprintf("%d", dep))
-			}
-			row = append(row, strings.Join(deps, ","))
-		} else {
-			row = append(row, "")
-		}
-
-		row = append(row, string(planNodeDesc.GetOutputVar()))
-
-		if planNodeDesc.IsSetBranchInfo() {
-			if !hasBranchInfo {
-				hasBranchInfo = true
-				header = append(header, "branch_info")
-			}
-			branchInfo := planNodeDesc.GetBranchInfo()
-			row = append(row, fmt.Sprintf("branch: %t, node_id: %d",
-				branchInfo.GetIsDoBranch(), branchInfo.GetConditionNodeID()))
-		}
-
-		if planNodeDesc.IsSetProfiles() {
-			if !hasProfilingData {
-				hasProfilingData = true
-				header = append(header, "profiling_data")
-			}
-
-			var strArr []string
-			for i, profile := range planNodeDesc.GetProfiles() {
-				s := fmt.Sprintf("version: %d, rows: %d, exec_time: %dus, total_time: %dus",
-					i, profile.GetRows(), profile.GetExecDurationInUs(), profile.GetTotalDurationInUs())
-				strArr = append(strArr, s)
-			}
-			row = append(row, strings.Join(strArr, "\n"))
-		}
-
-		if planNodeDesc.IsSetDescription() {
-			if !hasDescription {
-				hasDescription = true
-				header = append(header, "description")
-			}
-			desc := planNodeDesc.GetDescription()
-			var str []string
-			for k, v := range desc {
-				str = append(str, fmt.Sprintf("%s: %s", k, string(v)))
-			}
-			row = append(row, strings.Join(str, ","))
-		}
-		rows = append(rows, table.Row(row))
-	}
-	writer.AppendHeader(table.Row(header))
-	for _, row := range rows {
-		writer.AppendRow(row)
-		writer.AppendSeparator()
-	}
-	fmt.Println(writer.Render())
 }
