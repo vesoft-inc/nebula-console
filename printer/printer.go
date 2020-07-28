@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jedib0t/go-pretty/table"
+	"github.com/jedib0t/go-pretty/v6/table"
 	common "github.com/vesoft-inc/nebula-go/v2/nebula"
 	graph "github.com/vesoft-inc/nebula-go/v2/nebula/graph"
 )
@@ -201,7 +201,7 @@ func PrintPlanDesc(planDesc *graph.PlanDescription) {
 				header = append(header, "branch_info")
 			}
 			branchInfo := planNodeDesc.GetBranchInfo()
-			row = append(row, fmt.Sprintf("do_branch: %t, cond_node_id: %d",
+			row = append(row, fmt.Sprintf("do_branch: %t\n cond_node_id: %d",
 				branchInfo.GetIsDoBranch(), branchInfo.GetConditionNodeID()))
 		}
 
@@ -213,7 +213,7 @@ func PrintPlanDesc(planDesc *graph.PlanDescription) {
 
 			var strArr []string
 			for i, profile := range planNodeDesc.GetProfiles() {
-				s := fmt.Sprintf("version: %d, num_rows: %d, exec_duration: %dus, total_duration: %dus",
+				s := fmt.Sprintf("version: %d\nnum_rows: %d\nexec_duration: %dus\ntotal_duration: %dus",
 					i, profile.GetRows(), profile.GetExecDurationInUs(), profile.GetTotalDurationInUs())
 				strArr = append(strArr, s)
 			}
