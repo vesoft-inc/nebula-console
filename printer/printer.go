@@ -9,7 +9,6 @@ package printer
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 
@@ -17,13 +16,6 @@ import (
 	common "github.com/vesoft-inc/nebula-go/v2/nebula"
 	graph "github.com/vesoft-inc/nebula-go/v2/nebula/graph"
 )
-
-var writer table.Writer
-
-func init() {
-	writer := table.NewWriter()
-	writer.SetOutputMirror(os.Stdout)
-}
 
 func valueToString(value *common.Value, depth uint) string {
 	if value.IsSetNVal() { // null
@@ -45,7 +37,7 @@ func valueToString(value *common.Value, depth uint) string {
 	} else if value.IsSetFVal() { // float64
 		return strconv.FormatFloat(value.GetFVal(), 'g', -1, 64)
 	} else if value.IsSetSVal() { // string
-		return "\"" + string(value.GetSVal()) + "\""
+		return string(value.GetSVal())
 	} else if value.IsSetDVal() { // yyyy-mm-dd
 		date := value.GetDVal()
 		str := fmt.Sprintf("%d-%d-%d", date.GetYear(), date.GetMonth(), date.GetDay())
@@ -158,50 +150,41 @@ func valueToString(value *common.Value, depth uint) string {
 	return ""
 }
 
-func max(v1 uint, v2 uint) uint {
-	if v1 > v2 {
-		return v1
-	}
-	return v2
-}
-
-func sum(a []uint) uint {
-	s := uint(0)
-	for _, v := range a {
-		s += v
-	}
-	return s
-}
-
 func PrintDataSet(dataset *common.DataSet) {
-	var header table.Row
+	writer := table.NewWriter()
+
+	var header []interface{}
 	for _, columName := range dataset.GetColumnNames() {
-		header = append(header, columName)
+		header = append(header, string(columName))
 	}
-	writer.AppendHeader(header)
+	writer.AppendHeader(table.Row(header))
 
 	for _, row := range dataset.GetRows() {
-		var newRow table.Row
+		var newRow []interface{}
 		for _, column := range row.GetValues() {
 			newRow = append(newRow, valueToString(column, 256))
 		}
-		writer.AppendRow(newRow)
+		writer.AppendRow(table.Row(newRow))
 	}
 
-	writer.Render()
+	fmt.Println(writer.Render())
 }
 
 func PrintPlanDesc(planDesc *graph.PlanDescription) {
+	writer := table.NewWriter()
+
 	planNodeDescs := planDesc.GetPlanNodeDescs()
 
-	header := table.Row{"id", "name", "dependencies", "output_var"}
+	var header []interface{}
+	header = append(header, "id", "name", "dependencies", "output_var")
 	hasBranchInfo, hasProfilingData, hasDescription := false, false, false
+	var rows []table.Row
 	for _, planNodeDesc := range planNodeDescs {
-		var row table.Row
-		row = append(row, planNodeDesc.GetId(), planNodeDesc.GetName())
+		var row []interface{}
+		row = append(row, planNodeDesc.GetId(), string(planNodeDesc.GetName()))
 
 		if planNodeDesc.IsSetDependencies() {
-			deps := make([]string, len(planNodeDesc.GetDependencies()))
+			var deps []string
 			for _, dep := range planNodeDesc.GetDependencies() {
 				deps = append(deps, fmt.Sprintf("%d", dep))
 			}
@@ -210,7 +193,7 @@ func PrintPlanDesc(planDesc *graph.PlanDescription) {
 			row = append(row, "")
 		}
 
-		row = append(row, planNodeDesc.GetOutputVar())
+		row = append(row, string(planNodeDesc.GetOutputVar()))
 
 		if planNodeDesc.IsSetBranchInfo() {
 			if !hasBranchInfo {
@@ -218,7 +201,7 @@ func PrintPlanDesc(planDesc *graph.PlanDescription) {
 				header = append(header, "branch_info")
 			}
 			branchInfo := planNodeDesc.GetBranchInfo()
-			row = append(row, fmt.Sprintf("do_branch: %b, cond_node_id: %d",
+			row = append(row, fmt.Sprintf("do_branch: %t, cond_node_id: %d",
 				branchInfo.GetIsDoBranch(), branchInfo.GetConditionNodeID()))
 		}
 
@@ -228,7 +211,7 @@ func PrintPlanDesc(planDesc *graph.PlanDescription) {
 				header = append(header, "profiling_data")
 			}
 
-			strArr := make([]string, len(planNodeDesc.GetProfiles()))
+			var strArr []string
 			for i, profile := range planNodeDesc.GetProfiles() {
 				s := fmt.Sprintf("version: %d, num_rows: %d, exec_duration: %dus, total_duration: %dus",
 					i, profile.GetRows(), profile.GetExecDurationInUs(), profile.GetTotalDurationInUs())
@@ -245,10 +228,13 @@ func PrintPlanDesc(planDesc *graph.PlanDescription) {
 			desc := planNodeDesc.GetDescription()
 			var str []string
 			for k, v := range desc {
-				str = append(str, fmt.Sprintf("%s: %s", k, v))
+				str = append(str, fmt.Sprintf("%s: %s", k, string(v)))
 			}
 			row = append(row, strings.Join(str, ","))
 		}
+		rows = append(rows, table.Row(row))
 	}
-	writer.AppendHeader(header)
+	writer.AppendHeader(table.Row(header))
+	writer.AppendRows(rows)
+	fmt.Println(writer.Render())
 }
