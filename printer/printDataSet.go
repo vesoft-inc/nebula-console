@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/vesoft-inc/nebula-go/v2/nebula"
 )
 
@@ -145,4 +146,25 @@ func valueToString(value *nebula.Value, depth uint) string {
 		return buffer.String()
 	}
 	return ""
+}
+
+func printDataSet(dataset *nebula.DataSet) {
+	writer := table.NewWriter()
+	writer.Style().Options.SeparateRows = true
+
+	var header []interface{}
+	for _, columName := range dataset.GetColumnNames() {
+		header = append(header, string(columName))
+	}
+	writer.AppendHeader(table.Row(header))
+
+	for _, row := range dataset.GetRows() {
+		var newRow []interface{}
+		for _, column := range row.GetValues() {
+			newRow = append(newRow, valueToString(column, 256))
+		}
+		writer.AppendRow(table.Row(newRow))
+	}
+
+	fmt.Println(writer.Render())
 }

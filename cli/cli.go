@@ -19,7 +19,7 @@ import (
 	"github.com/vesoft-inc/readline"
 )
 
-const NebulaLabel = "Nebula-Console"
+const NebulaLabel = "nebula"
 
 const ttyColorPrefix = "\033["
 const ttyColorSuffix = "m"
@@ -29,14 +29,18 @@ const ttyColorReset = "0"
 
 func promptString(space string, user string, isErr bool, isTTY bool) string {
 	prompt := ""
-	// (user@nebula) [(space)] >
+	// (user@nebula) [space] >
 	if isTTY {
 		prompt += fmt.Sprintf("%s%s%s", ttyColorPrefix, ttyColorBold, ttyColorSuffix)
 	}
 	if isTTY && isErr {
 		prompt += fmt.Sprintf("%s%s%s", ttyColorPrefix, ttyColorRed, ttyColorSuffix)
 	}
-	prompt += fmt.Sprintf("(%s@%s) [(%s)]> ", user, NebulaLabel, space)
+	spaceName := "(none)"
+	if len(space) > 0 {
+		spaceName = space
+	}
+	prompt += fmt.Sprintf("(%s@%s) [%s]> ", user, NebulaLabel, spaceName)
 	if isTTY {
 		prompt += fmt.Sprintf("%s%s%s", ttyColorPrefix, ttyColorReset, ttyColorSuffix)
 	}

@@ -99,7 +99,7 @@ func loop(client *ngdb.GraphClient, c cli.Cli) error {
 			log.Fatalf("Execute error, %s", err.Error())
 		}
 		printResp(resp, duration)
-		fmt.Println(time.Now().Format("2006-01-02 15:04:05"))
+		// fmt.Println(time.Now().Format("2006-01-02 15:04:05"))
 		c.SetSpace(string(resp.SpaceName))
 		c.SetisErr(resp.GetErrorCode() != graph.ErrorCode_SUCCEEDED)
 		fmt.Println()

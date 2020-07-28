@@ -81,6 +81,7 @@ func printPlanDescByDot(planDesc *graph.PlanDescription) {
 
 func printPlanDescByRow(planDesc *graph.PlanDescription) {
 	writer := table.NewWriter()
+	writer.Style().Options.SeparateRows = true
 
 	planNodeDescs := planDesc.GetPlanNodeDescs()
 
@@ -135,9 +136,6 @@ func printPlanDescByRow(planDesc *graph.PlanDescription) {
 		rows = append(rows, table.Row(row))
 	}
 	writer.AppendHeader(header)
-	for _, row := range rows {
-		writer.AppendRow(row)
-		writer.AppendSeparator()
-	}
+	writer.AppendRows(rows)
 	fmt.Println(writer.Render())
 }
