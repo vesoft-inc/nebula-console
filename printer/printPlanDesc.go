@@ -36,6 +36,7 @@ func condEdgeLabel(condNode *graph.PlanNodeDescription, doBranch bool) string {
 
 func printPlanDescByDot(planDesc *graph.PlanDescription) {
 	writer := table.NewWriter()
+	configTableWriter(&writer)
 	writer.Style().Box.Left = " "
 	writer.Style().Box.Right = " "
 	writer.Style().Box.BottomLeft = "-"
@@ -54,23 +55,24 @@ func printPlanDescByDot(planDesc *graph.PlanDescription) {
 		planNodeName := name(planNodeDesc)
 		switch strings.ToLower(string(planNodeDesc.GetName())) {
 		case "select":
-			builder.WriteString(fmt.Sprintf("%s[shape=diamond];\n", planNodeName))
+			builder.WriteString(fmt.Sprintf("\t\"%s\"[shape=diamond];\n", planNodeName))
 		case "loop":
-			builder.WriteString(fmt.Sprintf("%s[shape=diamond];\n", planNodeName))
+			builder.WriteString(fmt.Sprintf("\t\"%s\"[shape=diamond];\n", planNodeName))
 		default:
-			builder.WriteString(fmt.Sprintf("%s[shape=box, style=rounded];\n", planNodeName))
+			builder.WriteString(fmt.Sprintf("\t\"%s\"[shape=box, style=rounded];\n", planNodeName))
 		}
 
 		if planNodeDesc.IsSetDependencies() {
 			for _, depId := range planNodeDesc.GetDependencies() {
 				dep := planNodeDescs[nodeIdxMap[depId]]
-				builder.WriteString(fmt.Sprintf("%s->%s;\n", name(dep), planNodeName))
+				builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(dep), planNodeName))
 			}
 		}
+
 		if planNodeDesc.IsSetBranchInfo() {
 			branchInfo := planNodeDesc.GetBranchInfo()
 			condNode := planNodeDescs[nodeIdxMap[branchInfo.GetConditionNodeID()]]
-			builder.WriteString(fmt.Sprintf("%s->%s[label=\"%s\"];\n",
+			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\"[label=\"%s\"];\n",
 				planNodeName, name(condNode), condEdgeLabel(condNode, branchInfo.GetIsDoBranch())))
 		}
 	}
@@ -81,7 +83,7 @@ func printPlanDescByDot(planDesc *graph.PlanDescription) {
 
 func printPlanDescByRow(planDesc *graph.PlanDescription) {
 	writer := table.NewWriter()
-	writer.Style().Options.SeparateRows = true
+	configTableWriter(&writer)
 
 	planNodeDescs := planDesc.GetPlanNodeDescs()
 

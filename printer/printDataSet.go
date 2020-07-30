@@ -16,6 +16,10 @@ import (
 )
 
 func valueToString(value *nebula.Value, depth uint) string {
+	// TODO(shylock) get golang runtime limit
+	if depth == 0 { // Avoid too deep recursive
+		return "..."
+	}
 	if value.IsSetNVal() { // null
 		switch value.GetNVal() {
 		case nebula.NullType___NULL__:
@@ -150,7 +154,7 @@ func valueToString(value *nebula.Value, depth uint) string {
 
 func printDataSet(dataset *nebula.DataSet) {
 	writer := table.NewWriter()
-	writer.Style().Options.SeparateRows = true
+	configTableWriter(&writer)
 
 	var header []interface{}
 	for _, columName := range dataset.GetColumnNames() {

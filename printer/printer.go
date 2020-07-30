@@ -20,10 +20,10 @@ func PrintDataSet(dataset *nebula.DataSet) {
 func PrintPlanDesc(planDesc *graph.PlanDescription) {
 	fmt.Println("\n\nExecution Plan\n")
 
-	switch planDesc.GetFormat() {
-	case graph.PlanFormat_ROW:
+	switch string(planDesc.GetFormat()) {
+	case "row":
 		printPlanDescByRow(planDesc)
-	case graph.PlanFormat_DOT:
+	case "dot":
 		printPlanDescByDot(planDesc)
 	}
 }

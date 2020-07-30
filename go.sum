@@ -18,8 +18,8 @@ github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/stretchr/testify v1.3.0 h1:TivCn/peBQ7UY8ooIcPgZFpTNSz0Q2U6UrFlUfqbe0Q=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
-github.com/vesoft-inc/nebula-go/v2 v2.0.0-20200727080130-7da40daa0aba h1:x5El786ZTGnUcwWm/f/pdM3uLC48u4pjX5VevbPtbx4=
-github.com/vesoft-inc/nebula-go/v2 v2.0.0-20200727080130-7da40daa0aba/go.mod h1:92I8vrIc2Rk7/oJO+1hTgjNhHiYfnsW2uu3Ofh0ECnI=
+github.com/vesoft-inc/nebula-go/v2 v2.0.0-20200730062750-d87c9abe1422 h1:cPIBBtmtXq9BvK4xh/lq9Yr3yg5ksqFScbREOFYRKxA=
+github.com/vesoft-inc/nebula-go/v2 v2.0.0-20200730062750-d87c9abe1422/go.mod h1:92I8vrIc2Rk7/oJO+1hTgjNhHiYfnsW2uu3Ofh0ECnI=
 github.com/vesoft-inc/readline v0.0.0-20200707112557-889240450af4 h1:DiyiidZ9FBSwOZfslQeIPeCUo7AjJ59bj3UaTQEY7po=
 github.com/vesoft-inc/readline v0.0.0-20200707112557-889240450af4/go.mod h1:E6VDTX2OSL0so+MQj23uMHpp24E2gqbl5nVOSviDIkU=
 golang.org/x/sys v0.0.0-20180816055513-1c9583448a9c/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
