@@ -65,7 +65,8 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 	}
 
 	if resp.IsSetPlanDesc() {
-		printer.PrintPlanDesc(resp.GetPlanDesc())
+		p := printer.NewPlanDescPrinter(resp.GetPlanDesc())
+		fmt.Println(p.Print())
 	}
 	fmt.Println()
 }

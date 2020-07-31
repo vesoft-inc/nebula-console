@@ -152,7 +152,7 @@ func valueToString(value *nebula.Value, depth uint) string {
 	return ""
 }
 
-func printDataSet(dataset *nebula.DataSet) {
+func PrintDataSet(dataset *nebula.DataSet) {
 	writer := table.NewWriter()
 	configTableWriter(&writer)
 
