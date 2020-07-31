@@ -61,7 +61,7 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 	if resp.IsSetData() {
 		printer.PrintDataSet(resp.GetData())
 		// Show time
-		fmt.Printf("time spent %d/%d us", resp.GetLatencyInUs(), duration /*ns*/ /1000)
+		fmt.Printf("time spent %d/%d us\n", resp.GetLatencyInUs(), duration/1000)
 	}
 
 	if resp.IsSetPlanDesc() {

@@ -13,5 +13,5 @@ import (
 
 func configTableWriter(writer *table.Writer) {
 	(*writer).Style().Format.Header = text.FormatDefault
-	// (*writer).Style().Options.SeparateRows = true
+	(*writer).Style().Options.SeparateRows = true
 }

@@ -4,7 +4,7 @@
 default: build
 
 build: clean fmt
-	go build -o nebula-console;
+	go build -o nebula-console
 
 vendorbuild: clean fmt
 	@go mod vendor && go build -mod vendor -o nebula-console

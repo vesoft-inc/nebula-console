@@ -48,13 +48,13 @@ func condEdgeLabel(condNode *graph.PlanNodeDescription, doBranch bool) string {
 	name := strings.ToLower(string(condNode.GetName()))
 	if strings.HasPrefix(name, "select") {
 		if doBranch {
-			return "Yes"
+			return "Y"
 		}
-		return "No"
+		return "N"
 	}
 	if strings.HasPrefix(name, "loop") {
 		if doBranch {
-			return "LoopBody"
+			return "Do"
 		}
 	}
 	return ""
@@ -79,6 +79,7 @@ func (p PlanDescPrinter) renderByDotStruct() string {
 	planNodeDescs := p.planDesc.GetPlanNodeDescs()
 	var builder strings.Builder
 	builder.WriteString("digraph exec_plan {\n")
+	builder.WriteString("\trankdir=LR;\n")
 	for _, planNodeDesc := range planNodeDescs {
 		planNodeName := name(planNodeDesc)
 		switch strings.ToLower(string(planNodeDesc.GetName())) {
@@ -100,13 +101,39 @@ func (p PlanDescPrinter) renderByDotStruct() string {
 		if planNodeDesc.IsSetBranchInfo() {
 			branchInfo := planNodeDesc.GetBranchInfo()
 			condNode := planNodeDescs[nodeIdxMap[branchInfo.GetConditionNodeID()]]
-			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\"[label=\"%s\"];\n",
+			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\"[label=\"%s\", style=dashed];\n",
 				planNodeName, name(condNode), condEdgeLabel(condNode, branchInfo.GetIsDoBranch())))
 		}
 	}
 	builder.WriteString("}")
 	p.writer.AppendRow(table.Row{builder.String()})
 	return p.writer.Render()
+}
+
+func (p PlanDescPrinter) findBranchEndNode(condNodeId int64, isDoBranch bool) int64 {
+	for _, node := range p.planDesc.GetPlanNodeDescs() {
+		if node.IsSetBranchInfo() {
+			bInfo := node.GetBranchInfo()
+			if bInfo.GetConditionNodeID() == condNodeId && bInfo.GetIsDoBranch() == isDoBranch {
+				return node.GetId()
+			}
+		}
+	}
+	return -1
+}
+
+func (p PlanDescPrinter) findFirstStartNodeFrom(nodeId int64) int64 {
+	node := p.planDesc.GetPlanNodeDescs()[p.planDesc.GetNodeIndexMap()[nodeId]]
+	for {
+		deps := node.GetDependencies()
+		if len(deps) == 0 {
+			if strings.ToLower(string(node.GetName())) != "start" {
+				return -1
+			}
+			return node.GetId()
+		}
+		node = p.planDesc.GetPlanNodeDescs()[p.planDesc.GetNodeIndexMap()[deps[0]]]
+	}
 }
 
 func (p PlanDescPrinter) renderByDot() string {
@@ -117,29 +144,41 @@ func (p PlanDescPrinter) renderByDot() string {
 	planNodeDescs := p.planDesc.GetPlanNodeDescs()
 	var builder strings.Builder
 	builder.WriteString("digraph exec_plan {\n")
+	builder.WriteString("\trankdir=LR;\n")
 	for _, planNodeDesc := range planNodeDescs {
 		planNodeName := name(planNodeDesc)
 		switch strings.ToLower(string(planNodeDesc.GetName())) {
 		case "select":
 			builder.WriteString(fmt.Sprintf("\t\"%s\"[shape=diamond];\n", planNodeName))
+			dep := planNodeDescs[nodeIdxMap[planNodeDesc.GetDependencies()[0]]]
+			// then branch
+			thenNodeId := p.findBranchEndNode(planNodeDesc.GetId(), true)
+			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(planNodeDescs[nodeIdxMap[thenNodeId]]), name(dep)))
+			thenStartId := p.findFirstStartNodeFrom(thenNodeId)
+			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\"[label=\"Y\", style=dashed];\n", name(planNodeDesc), name(planNodeDescs[nodeIdxMap[thenStartId]])))
+			// else branch
+			elseNodeId := p.findBranchEndNode(planNodeDesc.GetId(), false)
+			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(planNodeDescs[nodeIdxMap[elseNodeId]]), name(dep)))
+			elseStartId := p.findFirstStartNodeFrom(elseNodeId)
+			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\"[label=\"N\", style=dashed];\n", name(planNodeDesc), name(planNodeDescs[nodeIdxMap[elseStartId]])))
 		case "loop":
 			builder.WriteString(fmt.Sprintf("\t\"%s\"[shape=diamond];\n", planNodeName))
+			dep := planNodeDescs[nodeIdxMap[planNodeDesc.GetDependencies()[0]]]
+			// do branch
+			doNodeId := p.findBranchEndNode(planNodeDesc.GetId(), true)
+			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(planNodeDescs[nodeIdxMap[doNodeId]]), name(planNodeDesc)))
+			doStartId := p.findFirstStartNodeFrom(doNodeId)
+			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\"[label=\"Do\", style=dashed];\n", name(planNodeDesc), name(planNodeDescs[nodeIdxMap[doStartId]])))
+			// dep
+			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(dep), planNodeName))
 		default:
 			builder.WriteString(fmt.Sprintf("\t\"%s\"[shape=box, style=rounded];\n", planNodeName))
-		}
-
-		if planNodeDesc.IsSetDependencies() {
-			for _, depId := range planNodeDesc.GetDependencies() {
-				dep := planNodeDescs[nodeIdxMap[depId]]
-				builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(dep), planNodeName))
+			if planNodeDesc.IsSetDependencies() {
+				for _, depId := range planNodeDesc.GetDependencies() {
+					dep := planNodeDescs[nodeIdxMap[depId]]
+					builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(dep), planNodeName))
+				}
 			}
-		}
-
-		if planNodeDesc.IsSetBranchInfo() {
-			branchInfo := planNodeDesc.GetBranchInfo()
-			condNode := planNodeDescs[nodeIdxMap[branchInfo.GetConditionNodeID()]]
-			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\"[label=\"%s\"];\n",
-				planNodeName, name(condNode), condEdgeLabel(condNode, branchInfo.GetIsDoBranch())))
 		}
 	}
 	builder.WriteString("}")
