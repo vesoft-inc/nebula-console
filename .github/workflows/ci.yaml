@@ -42,8 +42,3 @@ jobs:
         env:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
-      - name: test
-        if: matrix.os == 'linux' && matrix.arch == 'amd64'
-        run: |
-          ./nebula-console -e 'exit'
-          ./nebula-console -f demo.nGQL

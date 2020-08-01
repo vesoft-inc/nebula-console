@@ -29,7 +29,8 @@ func welcome(interactive bool) {
 	if !interactive {
 		return
 	}
-	fmt.Printf("Welcome to Nebula Graph %s!", Version)
+	fmt.Println()
+	fmt.Printf("Welcome to Nebula Graph %s!\n", Version)
 	fmt.Println()
 }
 
@@ -96,11 +97,10 @@ func loop(client *ngdb.GraphClient, c cli.Cli) error {
 		resp, err := client.Execute(lineString)
 		duration := time.Since(start)
 		if err != nil {
-			// Exception
 			log.Fatalf("Execute error, %s", err.Error())
 		}
 		printResp(resp, duration)
-		// fmt.Println(time.Now().Format("2006-01-02 15:04:05"))
+		fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
 		c.SetSpace(string(resp.SpaceName))
 		c.SetisErr(resp.GetErrorCode() != graph.ErrorCode_SUCCEEDED)
 		fmt.Println()
@@ -152,8 +152,8 @@ func main() {
 		if err != nil {
 			log.Fatalf("Open file %s failed, %s", *file, err.Error())
 		}
+		defer fd.Close()
 		exit = loop(client, cli.NewnCli(fd))
-		fd.Close()
 	}
 
 	if exit != nil {
