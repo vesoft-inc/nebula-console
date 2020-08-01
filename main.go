@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/vesoft-inc/nebula-console/cli"
 	"github.com/vesoft-inc/nebula-console/printer"
 	ngdb "github.com/vesoft-inc/nebula-go/v2"
@@ -66,6 +67,9 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 	}
 
 	if resp.IsSetPlanDesc() {
+		fmt.Println()
+		fmt.Println(text.Bold.Sprint("Execution Plan"))
+		fmt.Println()
 		p := printer.NewPlanDescPrinter(resp.GetPlanDesc())
 		fmt.Println(p.Print())
 	}
