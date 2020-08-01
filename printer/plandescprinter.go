@@ -33,9 +33,9 @@ func (p PlanDescPrinter) Print() string {
 	case "row":
 		return p.renderByRow()
 	case "dot":
-		return p.renderByDot()
+		return p.renderDotGraph()
 	case "dot:struct":
-		return p.renderByDotStruct()
+		return p.renderDotGraphByStruct()
 	}
 	return ""
 }
@@ -71,11 +71,15 @@ func (p PlanDescPrinter) configWriterDotRenderStyle() {
 	p.writer.Style().Box.RightSeparator = "-"
 }
 
-func (p PlanDescPrinter) renderByDotStruct() string {
+func (p PlanDescPrinter) nodeById(nodeId int64) *graph.PlanNodeDescription {
+	line := p.planDesc.GetNodeIndexMap()[nodeId]
+	return p.planDesc.GetPlanNodeDescs()[line]
+}
+
+func (p PlanDescPrinter) renderDotGraphByStruct() string {
 	p.configWriterDotRenderStyle()
 	p.writer.AppendHeader(table.Row{"plan"})
 
-	nodeIdxMap := p.planDesc.GetNodeIndexMap()
 	planNodeDescs := p.planDesc.GetPlanNodeDescs()
 	var builder strings.Builder
 	builder.WriteString("digraph exec_plan {\n")
@@ -93,14 +97,14 @@ func (p PlanDescPrinter) renderByDotStruct() string {
 
 		if planNodeDesc.IsSetDependencies() {
 			for _, depId := range planNodeDesc.GetDependencies() {
-				dep := planNodeDescs[nodeIdxMap[depId]]
+				dep := p.nodeById(depId)
 				builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(dep), planNodeName))
 			}
 		}
 
 		if planNodeDesc.IsSetBranchInfo() {
 			branchInfo := planNodeDesc.GetBranchInfo()
-			condNode := planNodeDescs[nodeIdxMap[branchInfo.GetConditionNodeID()]]
+			condNode := p.nodeById(branchInfo.GetConditionNodeID())
 			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\"[label=\"%s\", style=dashed];\n",
 				planNodeName, name(condNode), condEdgeLabel(condNode, branchInfo.GetIsDoBranch())))
 		}
@@ -123,7 +127,7 @@ func (p PlanDescPrinter) findBranchEndNode(condNodeId int64, isDoBranch bool) in
 }
 
 func (p PlanDescPrinter) findFirstStartNodeFrom(nodeId int64) int64 {
-	node := p.planDesc.GetPlanNodeDescs()[p.planDesc.GetNodeIndexMap()[nodeId]]
+	node := p.nodeById(nodeId)
 	for {
 		deps := node.GetDependencies()
 		if len(deps) == 0 {
@@ -132,15 +136,14 @@ func (p PlanDescPrinter) findFirstStartNodeFrom(nodeId int64) int64 {
 			}
 			return node.GetId()
 		}
-		node = p.planDesc.GetPlanNodeDescs()[p.planDesc.GetNodeIndexMap()[deps[0]]]
+		node = p.nodeById(deps[0])
 	}
 }
 
-func (p PlanDescPrinter) renderByDot() string {
+func (p PlanDescPrinter) renderDotGraph() string {
 	p.configWriterDotRenderStyle()
 	p.writer.AppendHeader(table.Row{"plan"})
 
-	nodeIdxMap := p.planDesc.GetNodeIndexMap()
 	planNodeDescs := p.planDesc.GetPlanNodeDescs()
 	var builder strings.Builder
 	builder.WriteString("digraph exec_plan {\n")
@@ -150,33 +153,32 @@ func (p PlanDescPrinter) renderByDot() string {
 		switch strings.ToLower(string(planNodeDesc.GetName())) {
 		case "select":
 			builder.WriteString(fmt.Sprintf("\t\"%s\"[shape=diamond];\n", planNodeName))
-			dep := planNodeDescs[nodeIdxMap[planNodeDesc.GetDependencies()[0]]]
+			dep := p.nodeById(planNodeDesc.GetDependencies()[0])
 			// then branch
 			thenNodeId := p.findBranchEndNode(planNodeDesc.GetId(), true)
-			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(planNodeDescs[nodeIdxMap[thenNodeId]]), name(dep)))
+			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(p.nodeById(thenNodeId)), name(dep)))
 			thenStartId := p.findFirstStartNodeFrom(thenNodeId)
-			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\"[label=\"Y\", style=dashed];\n", name(planNodeDesc), name(planNodeDescs[nodeIdxMap[thenStartId]])))
+			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\"[label=\"Y\", style=dashed];\n", name(planNodeDesc), name(p.nodeById(thenStartId))))
 			// else branch
 			elseNodeId := p.findBranchEndNode(planNodeDesc.GetId(), false)
-			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(planNodeDescs[nodeIdxMap[elseNodeId]]), name(dep)))
+			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(p.nodeById(elseNodeId)), name(dep)))
 			elseStartId := p.findFirstStartNodeFrom(elseNodeId)
-			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\"[label=\"N\", style=dashed];\n", name(planNodeDesc), name(planNodeDescs[nodeIdxMap[elseStartId]])))
+			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\"[label=\"N\", style=dashed];\n", name(planNodeDesc), name(p.nodeById(elseStartId))))
 		case "loop":
 			builder.WriteString(fmt.Sprintf("\t\"%s\"[shape=diamond];\n", planNodeName))
-			dep := planNodeDescs[nodeIdxMap[planNodeDesc.GetDependencies()[0]]]
+			dep := p.nodeById(planNodeDesc.GetDependencies()[0])
 			// do branch
 			doNodeId := p.findBranchEndNode(planNodeDesc.GetId(), true)
-			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(planNodeDescs[nodeIdxMap[doNodeId]]), name(planNodeDesc)))
+			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(p.nodeById(doNodeId)), name(planNodeDesc)))
 			doStartId := p.findFirstStartNodeFrom(doNodeId)
-			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\"[label=\"Do\", style=dashed];\n", name(planNodeDesc), name(planNodeDescs[nodeIdxMap[doStartId]])))
+			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\"[label=\"Do\", style=dashed];\n", name(planNodeDesc), name(p.nodeById(doStartId))))
 			// dep
 			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(dep), planNodeName))
 		default:
 			builder.WriteString(fmt.Sprintf("\t\"%s\"[shape=box, style=rounded];\n", planNodeName))
 			if planNodeDesc.IsSetDependencies() {
 				for _, depId := range planNodeDesc.GetDependencies() {
-					dep := planNodeDescs[nodeIdxMap[depId]]
-					builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(dep), planNodeName))
+					builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(p.nodeById(depId)), planNodeName))
 				}
 			}
 		}
