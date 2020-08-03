@@ -15,18 +15,23 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jedib0t/go-pretty/v6/text"
+	"github.com/vesoft-inc/nebula-console/cli"
+	"github.com/vesoft-inc/nebula-console/printer"
 	ngdb "github.com/vesoft-inc/nebula-go/v2"
 	graph "github.com/vesoft-inc/nebula-go/v2/nebula/graph"
 )
 
-const NebulaLabel = "Nebula-Console"
-const Version = "v2.0.0-alpha"
+const (
+	Version = "v2.0.0-alpha"
+)
 
 func welcome(interactive bool) {
 	if !interactive {
 		return
 	}
-	fmt.Printf("Welcome to Nebula Graph %s!", Version)
+	fmt.Println()
+	fmt.Printf("Welcome to Nebula Graph %s!\n", Version)
 	fmt.Println()
 }
 
@@ -47,8 +52,6 @@ func clientCmd(query string) bool {
 	return false
 }
 
-var t = NewTable(2, "=", "-", "|")
-
 func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 	// Error
 	if resp.GetErrorCode() != graph.ErrorCode_SUCCEEDED {
@@ -57,19 +60,27 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 		return
 	}
 	// Show table
-	if resp.GetData() != nil {
-		t.PrintTable(resp.GetData())
+	if resp.IsSetData() {
+		printer.PrintDataSet(resp.GetData())
+		// Show time
+		fmt.Printf("time spent %d/%d us\n", resp.GetLatencyInUs(), duration/1000)
 	}
-	// Show time
-	fmt.Printf("time spent %d/%d us", resp.GetLatencyInUs(), duration /*ns*/ /1000)
+
+	if resp.IsSetPlanDesc() {
+		fmt.Println()
+		fmt.Println(text.Bold.Sprint("Execution Plan"))
+		fmt.Println()
+		p := printer.NewPlanDescPrinter(resp.GetPlanDesc())
+		fmt.Println(p.Print())
+	}
 	fmt.Println()
 }
 
 // Loop the request util fatal or timeout
 // We treat one line as one query
 // Add line break yourself as `SHOW \<CR>HOSTS`
-func loop(client *ngdb.GraphClient, c Cli) error {
-	for true {
+func loop(client *ngdb.GraphClient, c cli.Cli) error {
+	for {
 		line, err, exit := c.ReadLine()
 		lineString := string(line)
 		if exit {
@@ -90,16 +101,14 @@ func loop(client *ngdb.GraphClient, c Cli) error {
 		resp, err := client.Execute(lineString)
 		duration := time.Since(start)
 		if err != nil {
-			// Exception
 			log.Fatalf("Execute error, %s", err.Error())
 		}
 		printResp(resp, duration)
-		fmt.Println(time.Now().Format("2006-01-02 15:04:05"))
+		fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
 		c.SetSpace(string(resp.SpaceName))
 		c.SetisErr(resp.GetErrorCode() != graph.ErrorCode_SUCCEEDED)
 		fmt.Println()
 	}
-	return nil
 }
 
 func main() {
@@ -139,16 +148,16 @@ func main() {
 	// Loop the request
 	var exit error = nil
 	if interactive {
-		exit = loop(client, NewiCli(historyHome, *username))
+		exit = loop(client, cli.NewiCli(historyHome, *username))
 	} else if *script != "" {
-		exit = loop(client, NewnCli(strings.NewReader(*script)))
+		exit = loop(client, cli.NewnCli(strings.NewReader(*script)))
 	} else if *file != "" {
 		fd, err := os.Open(*file)
 		if err != nil {
 			log.Fatalf("Open file %s failed, %s", *file, err.Error())
 		}
-		exit = loop(client, NewnCli(fd))
-		fd.Close()
+		defer fd.Close()
+		exit = loop(client, cli.NewnCli(fd))
 	}
 
 	if exit != nil {

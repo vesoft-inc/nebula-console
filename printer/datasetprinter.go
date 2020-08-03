@@ -4,32 +4,31 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-package main
+package printer
 
 import (
 	"bytes"
 	"fmt"
 	"strconv"
-	"strings"
 
-	common "github.com/vesoft-inc/nebula-go/v2/nebula"
+	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/vesoft-inc/nebula-go/v2/nebula"
 )
 
-func val2String(value *common.Value, depth uint) string {
+func valueToString(value *nebula.Value, depth uint) string {
 	// TODO(shylock) get golang runtime limit
 	if depth == 0 { // Avoid too deep recursive
 		return "..."
 	}
-
 	if value.IsSetNVal() { // null
 		switch value.GetNVal() {
-		case common.NullType___NULL__:
+		case nebula.NullType___NULL__:
 			return "NULL"
-		case common.NullType_NaN:
+		case nebula.NullType_NaN:
 			return "NaN"
-		case common.NullType_BAD_DATA:
+		case nebula.NullType_BAD_DATA:
 			return "BAD_DATA"
-		case common.NullType_BAD_TYPE:
+		case nebula.NullType_BAD_TYPE:
 			return "BAD_TYPE"
 		}
 		return "NULL"
@@ -40,7 +39,7 @@ func val2String(value *common.Value, depth uint) string {
 	} else if value.IsSetFVal() { // float64
 		return strconv.FormatFloat(value.GetFVal(), 'g', -1, 64)
 	} else if value.IsSetSVal() { // string
-		return "\"" + string(value.GetSVal()) + "\""
+		return string(value.GetSVal())
 	} else if value.IsSetDVal() { // yyyy-mm-dd
 		date := value.GetDVal()
 		str := fmt.Sprintf("%d-%d-%d", date.GetYear(), date.GetMonth(), date.GetDay())
@@ -68,7 +67,7 @@ func val2String(value *common.Value, depth uint) string {
 				buffer.WriteString(".")
 				buffer.WriteString(k)
 				buffer.WriteString(":")
-				buffer.WriteString(val2String(v, depth-1))
+				buffer.WriteString(valueToString(v, depth-1))
 				buffer.WriteString(",")
 			}
 		}
@@ -89,7 +88,7 @@ func val2String(value *common.Value, depth uint) string {
 			filled = true
 			buffer.WriteString(k)
 			buffer.WriteString(":")
-			buffer.WriteString(val2String(v, depth-1))
+			buffer.WriteString(valueToString(v, depth-1))
 			buffer.WriteString(",")
 		}
 		if filled {
@@ -111,7 +110,7 @@ func val2String(value *common.Value, depth uint) string {
 		var buffer bytes.Buffer
 		buffer.WriteString("[")
 		for _, v := range l.GetValues() {
-			buffer.WriteString(val2String(v, depth-1))
+			buffer.WriteString(valueToString(v, depth-1))
 			buffer.WriteString(",")
 		}
 		if buffer.Len() > 1 {
@@ -127,7 +126,7 @@ func val2String(value *common.Value, depth uint) string {
 		for k, v := range m.GetKvs() {
 			buffer.WriteString("\"" + k + "\"")
 			buffer.WriteString(":")
-			buffer.WriteString(val2String(v, depth-1))
+			buffer.WriteString(valueToString(v, depth-1))
 			buffer.WriteString(",")
 		}
 		if buffer.Len() > 1 {
@@ -141,7 +140,7 @@ func val2String(value *common.Value, depth uint) string {
 		var buffer bytes.Buffer
 		buffer.WriteString("{")
 		for _, v := range s.GetValues() {
-			buffer.WriteString(val2String(v, depth-1))
+			buffer.WriteString(valueToString(v, depth-1))
 			buffer.WriteString(",")
 		}
 		if buffer.Len() > 1 {
@@ -153,77 +152,23 @@ func val2String(value *common.Value, depth uint) string {
 	return ""
 }
 
-func max(v1 uint, v2 uint) uint {
-	if v1 > v2 {
-		return v1
+func PrintDataSet(dataset *nebula.DataSet) {
+	writer := table.NewWriter()
+	configTableWriter(&writer)
+
+	var header []interface{}
+	for _, columName := range dataset.GetColumnNames() {
+		header = append(header, string(columName))
 	}
-	return v2
-}
+	writer.AppendHeader(table.Row(header))
 
-func sum(a []uint) uint {
-	s := uint(0)
-	for _, v := range a {
-		s += v
-	}
-	return s
-}
-
-type Table struct {
-	align        uint   // Each column align indent to boundary
-	headerChar   string // Header line characters
-	rowChar      string // Row line characters
-	colDelimiter string // Column delemiter
-}
-
-func NewTable(align uint, header string, row string, delemiter string) Table {
-	return Table{align, header, row, delemiter}
-}
-
-// Columns width
-type TableSpec = []uint
-type TableRows = [][]string
-
-func (t Table) printRow(row []string, colSpec TableSpec) {
-	for i, col := range row {
-		colString := t.colDelimiter + strings.Repeat(" ", int(t.align)) + col
-		length := uint(len(col))
-		if length < colSpec[i]+t.align {
-			colString = colString + strings.Repeat(" ", int(colSpec[i]+t.align-length))
+	for _, row := range dataset.GetRows() {
+		var newRow []interface{}
+		for _, column := range row.GetValues() {
+			newRow = append(newRow, valueToString(column, 256))
 		}
-		fmt.Print(colString)
-	}
-	fmt.Println(t.colDelimiter)
-}
-
-func (t Table) PrintTable(table *common.DataSet) {
-	columnSize := len(table.GetColumnNames())
-	rowSize := len(table.GetRows())
-	tableSpec := make(TableSpec, columnSize)
-	tableRows := make(TableRows, rowSize)
-	tableHeader := make([]string, columnSize)
-	for i, header := range table.GetColumnNames() {
-		tableSpec[i] = uint(len(header))
-		tableHeader[i] = string(header)
-	}
-	for i, row := range table.GetRows() {
-		tableRows[i] = make([]string, columnSize)
-		for j, col := range row.GetValues() {
-			tableRows[i][j] = val2String(col, 256)
-			tableSpec[j] = max(uint(len(tableRows[i][j])), tableSpec[j])
-		}
+		writer.AppendRow(table.Row(newRow))
 	}
 
-	//                 value limit         + two indent              + '|' itself
-	totalLineLength := int(sum(tableSpec)) + columnSize*int(t.align)*2 + columnSize + 1
-	headerLine := strings.Repeat(t.headerChar, totalLineLength)
-	rowLine := strings.Repeat(t.rowChar, totalLineLength)
-	fmt.Println(headerLine)
-	t.printRow(tableHeader, tableSpec)
-	fmt.Println(headerLine)
-	for _, row := range tableRows {
-		t.printRow(row, tableSpec)
-		fmt.Println(rowLine)
-	}
-	fmt.Printf("Got %d rows, %d columns.", rowSize, columnSize)
-	fmt.Println()
+	fmt.Println(writer.Render())
 }
