@@ -228,7 +228,7 @@ func (p PlanDescPrinter) renderByRow() string {
 		if planNodeDesc.IsSetProfiles() {
 			var strArr []string
 			for i, profile := range planNodeDesc.GetProfiles() {
-				s := fmt.Sprintf("version: %d, rows: %d, exec_time: %dus, total_time: %dus",
+				s := fmt.Sprintf("ver: %d, rows: %d, execTime: %dus, totalTime: %dus",
 					i, profile.GetRows(), profile.GetExecDurationInUs(), profile.GetTotalDurationInUs())
 				strArr = append(strArr, s)
 			}
@@ -240,10 +240,10 @@ func (p PlanDescPrinter) renderByRow() string {
 		if planNodeDesc.IsSetDescription() {
 			desc := planNodeDesc.GetDescription()
 			var str []string
-			for k, v := range desc {
-				str = append(str, fmt.Sprintf("%s: %s", k, string(v)))
+			for _, pair := range desc {
+				str = append(str, fmt.Sprintf("%s: %s", string(pair.GetKey()), string(pair.GetValue())))
 			}
-			row = append(row, strings.Join(str, ","))
+			row = append(row, strings.Join(str, "\n"))
 		} else {
 			row = append(row, "")
 		}
