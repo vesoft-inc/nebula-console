@@ -195,10 +195,8 @@ func (p PlanDescPrinter) renderByRow() string {
 		"id",
 		"name",
 		"dependencies",
-		"output_var",
-		"branch_info",
-		"profiling_data",
-		"description",
+		"profiling data",
+		"operator info",
 	})
 
 	for _, planNodeDesc := range planNodeDescs {
@@ -215,20 +213,10 @@ func (p PlanDescPrinter) renderByRow() string {
 			row = append(row, "")
 		}
 
-		row = append(row, string(planNodeDesc.GetOutputVar()))
-
-		if planNodeDesc.IsSetBranchInfo() {
-			branchInfo := planNodeDesc.GetBranchInfo()
-			row = append(row, fmt.Sprintf("branch: %t, node_id: %d",
-				branchInfo.GetIsDoBranch(), branchInfo.GetConditionNodeID()))
-		} else {
-			row = append(row, "")
-		}
-
 		if planNodeDesc.IsSetProfiles() {
 			var strArr []string
 			for i, profile := range planNodeDesc.GetProfiles() {
-				s := fmt.Sprintf("version: %d, rows: %d, exec_time: %dus, total_time: %dus",
+				s := fmt.Sprintf("ver: %d, rows: %d, execTime: %dus, totalTime: %dus",
 					i, profile.GetRows(), profile.GetExecDurationInUs(), profile.GetTotalDurationInUs())
 				strArr = append(strArr, s)
 			}
@@ -237,16 +225,23 @@ func (p PlanDescPrinter) renderByRow() string {
 			row = append(row, "")
 		}
 
+		var columnInfo []string
+		if planNodeDesc.IsSetBranchInfo() {
+			branchInfo := planNodeDesc.GetBranchInfo()
+			columnInfo = append(columnInfo, fmt.Sprintf("branch: %t, nodeId: %d\n",
+				branchInfo.GetIsDoBranch(), branchInfo.GetConditionNodeID()))
+		}
+
+		outputVar := fmt.Sprintf("outputVar: %s", string(planNodeDesc.GetOutputVar()))
+		columnInfo = append(columnInfo, outputVar)
+
 		if planNodeDesc.IsSetDescription() {
 			desc := planNodeDesc.GetDescription()
-			var str []string
-			for k, v := range desc {
-				str = append(str, fmt.Sprintf("%s: %s", k, string(v)))
+			for _, pair := range desc {
+				columnInfo = append(columnInfo, fmt.Sprintf("%s: %s", string(pair.GetKey()), string(pair.GetValue())))
 			}
-			row = append(row, strings.Join(str, ","))
-		} else {
-			row = append(row, "")
 		}
+		row = append(row, strings.Join(columnInfo, "\n"))
 		p.writer.AppendRow(table.Row(row))
 	}
 	return p.writer.Render()
