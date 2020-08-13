@@ -62,8 +62,14 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 	// Show table
 	if resp.IsSetData() {
 		printer.PrintDataSet(resp.GetData())
-		// Show time
-		fmt.Printf("time spent %d/%d us\n", resp.GetLatencyInUs(), duration/1000)
+		if len(resp.GetData().GetRows()) > 0 {
+			fmt.Printf("Got %d rows (time spent %d/%d us)\n",
+				len(resp.GetData().GetRows()), resp.GetLatencyInUs(), duration/1000)
+		} else {
+			fmt.Printf("Empty set (time spent %d/%d us)\n", resp.GetLatencyInUs(), duration/1000)
+		}
+	} else {
+		fmt.Printf("Execution succeeded (time spent %d/%d us)\n", resp.GetLatencyInUs(), duration/1000)
 	}
 
 	if resp.IsSetPlanDesc() {
