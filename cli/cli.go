@@ -15,7 +15,6 @@ import (
 	"path"
 
 	"github.com/vesoft-inc/nebula-console/completer"
-
 	"github.com/vesoft-inc/readline"
 )
 
@@ -26,15 +25,19 @@ const ttyColorSuffix = "m"
 const ttyColorRed = "31"
 const ttyColorBold = "1"
 const ttyColorReset = "0"
+var color = 0
+var NextPrompt = false
 
 func promptString(space string, user string, isErr bool, isTTY bool) string {
 	prompt := ""
 	// (user@nebula) [space] >
 	if isTTY {
-		prompt += fmt.Sprintf("%s%s%s", ttyColorPrefix, ttyColorBold, ttyColorSuffix)
-	}
-	if isTTY && isErr {
-		prompt += fmt.Sprintf("%s%s%s", ttyColorPrefix, ttyColorRed, ttyColorSuffix)
+        ttyColor := color + 31 // colors: Red, Green, Yellow, Blue, Magenta, Cyan
+        prompt += fmt.Sprintf("%s%v;%s%s", ttyColorPrefix, ttyColor, ttyColorBold, ttyColorSuffix)
+        if NextPrompt {
+            color = (color + 1) % 6
+            NextPrompt = false
+        }
 	}
 	spaceName := "(none)"
 	if len(space) > 0 {
@@ -42,7 +45,7 @@ func promptString(space string, user string, isErr bool, isTTY bool) string {
 	}
 	prompt += fmt.Sprintf("(%s@%s) [%s]> ", user, NebulaLabel, spaceName)
 	if isTTY {
-		prompt += fmt.Sprintf("%s%s%s", ttyColorPrefix, ttyColorReset, ttyColorSuffix)
+        prompt += fmt.Sprintf("%s%s%s", ttyColorPrefix, ttyColorReset, ttyColorSuffix)
 	}
 	return prompt
 }

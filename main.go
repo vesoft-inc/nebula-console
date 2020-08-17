@@ -25,7 +25,6 @@ import (
 const (
 	Version = "v2.0.0-alpha"
 )
-
 func welcome(interactive bool) {
 	if !interactive {
 		return
@@ -88,7 +87,8 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 func loop(client *ngdb.GraphClient, c cli.Cli) error {
 	for {
 		line, err, exit := c.ReadLine()
-		lineString := string(line)
+		cli.NextPrompt = true
+        lineString := string(line)
 		if exit {
 			return err
 		}
