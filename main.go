@@ -14,7 +14,11 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+    "path"
+    "bufio"
 
+    "github.com/vesoft-inc/nebula-console/completer"
+    "github.com/peterh/liner"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/vesoft-inc/nebula-console/cli"
 	"github.com/vesoft-inc/nebula-console/printer"
@@ -82,15 +86,151 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 	fmt.Println()
 }
 
+func checkJoined(input string) {
+    runes := []rune(input)
+    var backSlashFound = false
+    var backSlashIndex int
+    for i := len(runes)-1; i >= 0; i-- {
+        if runes[i] == 92 { // '\'
+            backSlashFound = true
+            backSlashIndex = i
+        } else if runes[i] == 32 { // ' '
+        } else{
+            break
+        }
+    }
+    if inputer.joined {
+        if backSlashFound {
+            inputer.line += string(runes[:backSlashIndex])
+        } else {
+            inputer.line += string(runes)
+            inputer.joined = false
+        }
+     } else {
+         if backSlashFound {
+             inputer.line = string(runes[:backSlashIndex])
+             inputer.joined = true
+         } else {
+             inputer.line = string(runes)
+         }
+     }
+}
+
+var inputer struct {
+    line string
+    joined bool
+}
+
+var prompter struct {
+    color int
+    user string
+    space string
+    pLen int
+}
+
+func nebulaPrompt() string {
+    //ttyColor := prompter.color + 31
+    //prompter.color = (prompter.color + 1) % 6
+    prompt := ""
+    //prompt += fmt.Sprintf("\033[%v;1m", ttyColor)
+    if inputer.joined {
+        for i := 0; i < prompter.pLen-3;i++ {
+            prompt += " "
+        }
+        prompt += "-> "
+    } else {
+        promptString := fmt.Sprintf("(%s@nebula) [%s]> ", prompter.user, prompter.space)
+        prompter.pLen = len(promptString)
+        prompt += promptString
+    }
+    //prompt += "\033[0m"
+    return prompt
+}
+
 // Loop the request util fatal or timeout
 // We treat one line as one query
 // Add line break yourself as `SHOW \<CR>HOSTS`
-func loop(client *ngdb.GraphClient, c cli.Cli) error {
+func loop(client *ngdb.GraphClient, username, historyFile string) {
+    c := liner.NewLiner()
+    defer c.Close()
+    c.SetCtrlCAborts(true)
+    // Two tab styles are currently available:
+    //
+    // 1.TabCircular cycles through each completion item and displays it directly on
+    // the prompt
+    //
+    // 2.TabPrints prints the list of completion items to the screen after a second
+    // tab key is pressed. This behaves similar to GNU readline and BASH (which
+    // uses readline)
+
+    //c.SetTabCompletionStyle(liner.TabPrints)
+    c.SetWordCompleter(completer.NewCompleter)
+    if f, err := os.Open(historyFile); err == nil {
+		c.ReadHistory(f)
+		f.Close()
+    }
+
+    inputer.line = ""
+    inputer.joined = false
+    prompter.color = 0
+    prompter.user = username
+    prompter.space = "(none)"
+    for {
+        if input, err:= c.Prompt(nebulaPrompt()); err == nil {
+            if len(input) > 0 {
+                c.AppendHistory(input)
+            }
+            checkJoined(input)
+            if inputer.joined {
+                continue
+            }
+            if len(inputer.line) == 0 {
+                continue
+            }
+            // Client Side command
+            if clientCmd(inputer.line) {
+                // Quit
+                break
+            }
+
+		    start := time.Now()
+            resp, err := client.Execute(inputer.line)
+		    duration := time.Since(start)
+		    if err != nil {
+			    log.Fatalf("Execute error, %s", err.Error())
+		    }
+		    printResp(resp, duration)
+		    fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
+            prompter.space = "(none)"
+            if len(string(resp.SpaceName)) > 0 {
+                prompter.space = string(resp.SpaceName)
+            }
+        } else if err == cli.ErrAborted {
+            log.Print("Ctrl+C aborted: ", err)
+            break
+        } else if err == cli.ErrEOF {
+            log.Print("EOF: ", err)
+            break
+        } else {
+            log.Print("err:", err)
+            break
+        }
+    }
+    if f, err := os.Create(historyFile);  err != nil {
+        log.Print("Error writing history file: ", err)
+	} else {
+		c.WriteHistory(f)
+		defer f.Close()
+	}
+
+}
+
+func process(client *ngdb.GraphClient, c *bufio.Reader) {
 	for {
-		line, err, exit := c.ReadLine()
+		line, _, err := c.ReadLine()
 		lineString := string(line)
-		if exit {
-			return err
+		if err != nil {
+			break
 		}
 		if len(line) == 0 {
 			fmt.Println()
@@ -100,7 +240,7 @@ func loop(client *ngdb.GraphClient, c cli.Cli) error {
 		// Client side command
 		if clientCmd(lineString) {
 			// Quit
-			return nil
+			break
 		}
 
 		start := time.Now()
@@ -111,11 +251,10 @@ func loop(client *ngdb.GraphClient, c cli.Cli) error {
 		}
 		printResp(resp, duration)
 		fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
-		c.SetSpace(string(resp.SpaceName))
-		c.SetisErr(resp.GetErrorCode() != graph.ErrorCode_SUCCEEDED)
 		fmt.Println()
 	}
 }
+
 
 func main() {
 	address := flag.String("address", "127.0.0.1", "The Nebula Graph IP address")
@@ -136,12 +275,13 @@ func main() {
 		}
 		historyHome = filepath.Dir(ex) // Set to executable folder
 	}
-
+    historyFile := path.Join(historyHome, ".nebula_history")
 	client, err := ngdb.NewClient(fmt.Sprintf("%s:%d", *address, *port))
 	if err != nil {
 		log.Fatalf("Fail to create client, address: %s, port: %d, %s", *address, *port, err.Error())
 	}
 
+    fmt.Println("username:", *username, "password:", *password)
 	if err = client.Connect(*username, *password); err != nil {
 		log.Fatalf("Fail to connect server, username: %s, password: %s, %s", *username, *password, err.Error())
 	}
@@ -151,22 +291,17 @@ func main() {
 	defer bye(*username, interactive)
 	defer client.Disconnect()
 
-	// Loop the request
-	var exit error = nil
+    // Loop the request
 	if interactive {
-		exit = loop(client, cli.NewiCli(historyHome, *username))
+        loop(client, *username, historyFile)
 	} else if *script != "" {
-		exit = loop(client, cli.NewnCli(strings.NewReader(*script)))
+		process(client, bufio.NewReader(strings.NewReader(*script)))
 	} else if *file != "" {
 		fd, err := os.Open(*file)
 		if err != nil {
 			log.Fatalf("Open file %s failed, %s", *file, err.Error())
 		}
 		defer fd.Close()
-		exit = loop(client, cli.NewnCli(fd))
-	}
-
-	if exit != nil {
-		os.Exit(1)
+		process(client, bufio.NewReader(fd))
 	}
 }
