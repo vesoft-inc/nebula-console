@@ -1,9 +1,11 @@
-FROM golang:1.14.2 as builder
+FROM golang:1.13.2-alpine as builder
 
 COPY . /usr/src
 
 RUN cd /usr/src && go build
 
-FROM golang:1.14.2
+FROM alpine
 
-COPY --from=builder /usr/src/nebula-console /usr/bin/nebula-console
+COPY --from=builder /usr/src/nebula-console /usr/local/bin/nebula-console
+
+ENTRYPOINT ["nebula-console"]

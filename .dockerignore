@@ -1,0 +1,10 @@
+nebula-console
+LICENSE
+.gitignore
+.editorconfig
+*.md
+*.nGQL
+
+ci/
+.git/
+.github/
