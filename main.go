@@ -281,7 +281,6 @@ func main() {
 		log.Fatalf("Fail to create client, address: %s, port: %d, %s", *address, *port, err.Error())
 	}
 
-    fmt.Println("username:", *username, "password:", *password)
 	if err = client.Connect(*username, *password); err != nil {
 		log.Fatalf("Fail to connect server, username: %s, password: %s, %s", *username, *password, err.Error())
 	}
