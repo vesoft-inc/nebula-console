@@ -27,6 +27,22 @@ var cmds = map[string][]string {
     "REVOKE": []string{"ROLE"},
     "CHANGE": []string{"PASSWORD"},
 
+    "FROM": []string{},
+    "HOSTS": []string{},
+    "SPACES": []string{},
+    "PARTS": []string{},
+    "TAGS": []string{},
+    "EDGES": []string{},
+    "USERS": []string{},
+    "ROLES": []string{},
+    "USER": []string{},
+    "CONFIGS": []string{},
+    "TAG": []string{},
+    "EDGE": []string{},
+    "SPACE": []string{},
+    "VERTEX": []string{},
+    "ROLE": []string{},
+    "PASSWORD": []string{},
     "UPTO": []string{},
     "STEPS": []string{},
     "OVER": []string{},
@@ -45,7 +61,6 @@ var cmds = map[string][]string {
     "TO": []string{},
     "GOD": []string{},
     "ADMIN": []string{},
-    "USER": []string{},
     "GUEST": []string{},
     "ON": []string{},
     "COUNT": []string{},
@@ -101,11 +116,11 @@ func NewCompleter(line string, pos int) (string, []string, string) {
             if strings.HasPrefix(k, cmd) {
                 completions = append(completions, k)
             }
-            for _, v := range cmds[k] {
-                if strings.HasPrefix(v, cmd) {
-                    completions = append(completions, v)
-                }
-            }
+            //for _, v := range cmds[k] {
+            //    if strings.HasPrefix(v, cmd) {
+            //        completions = append(completions, v)
+            //    }
+            //}
         }
         return head, completions, tail
     }
