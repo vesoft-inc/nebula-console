@@ -11,10 +11,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
-    "path"
 
 	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/vesoft-inc/nebula-console/cli"
@@ -58,6 +58,7 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 	if resp.GetErrorCode() != graph.ErrorCode_SUCCEEDED {
 		fmt.Printf("[ERROR (%d)]: %s", resp.GetErrorCode(), resp.GetErrorMsg())
 		fmt.Println()
+        fmt.Println()
 		return
 	}
 	// Show table
@@ -87,37 +88,38 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 // We treat one line as one query
 // Add line break yourself as `SHOW \<CR>HOSTS`
 func loop(client *ngdb.GraphClient, c cli.Cli) {
-    for {
-        line, err, exit:= c.ReadLine()
-        if exit {
-            return
-        }
-        if err == nil {
-            if len(line) == 0 {
-                continue
-            }
-            // Client Side command
-            if clientCmd(line) {
-                // Quit
-                break
-            }
-            start := time.Now()
-            resp, err := client.Execute(line)
-            duration := time.Since(start)
-            if err != nil {
-                log.Fatalf("Execute error, %s", err.Error())
-            }
-            printResp(resp, duration)
-            fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
+	for {
+		line, err, exit := c.ReadLine()
+		if exit {
+			return
+		}
+		if err == nil {
+			if len(line) == 0 {
+				continue
+			}
+			// Client Side command
+			if clientCmd(line) {
+				// Quit
+				break
+			}
+			start := time.Now()
+			resp, err := client.Execute(line)
+			duration := time.Since(start)
+			if err != nil {
+				log.Fatalf("Execute error, %s", err.Error())
+			}
+			printResp(resp, duration)
+			fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
+			fmt.Println()
             c.SetSpace("(none)")
-            if len(string(resp.SpaceName)) > 0 {
-                c.SetSpace(string(resp.SpaceName))
-            }
-        } else {
-            log.Print("err:", err)
-            break
-        }
-    }
+			if len(string(resp.SpaceName)) > 0 {
+				c.SetSpace(string(resp.SpaceName))
+			}
+		} else {
+			log.Print("err:", err)
+			break
+		}
+	}
 }
 
 func main() {
@@ -139,7 +141,7 @@ func main() {
 		}
 		historyHome = filepath.Dir(ex) // Set to executable folder
 	}
-    historyFile := path.Join(historyHome, ".nebula_history")
+	historyFile := path.Join(historyHome, ".nebula_history")
 	client, err := ngdb.NewClient(fmt.Sprintf("%s:%d", *address, *port))
 	if err != nil {
 		log.Fatalf("Fail to create client, address: %s, port: %d, %s", *address, *port, err.Error())
@@ -154,18 +156,18 @@ func main() {
 	defer bye(*username, interactive)
 	defer client.Disconnect()
 
-    // Loop the request
+	// Loop the request
 	if interactive {
-        c := cli.NewiCli(historyFile, *username)
-        defer c.Terminal.Close()
-        loop(client, c)
-        if f, err := os.Create(historyFile); err != nil {
-            log.Print("error writing history file: ", err)
-	    } else {
-		    c.Terminal.WriteHistory(f)
-	        defer f.Close()
-        }
-    } else if *script != "" {
+		c := cli.NewiCli(historyFile, *username)
+		defer c.Terminal.Close()
+		loop(client, c)
+		if f, err := os.Create(historyFile); err != nil {
+			log.Print("error writing history file: ", err)
+		} else {
+			c.Terminal.WriteHistory(f)
+			defer f.Close()
+		}
+	} else if *script != "" {
 		loop(client, cli.NewnCli(strings.NewReader(*script)))
 	} else if *file != "" {
 		fd, err := os.Open(*file)
@@ -173,6 +175,6 @@ func main() {
 			log.Fatalf("Open file %s failed, %s", *file, err.Error())
 		}
 		defer fd.Close()
-	    loop(client, cli.NewnCli(fd))
+		loop(client, cli.NewnCli(fd))
 	}
 }
