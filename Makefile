@@ -13,4 +13,4 @@ clean:
 	@rm -rf nebula-console vendor
 
 fmt:
-	@find . -path vendor -prune -o -type f -iname '*.go' -exec go fmt {} \;
+	@go mod tidy && find . -path vendor -prune -o -type f -iname '*.go' -exec go fmt {} \;
