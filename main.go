@@ -58,7 +58,7 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 	if resp.GetErrorCode() != graph.ErrorCode_SUCCEEDED {
 		fmt.Printf("[ERROR (%d)]: %s", resp.GetErrorCode(), resp.GetErrorMsg())
 		fmt.Println()
-        fmt.Println()
+		fmt.Println()
 		return
 	}
 	// Show table
@@ -111,7 +111,7 @@ func loop(client *ngdb.GraphClient, c cli.Cli) {
 			printResp(resp, duration)
 			fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
 			fmt.Println()
-            c.SetSpace("(none)")
+			c.SetSpace("(none)")
 			if len(string(resp.SpaceName)) > 0 {
 				c.SetSpace(string(resp.SpaceName))
 			}

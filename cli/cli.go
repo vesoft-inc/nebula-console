@@ -154,7 +154,7 @@ func NewnCli(i io.Reader) nCli {
 }
 
 func (l nCli) ReadLine() (string, error, bool) {
-    s, _, e := l.io.ReadLine()
+	s, _, e := l.io.ReadLine()
 	if e == io.EOF {
 		return string(s), nil, true
 	}
