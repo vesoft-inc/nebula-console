@@ -116,7 +116,7 @@ func loop(client *ngdb.GraphClient, c cli.Cli) {
 				c.SetSpace(string(resp.SpaceName))
 			}
 		} else {
-			log.Print("err:", err)
+			log.Print("error:", err)
 			break
 		}
 	}
@@ -159,14 +159,8 @@ func main() {
 	// Loop the request
 	if interactive {
 		c := cli.NewiCli(historyFile, *username)
-		defer c.Terminal.Close()
+		defer c.Close()
 		loop(client, c)
-		if f, err := os.Create(historyFile); err != nil {
-			log.Print("error writing history file: ", err)
-		} else {
-			c.Terminal.WriteHistory(f)
-			defer f.Close()
-		}
 	} else if *script != "" {
 		loop(client, cli.NewnCli(strings.NewReader(*script)))
 	} else if *file != "" {

@@ -26,12 +26,14 @@ type Cli interface {
 	ReadLine() ( /*line*/ string /*err*/, error /*exit*/, bool)
 	Interactive() bool
 	SetSpace(string)
+	Close()
 }
 
 // interactive
 type iCli struct {
-	Terminal *liner.State
+	terminal *liner.State
 	// prompt
+	historyFile string
 	user        string
 	space       string
 	promptLen   int
@@ -59,33 +61,35 @@ func NewiCli(historyFile, user string) *iCli {
 		c.ReadHistory(f)
 		f.Close()
 	}
-	icli := &iCli{c, user, "(none)", -1, -1, "", false}
+	icli := &iCli{
+		terminal:    c,
+		historyFile: historyFile,
+		user:        user,
+		space:       "(none)",
+		promptLen:   -1,
+		promptColor: -1,
+		line:        "",
+		joined:      false,
+	}
 	return icli
 }
 
 func (l *iCli) checkJoined(input string) {
 	runes := []rune(input)
 	var backSlashFound = false
-	var backSlashIndex int
-	for i := len(runes) - 1; i >= 0; i-- {
-		if runes[i] == 92 { // '\'
-			backSlashFound = true
-			backSlashIndex = i
-		} else if runes[i] == 32 { // ' '
-		} else {
-			break
-		}
+	if len(runes) > 1 && runes[len(runes)-1] == 92 { // '\'
+		backSlashFound = true
 	}
 	if l.joined {
 		if backSlashFound {
-			l.line += string(runes[:backSlashIndex])
+			l.line += string(runes[:len(runes)-1])
 		} else {
 			l.line += string(runes)
 			l.joined = false
 		}
 	} else {
 		if backSlashFound {
-			l.line = string(runes[:backSlashIndex])
+			l.line = string(runes[:len(runes)-1])
 			l.joined = true
 		} else {
 			l.line = string(runes)
@@ -114,24 +118,22 @@ func (l *iCli) nebulaPrompt() string {
 
 func (l *iCli) ReadLine() (string, error, bool) {
 	for {
-		if input, err := l.Terminal.Prompt(l.nebulaPrompt()); err == nil {
+		if input, err := l.terminal.Prompt(l.nebulaPrompt()); err == nil {
 			if len(input) > 0 {
-				l.Terminal.AppendHistory(input)
+				l.terminal.AppendHistory(input)
 			}
 			l.checkJoined(input)
 			if l.joined {
 				continue
 			}
 			return l.line, nil, false
-		} else if err == liner.ErrPromptAborted {
-			//log.Print("Ctrl+C aborted")
+		} else if err == ErrAborted {
 			return l.line, nil, true
-		} else if err == io.EOF {
-			//log.Print("EOF")
+		} else if err == ErrEOF {
 			return l.line, nil, true
 		} else {
-			log.Print("err:", err)
-			return l.line, err, true
+			log.Print("ReadLine error:", err)
+			return l.line, err, false
 		}
 	}
 }
@@ -142,6 +144,16 @@ func (l iCli) Interactive() bool {
 
 func (l *iCli) SetSpace(space string) {
 	l.space = space
+}
+
+func (l *iCli) Close() {
+	if f, err := os.Create(l.historyFile); err != nil {
+		log.Print("error writing history file ", l.historyFile, err)
+	} else {
+		l.terminal.WriteHistory(f)
+		f.Close()
+	}
+	l.terminal.Close()
 }
 
 // non-interactive
@@ -169,5 +181,9 @@ func (l nCli) Interactive() bool {
 }
 
 func (l nCli) SetSpace(space string) {
+	// nothing
+}
+
+func (l nCli) Close() {
 	// nothing
 }

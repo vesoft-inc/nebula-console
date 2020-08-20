@@ -11,7 +11,7 @@ import (
 )
 
 // all keywords
-var cmds = []string{
+var keywords = []string{
 	/* Reserved keyword */
 	"GO", "AS", "TO", "OR", "AND", "XOR", "USE", "SET", "FROM",
 	"WHERE", "MATCH", "INSERT", "YIELD", "RETURN", "DESCRIBE",
@@ -74,6 +74,9 @@ var subCmds = map[string][]string{
 	/* UNION */
 	"UNION": []string{"DISTINCT", "ALL"},
 
+	/* BALANCE */
+	"BALANCE": []string{"LEADER", "DATA", "STOP"},
+
 	/* DESCRIBE */
 	"DESCRIBE": []string{"TAG", "EDGE", "SPACE"},
 	"DESC":     []string{"TAG", "EDGE", "SPACE"},
@@ -113,54 +116,28 @@ var subCmds = map[string][]string{
 }
 
 func NewCompleter(line string, pos int) (head string, completions []string, tail string) {
-	head = ""
-	completions = []string{}
-	tail = ""
 	if len(line) < 1 {
-		return head, completions, tail
+		return
 	}
 	words := strings.Fields(line[:pos])
 	if len(words) < 1 {
-		return head, completions, tail
+		return
 	}
-	find := words[len(words)-1]
-	upperFind := strings.ToUpper(find)
+	lastWord := strings.ToUpper(words[len(words)-1])
 	h := strings.LastIndex(line[:pos], " ")
 	head = line[:h+1]
 	tail = line[pos:]
-	var findSub bool
-	if line[pos-1] == ' ' {
-		findSub = true
-	} else {
-		findSub = false
-	}
-	if findSub {
-		if subs, ok := subCmds[upperFind]; ok {
+	if line[pos-1] == ' ' { // find sub cmd
+		if subs, ok := subCmds[lastWord]; ok {
 			completions = subs
-			//return head, subs, tail
 		} else {
-			//return head, completions, tail
 		}
 	} else {
-		//for _, t := range types {
-		//    if strings.HasPrefix(t, find) {
-		//        completions = append(completions, t)
-		//    }
-		//}
-		//if len(completions) > 0 {
-		//    return head, completions, tail
-		//}
-		for _, k := range cmds {
-			if strings.HasPrefix(k, upperFind) {
+		for _, k := range keywords {
+			if strings.HasPrefix(k, lastWord) {
 				completions = append(completions, k)
 			}
-			//for _, v := range cmds[k] {
-			//    if strings.HasPrefix(v, cmd) {
-			//        completions = append(completions, v)
-			//    }
-			//}
 		}
-		//return head, completions, tail
 	}
 	if len(completions) == 1 {
 		completions[0] += " "
