@@ -40,6 +40,7 @@ func welcome(interactive bool) {
 }
 
 func bye(username string, interactive bool) {
+	fmt.Println()
 	fmt.Printf("Bye %s!\n", username)
 	fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
 	fmt.Println()
@@ -163,7 +164,6 @@ func main() {
 		}
 		historyHome = filepath.Dir(ex) // Set to executable folder
 	}
-	historyFile := path.Join(historyHome, ".nebula_history")
 	client, err := ngdb.NewClient(fmt.Sprintf("%s:%d", *address, *port))
 	if err != nil {
 		log.Panicf("Fail to create client, address: %s, port: %d, %s", *address, *port, err.Error())
@@ -180,6 +180,7 @@ func main() {
 
 	// Loop the request
 	if interactive {
+		historyFile := path.Join(historyHome, ".nebula_history")
 		c := cli.NewiCli(historyFile, *username)
 		defer c.Close()
 		err = loop(client, c)
