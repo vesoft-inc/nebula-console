@@ -49,22 +49,28 @@ func bye(username string, interactive bool) {
 }
 
 // client side cmd, will not be sent to server
-func clientCmd(cmd string) (exit, isLocal bool) {
+func clientCmd(cmd string) (isLocal, exit bool, err error) {
 	plain := strings.TrimSpace(strings.ToLower(cmd))
 	if len(plain) < 1 || plain[0] != ':' {
-		return false, false
+		return
 	}
+
+	isLocal = true
 	runes := strings.Fields(plain[1:])
 	if len(runes) == 1 && (runes[0] == "exit" || runes[0] == "quit") {
-		return true, true
+		exit = true
 	} else if len(runes) == 3 && (runes[0] == "set" && runes[1] == "outcsv") {
 		o.SetOutCsv(runes[2])
-		return false, true
+		exit = false
 	} else if len(runes) == 2 && (runes[0] == "unset" && runes[1] == "outcsv") {
 		o.UnsetOutCsv()
-		return false, true
+		exit = false
+	} else {
+		exit = false
+		err = fmt.Errorf("Error: this local command not exists!")
 	}
-	return false, false
+
+	return
 }
 
 func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
@@ -113,15 +119,19 @@ func loop(client *ngdb.GraphClient, c cli.Cli) error {
 		if len(line) == 0 {
 			continue
 		}
-		// Client Side command
-		if exit, isLocal := clientCmd(line); isLocal {
+		isLocal, exit, err := clientCmd(line)
+		// Client side command
+		if isLocal {
 			if exit {
 				// Quit
 				return nil
+			} else if err != nil {
+				return err
 			} else {
 				continue
 			}
 		}
+		// Server side command
 		start := time.Now()
 		resp, err := client.Execute(line)
 		duration := time.Since(start)
