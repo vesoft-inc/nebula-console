@@ -107,7 +107,7 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 // Loop the request util fatal or timeout
 // We treat one line as one query
 // Add line break yourself as `SHOW \<CR>HOSTS`
-func loop(client *ngdb.GraphClient, c cli.Cli) error {
+func loop(client *ngdb.GraphClient, c cli.CliManager) error {
 	for {
 		line, err, exit := c.ReadLine()
 		if exit { // Ctrl+D

@@ -18,8 +18,36 @@ import (
 	"github.com/vesoft-inc/nebula-console/completer"
 )
 
-type Cli interface {
-	ReadLine() ( /*line*/ string /*err*/, error /*exit*/, bool)
+const NebulaLabel = "nebula"
+
+const ttyColorPrefix = "\033["
+const ttyColorSuffix = "m"
+const ttyColorRed = "31"
+const ttyColorBold = "1"
+const ttyColorReset = "0"
+
+func promptString(space string, user string, isErr bool, isTTY bool) string {
+	prompt := ""
+	// (user@nebula) [space] >
+	if isTTY {
+		prompt += fmt.Sprintf("%s%s%s", ttyColorPrefix, ttyColorBold, ttyColorSuffix)
+	}
+	if isTTY && isErr {
+		prompt += fmt.Sprintf("%s%s%s", ttyColorPrefix, ttyColorRed, ttyColorSuffix)
+	}
+	spaceName := "(none)"
+	if len(space) > 0 {
+		spaceName = space
+	}
+	prompt += fmt.Sprintf("(%s@%s) [%s]> ", user, NebulaLabel, spaceName)
+	if isTTY {
+		prompt += fmt.Sprintf("%s%s%s", ttyColorPrefix, ttyColorReset, ttyColorSuffix)
+	}
+	return prompt
+}
+
+type CliManager interface {
+	ReadLine() (line string, err error, exit bool)
 	Interactive() bool
 	SetSpace(string)
 	Close()
