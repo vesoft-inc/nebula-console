@@ -132,7 +132,6 @@ func (l *iCli) ReadLine() (string, error, bool) {
 		} else if err == ErrEOF {
 			return l.line, nil, true
 		} else {
-			log.Print("ReadLine error:", err)
 			return l.line, err, false
 		}
 	}

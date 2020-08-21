@@ -40,7 +40,8 @@ func bye(username string, interactive bool) {
 	if !interactive {
 		return
 	}
-	fmt.Printf("Bye %s!", username)
+	fmt.Printf("Bye %s!\n", username)
+	fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
 	fmt.Println()
 }
 
@@ -87,39 +88,40 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 // Loop the request util fatal or timeout
 // We treat one line as one query
 // Add line break yourself as `SHOW \<CR>HOSTS`
-func loop(client *ngdb.GraphClient, c cli.Cli) {
+func loop(client *ngdb.GraphClient, c cli.Cli) error {
 	for {
 		line, err, exit := c.ReadLine()
-		if exit {
-			return
+		if exit { // Ctrl+D
+			return nil
 		}
-		if err == nil {
-			if len(line) == 0 {
-				continue
-			}
-			// Client Side command
-			if clientCmd(line) {
-				// Quit
-				break
-			}
-			start := time.Now()
-			resp, err := client.Execute(line)
-			duration := time.Since(start)
-			if err != nil {
-				log.Fatalf("Execute error, %s", err.Error())
-			}
-			printResp(resp, duration)
-			fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
-			fmt.Println()
-			c.SetSpace("(none)")
-			if len(string(resp.SpaceName)) > 0 {
-				c.SetSpace(string(resp.SpaceName))
-			}
-		} else {
-			log.Print("error:", err)
-			break
+		if err != nil {
+			return err
 		}
+		if len(line) == 0 {
+			continue
+		}
+		// Client Side command
+		if clientCmd(line) {
+			// Quit
+			return nil
+		}
+		start := time.Now()
+		resp, err := client.Execute(line)
+		duration := time.Since(start)
+		if err != nil {
+			return err
+		}
+		printResp(resp, duration)
+		fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
+		fmt.Println()
+		c.SetSpace("(none)")
+		if len(string(resp.SpaceName)) > 0 {
+			c.SetSpace(string(resp.SpaceName))
+		}
+
 	}
+
+	return nil
 }
 
 func main() {
@@ -160,15 +162,19 @@ func main() {
 	if interactive {
 		c := cli.NewiCli(historyFile, *username)
 		defer c.Close()
-		loop(client, c)
+		err = loop(client, c)
 	} else if *script != "" {
-		loop(client, cli.NewnCli(strings.NewReader(*script)))
+		err = loop(client, cli.NewnCli(strings.NewReader(*script)))
 	} else if *file != "" {
 		fd, err := os.Open(*file)
 		if err != nil {
 			log.Fatalf("Open file %s failed, %s", *file, err.Error())
 		}
 		defer fd.Close()
-		loop(client, cli.NewnCli(fd))
+		err = loop(client, cli.NewnCli(fd))
+	}
+
+	if err != nil {
+		log.Fatalf("Loop error, %s", err.Error())
 	}
 }
