@@ -42,7 +42,7 @@ type iCli struct {
 
 func NewiCli(historyFile, user string) *iCli {
 	c := liner.NewLiner()
-	c.SetCtrlCAborts(false)
+	c.SetCtrlCAborts(true)
 	// Two tab styles are currently available:
 	// 1.TabCircular cycles through each completion item and displays it directly on
 	// the prompt.
@@ -114,7 +114,8 @@ func (l *iCli) nebulaPrompt() string {
 
 func (l *iCli) ReadLine() (string, error, bool) {
 	for {
-		if input, err := l.terminal.Prompt(l.nebulaPrompt()); err == nil {
+		input, err := l.terminal.Prompt(l.nebulaPrompt())
+		if err == nil {
 			if len(input) > 0 {
 				l.terminal.AppendHistory(input)
 			}
@@ -123,10 +124,13 @@ func (l *iCli) ReadLine() (string, error, bool) {
 				continue
 			}
 			return l.line, nil, false
-		} else if err == io.EOF || err == liner.ErrPromptAborted {
-			return l.line, nil, true
+		} else if err == liner.ErrPromptAborted {
+			l.joined = false
+			return "", nil, false
+		} else if err == io.EOF {
+			return "", nil, true
 		} else {
-			return l.line, err, false
+			return "", err, false
 		}
 	}
 }
