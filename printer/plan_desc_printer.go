@@ -86,6 +86,22 @@ func defaultPlanNode(planNodeDesc *graph.PlanNodeDescription, planNodeName strin
 		planNodeName, planNodeName, outputVar, inputVar, colNames)
 }
 
+func edgeString(start, end string) string {
+	return fmt.Sprintf("\t\"%s\"->\"%s\";\n", start, end)
+}
+
+func conditionalEdgeString(start, end, label string) string {
+	return fmt.Sprintf("\t\"%s\"->\"%s\"[label=\"%s\", style=dashed];\n", start, end, label)
+}
+
+func nodeString(name string) string {
+	return fmt.Sprintf("\t\"%s\"[shape=box, style=rounded];\n", name)
+}
+
+func conditionalNodeString(name string) string {
+	return fmt.Sprintf("\t\"%s\"[shape=diamond];\n", name)
+}
+
 func (p PlanDescPrinter) configWriterDotRenderStyle() {
 	p.writer.Style().Box.Left = " "
 	p.writer.Style().Box.Right = " "
@@ -114,9 +130,9 @@ func (p PlanDescPrinter) renderDotGraphByStruct() string {
 		planNodeName := name(planNodeDesc)
 		switch strings.ToLower(string(planNodeDesc.GetName())) {
 		case "select":
-			builder.WriteString(fmt.Sprintf("\t\"%s\"[shape=diamond];\n", planNodeName))
+			builder.WriteString(conditionalNodeString(planNodeName))
 		case "loop":
-			builder.WriteString(fmt.Sprintf("\t\"%s\"[shape=diamond];\n", planNodeName))
+			builder.WriteString(conditionalNodeString(planNodeName))
 		default:
 			builder.WriteString(defaultPlanNode(planNodeDesc, planNodeName))
 		}
@@ -124,15 +140,15 @@ func (p PlanDescPrinter) renderDotGraphByStruct() string {
 		if planNodeDesc.IsSetDependencies() {
 			for _, depId := range planNodeDesc.GetDependencies() {
 				dep := p.nodeById(depId)
-				builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(dep), planNodeName))
+				builder.WriteString(edgeString(name(dep), planNodeName))
 			}
 		}
 
 		if planNodeDesc.IsSetBranchInfo() {
 			branchInfo := planNodeDesc.GetBranchInfo()
 			condNode := p.nodeById(branchInfo.GetConditionNodeID())
-			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\"[label=\"%s\", style=dashed];\n",
-				planNodeName, name(condNode), condEdgeLabel(condNode, branchInfo.GetIsDoBranch())))
+			label := condEdgeLabel(condNode, branchInfo.GetIsDoBranch())
+			builder.WriteString(conditionalEdgeString(planNodeName, name(condNode), label))
 		}
 	}
 	builder.WriteString("}")
@@ -178,33 +194,33 @@ func (p PlanDescPrinter) renderDotGraph() string {
 		planNodeName := name(planNodeDesc)
 		switch strings.ToLower(string(planNodeDesc.GetName())) {
 		case "select":
-			builder.WriteString(fmt.Sprintf("\t\"%s\"[shape=diamond];\n", planNodeName))
+			builder.WriteString(conditionalNodeString(planNodeName))
 			dep := p.nodeById(planNodeDesc.GetDependencies()[0])
 			// then branch
 			thenNodeId := p.findBranchEndNode(planNodeDesc.GetId(), true)
-			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(p.nodeById(thenNodeId)), name(dep)))
+			builder.WriteString(edgeString(name(p.nodeById(thenNodeId)), name(dep)))
 			thenStartId := p.findFirstStartNodeFrom(thenNodeId)
-			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\"[label=\"Y\", style=dashed];\n", name(planNodeDesc), name(p.nodeById(thenStartId))))
+			builder.WriteString(conditionalEdgeString(name(planNodeDesc), name(p.nodeById(thenStartId)), "Y"))
 			// else branch
 			elseNodeId := p.findBranchEndNode(planNodeDesc.GetId(), false)
-			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(p.nodeById(elseNodeId)), name(dep)))
+			builder.WriteString(edgeString(name(p.nodeById(elseNodeId)), name(dep)))
 			elseStartId := p.findFirstStartNodeFrom(elseNodeId)
-			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\"[label=\"N\", style=dashed];\n", name(planNodeDesc), name(p.nodeById(elseStartId))))
+			builder.WriteString(conditionalEdgeString(name(planNodeDesc), name(p.nodeById(elseStartId)), "N"))
 		case "loop":
-			builder.WriteString(fmt.Sprintf("\t\"%s\"[shape=diamond];\n", planNodeName))
+			builder.WriteString(conditionalNodeString(planNodeName))
 			dep := p.nodeById(planNodeDesc.GetDependencies()[0])
 			// do branch
 			doNodeId := p.findBranchEndNode(planNodeDesc.GetId(), true)
-			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(p.nodeById(doNodeId)), name(planNodeDesc)))
+			builder.WriteString(edgeString(name(p.nodeById(doNodeId)), name(planNodeDesc)))
 			doStartId := p.findFirstStartNodeFrom(doNodeId)
-			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\"[label=\"Do\", style=dashed];\n", name(planNodeDesc), name(p.nodeById(doStartId))))
+			builder.WriteString(conditionalEdgeString(name(planNodeDesc), name(p.nodeById(doStartId)), "Do"))
 			// dep
-			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(dep), planNodeName))
+			builder.WriteString(edgeString(name(dep), planNodeName))
 		default:
 			builder.WriteString(defaultPlanNode(planNodeDesc, planNodeName))
 			if planNodeDesc.IsSetDependencies() {
 				for _, depId := range planNodeDesc.GetDependencies() {
-					builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(p.nodeById(depId)), planNodeName))
+					builder.WriteString(edgeString(name(p.nodeById(depId)), planNodeName))
 				}
 			}
 
