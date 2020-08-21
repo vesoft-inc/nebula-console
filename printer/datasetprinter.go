@@ -9,17 +9,46 @@ package printer
 import (
 	"bytes"
 	"fmt"
-	"strconv"
-
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/vesoft-inc/nebula-go/v2/nebula"
+	"os"
+	"strconv"
 )
+
+type OutCsv struct {
+	fd       *os.File
+	filename string
+	out      bool
+}
+
+func (o *OutCsv) SetOutCsv(filename string) {
+	if o.out {
+		o.UnsetOutCsv()
+	}
+	fd, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+	if err != nil {
+		fmt.Printf("Open or Create file %s failed, %s", filename, err.Error())
+	}
+	o.out = true
+	o.filename = filename
+	o.fd = fd
+}
+
+func (o *OutCsv) UnsetOutCsv() {
+	if !o.out {
+		return
+	}
+	if err := o.fd.Close(); err != nil {
+		fmt.Printf("Close file % failed, %s", o.filename, err.Error())
+	}
+	o.out = false
+}
 
 func valueToString(value *nebula.Value, depth uint) string {
 	// TODO(shylock) get golang runtime limit
-	if depth == 0 { // Avoid too deep recursive
-		return "..."
-	}
+	//if depth == 0 { // Avoid too deep recursive
+	//	return "..."
+	//}
 	if value.IsSetNVal() { // null
 		switch value.GetNVal() {
 		case nebula.NullType___NULL__:
@@ -152,7 +181,7 @@ func valueToString(value *nebula.Value, depth uint) string {
 	return ""
 }
 
-func PrintDataSet(dataset *nebula.DataSet) {
+func PrintDataSet(dataset *nebula.DataSet, o *OutCsv) {
 	writer := table.NewWriter()
 	configTableWriter(&writer)
 
@@ -169,6 +198,15 @@ func PrintDataSet(dataset *nebula.DataSet) {
 		}
 		writer.AppendRow(table.Row(newRow))
 	}
+	if writer.Length() < 1 {
+		return
+	}
 
 	fmt.Println(writer.Render())
+	if o.out {
+		go func() {
+			fmt.Fprintln(o.fd, writer.RenderCSV())
+			fmt.Fprintln(o.fd)
+		}()
+	}
 }
