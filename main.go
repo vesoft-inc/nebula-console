@@ -27,6 +27,8 @@ const (
 	Version = "v2.0.0-alpha"
 )
 
+var o = &printer.Outcsv{}
+
 func welcome(interactive bool) {
 	if !interactive {
 		return
@@ -37,6 +39,7 @@ func welcome(interactive bool) {
 }
 
 func bye(username string, interactive bool) {
+	defer o.UnsetOutFile()
 	if !interactive {
 		return
 	}
@@ -45,13 +48,19 @@ func bye(username string, interactive bool) {
 	fmt.Println()
 }
 
-// return , does exit
-func clientCmd(query string) bool {
-	plain := strings.ToLower(strings.TrimSpace(query))
-	if plain == "exit" || plain == "quit" {
-		return true
+// client side cmd, will not be sent to server
+func clientCmd(cmd string) (bool, bool) {
+	plain := strings.Fields(strings.ToLower(cmd))
+	if len(plain) == 1 && (plain[0] == "exit" || plain[0] == "quit") {
+		return true, true
+	} else if len(plain) == 3 && (plain[0] == "set" && plain[1] == "outfile") {
+		o.SetOutFile(plain[2])
+		return false, true
+	} else if len(plain) == 2 && (plain[0] == "unset" && plain[1] == "outfile") {
+		o.UnsetOutFile()
+		return false, true
 	}
-	return false
+	return false, false
 }
 
 func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
@@ -64,7 +73,7 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 	}
 	// Show table
 	if resp.IsSetData() {
-		printer.PrintDataSet(resp.GetData())
+		printer.PrintDataSet(resp.GetData(), o)
 		if len(resp.GetData().GetRows()) > 0 {
 			fmt.Printf("Got %d rows (time spent %d/%d us)\n",
 				len(resp.GetData().GetRows()), resp.GetLatencyInUs(), duration/1000)
@@ -101,9 +110,13 @@ func loop(client *ngdb.GraphClient, c cli.Cli) error {
 			continue
 		}
 		// Client Side command
-		if clientCmd(line) {
-			// Quit
-			return nil
+		if exit, isLocal := clientCmd(line); isLocal {
+			if exit {
+				// Quit
+				return nil
+			} else {
+				continue
+			}
 		}
 		start := time.Now()
 		resp, err := client.Execute(line)
@@ -111,6 +124,10 @@ func loop(client *ngdb.GraphClient, c cli.Cli) error {
 		if err != nil {
 			return err
 		}
+		printResp(resp, duration)
+		fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
+		fmt.Println()
+		c.SetSpace(string(resp.SpaceName))
 		printResp(resp, duration)
 		fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
 		fmt.Println()
