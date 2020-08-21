@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -39,7 +40,8 @@ func bye(username string, interactive bool) {
 	if !interactive {
 		return
 	}
-	fmt.Printf("Bye %s!", username)
+	fmt.Printf("Bye %s!\n", username)
+	fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
 	fmt.Println()
 }
 
@@ -56,6 +58,7 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 	// Error
 	if resp.GetErrorCode() != graph.ErrorCode_SUCCEEDED {
 		fmt.Printf("[ERROR (%d)]: %s", resp.GetErrorCode(), resp.GetErrorMsg())
+		fmt.Println()
 		fmt.Println()
 		return
 	}
@@ -88,33 +91,33 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 func loop(client *ngdb.GraphClient, c cli.Cli) error {
 	for {
 		line, err, exit := c.ReadLine()
-		lineString := string(line)
-		if exit {
+		if exit { // Ctrl+D
+			return nil
+		}
+		if err != nil {
 			return err
 		}
 		if len(line) == 0 {
-			fmt.Println()
 			continue
 		}
-
-		// Client side command
-		if clientCmd(lineString) {
+		// Client Side command
+		if clientCmd(line) {
 			// Quit
 			return nil
 		}
-
 		start := time.Now()
-		resp, err := client.Execute(lineString)
+		resp, err := client.Execute(line)
 		duration := time.Since(start)
 		if err != nil {
-			log.Fatalf("Execute error, %s", err.Error())
+			return err
 		}
 		printResp(resp, duration)
 		fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
-		c.SetSpace(string(resp.SpaceName))
-		c.SetisErr(resp.GetErrorCode() != graph.ErrorCode_SUCCEEDED)
 		fmt.Println()
+		c.SetSpace(string(resp.SpaceName))
 	}
+
+	return nil
 }
 
 func main() {
@@ -132,18 +135,18 @@ func main() {
 	if historyHome == "" {
 		ex, err := os.Executable()
 		if err != nil {
-			log.Fatalf("Get executable failed: %s", err.Error())
+			log.Panicf("Get executable failed: %s", err.Error())
 		}
 		historyHome = filepath.Dir(ex) // Set to executable folder
 	}
-
+	historyFile := path.Join(historyHome, ".nebula_history")
 	client, err := ngdb.NewClient(fmt.Sprintf("%s:%d", *address, *port))
 	if err != nil {
-		log.Fatalf("Fail to create client, address: %s, port: %d, %s", *address, *port, err.Error())
+		log.Panicf("Fail to create client, address: %s, port: %d, %s", *address, *port, err.Error())
 	}
 
 	if err = client.Connect(*username, *password); err != nil {
-		log.Fatalf("Fail to connect server, username: %s, password: %s, %s", *username, *password, err.Error())
+		log.Panicf("Fail to connect server, username: %s, password: %s, %s", *username, *password, err.Error())
 	}
 
 	welcome(interactive)
@@ -152,21 +155,22 @@ func main() {
 	defer client.Disconnect()
 
 	// Loop the request
-	var exit error = nil
 	if interactive {
-		exit = loop(client, cli.NewiCli(historyHome, *username))
+		c := cli.NewiCli(historyFile, *username)
+		defer c.Close()
+		err = loop(client, c)
 	} else if *script != "" {
-		exit = loop(client, cli.NewnCli(strings.NewReader(*script)))
+		err = loop(client, cli.NewnCli(strings.NewReader(*script)))
 	} else if *file != "" {
 		fd, err := os.Open(*file)
 		if err != nil {
-			log.Fatalf("Open file %s failed, %s", *file, err.Error())
+			log.Panicf("Open file %s failed, %s", *file, err.Error())
 		}
 		defer fd.Close()
-		exit = loop(client, cli.NewnCli(fd))
+		err = loop(client, cli.NewnCli(fd))
 	}
 
-	if exit != nil {
-		os.Exit(1)
+	if err != nil {
+		log.Panicf("Loop error, %s", err.Error())
 	}
 }
