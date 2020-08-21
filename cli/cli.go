@@ -53,9 +53,11 @@ func NewiCli(historyFile, user string) *iCli {
 	c.SetTabCompletionStyle(liner.TabPrints)
 	c.SetWordCompleter(completer.NewCompleter)
 
-	if f, err := os.OpenFile(historyFile, os.O_RDONLY|os.O_CREATE, 0666); err == nil {
+	if f, err := os.OpenFile(historyFile, os.O_RDONLY|os.O_CREATE, 0666); err != nil {
+		log.Panicf("Open history file %s failed, %s", historyFile, err.Error())
+	} else {
+		defer f.Close()
 		c.ReadHistory(f)
-		f.Close()
 	}
 	icli := &iCli{
 		terminal:    c,
@@ -142,13 +144,13 @@ func (l *iCli) SetSpace(space string) {
 }
 
 func (l *iCli) Close() {
+	defer l.terminal.Close()
 	if f, err := os.Create(l.historyFile); err != nil {
-		log.Panicf("Writing history file %s failed, %s", l.historyFile, err.Error())
+		log.Panicf("Write history file %s failed, %s", l.historyFile, err.Error())
 	} else {
+		defer f.Close()
 		l.terminal.WriteHistory(f)
-		f.Close()
 	}
-	l.terminal.Close()
 }
 
 // non-interactive
