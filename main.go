@@ -114,11 +114,7 @@ func loop(client *ngdb.GraphClient, c cli.Cli) error {
 		printResp(resp, duration)
 		fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
 		fmt.Println()
-		c.SetSpace("(none)")
-		if len(string(resp.SpaceName)) > 0 {
-			c.SetSpace(string(resp.SpaceName))
-		}
-
+		c.SetSpace(string(resp.SpaceName))
 	}
 
 	return nil
@@ -139,18 +135,18 @@ func main() {
 	if historyHome == "" {
 		ex, err := os.Executable()
 		if err != nil {
-			log.Fatalf("Get executable failed: %s", err.Error())
+			log.Panicf("Get executable failed: %s", err.Error())
 		}
 		historyHome = filepath.Dir(ex) // Set to executable folder
 	}
 	historyFile := path.Join(historyHome, ".nebula_history")
 	client, err := ngdb.NewClient(fmt.Sprintf("%s:%d", *address, *port))
 	if err != nil {
-		log.Fatalf("Fail to create client, address: %s, port: %d, %s", *address, *port, err.Error())
+		log.Panicf("Fail to create client, address: %s, port: %d, %s", *address, *port, err.Error())
 	}
 
 	if err = client.Connect(*username, *password); err != nil {
-		log.Fatalf("Fail to connect server, username: %s, password: %s, %s", *username, *password, err.Error())
+		log.Panicf("Fail to connect server, username: %s, password: %s, %s", *username, *password, err.Error())
 	}
 
 	welcome(interactive)
@@ -168,13 +164,13 @@ func main() {
 	} else if *file != "" {
 		fd, err := os.Open(*file)
 		if err != nil {
-			log.Fatalf("Open file %s failed, %s", *file, err.Error())
+			log.Panicf("Open file %s failed, %s", *file, err.Error())
 		}
 		defer fd.Close()
 		err = loop(client, cli.NewnCli(fd))
 	}
 
 	if err != nil {
-		log.Fatalf("Loop error, %s", err.Error())
+		log.Panicf("Loop error, %s", err.Error())
 	}
 }

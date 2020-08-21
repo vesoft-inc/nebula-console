@@ -142,12 +142,16 @@ func (l iCli) Interactive() bool {
 }
 
 func (l *iCli) SetSpace(space string) {
-	l.space = space
+	if len(space) > 0 {
+		l.space = space
+	} else {
+		l.space = "(none)"
+	}
 }
 
 func (l *iCli) Close() {
 	if f, err := os.Create(l.historyFile); err != nil {
-		log.Print("error writing history file ", l.historyFile, err)
+		log.Panicf("Writing history file %s failed, %s", l.historyFile, err.Error())
 	} else {
 		l.terminal.WriteHistory(f)
 		f.Close()
