@@ -27,7 +27,7 @@ const (
 	Version = "v2.0.0-alpha"
 )
 
-var o = &printer.Outcsv{}
+var o = &printer.OutCsv{}
 
 func welcome(interactive bool) {
 	if !interactive {
@@ -39,7 +39,7 @@ func welcome(interactive bool) {
 }
 
 func bye(username string, interactive bool) {
-	defer o.UnsetOutFile()
+	defer o.UnsetOutCsv()
 	if !interactive {
 		return
 	}
@@ -49,15 +49,19 @@ func bye(username string, interactive bool) {
 }
 
 // client side cmd, will not be sent to server
-func clientCmd(cmd string) (bool, bool) {
-	plain := strings.Fields(strings.ToLower(cmd))
-	if len(plain) == 1 && (plain[0] == "exit" || plain[0] == "quit") {
+func clientCmd(cmd string) (exit, isLocal bool) {
+	plain := strings.TrimSpace(strings.ToLower(cmd))
+	if len(plain) < 1 || plain[0] != ':' {
+		return false, false
+	}
+	runes := strings.Fields(plain[1:])
+	if len(runes) == 1 && (runes[0] == "exit" || runes[0] == "quit") {
 		return true, true
-	} else if len(plain) == 3 && (plain[0] == "set" && plain[1] == "outfile") {
-		o.SetOutFile(plain[2])
+	} else if len(runes) == 3 && (runes[0] == "set" && runes[1] == "outcsv") {
+		o.SetOutCsv(runes[2])
 		return false, true
-	} else if len(plain) == 2 && (plain[0] == "unset" && plain[1] == "outfile") {
-		o.UnsetOutFile()
+	} else if len(runes) == 2 && (runes[0] == "unset" && runes[1] == "outcsv") {
+		o.UnsetOutCsv()
 		return false, true
 	}
 	return false, false
@@ -124,10 +128,6 @@ func loop(client *ngdb.GraphClient, c cli.Cli) error {
 		if err != nil {
 			return err
 		}
-		printResp(resp, duration)
-		fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
-		fmt.Println()
-		c.SetSpace(string(resp.SpaceName))
 		printResp(resp, duration)
 		fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
 		fmt.Println()
