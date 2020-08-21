@@ -12,14 +12,10 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/peterh/liner"
 	"github.com/vesoft-inc/nebula-console/completer"
-)
-
-var (
-	ErrEOF     = io.EOF
-	ErrAborted = liner.ErrPromptAborted
 )
 
 type Cli interface {
@@ -57,7 +53,7 @@ func NewiCli(historyFile, user string) *iCli {
 	c.SetTabCompletionStyle(liner.TabPrints)
 	c.SetWordCompleter(completer.NewCompleter)
 
-	if f, err := os.Open(historyFile); err == nil {
+	if f, err := os.OpenFile(historyFile, os.O_RDONLY|os.O_CREATE, 0600); err == nil {
 		c.ReadHistory(f)
 		f.Close()
 	}
@@ -103,9 +99,7 @@ func (l *iCli) nebulaPrompt() string {
 	prompt := ""
 	//prompt += fmt.Sprintf("\033[%v;1m", ttyColor)
 	if l.joined {
-		for i := 0; i < l.promptLen-3; i++ {
-			prompt += " "
-		}
+		prompt += strings.Repeat(" ", l.promptLen-3)
 		prompt += "-> "
 	} else {
 		promptString := fmt.Sprintf("(%s@nebula) [%s]> ", l.user, l.space)
@@ -127,9 +121,7 @@ func (l *iCli) ReadLine() (string, error, bool) {
 				continue
 			}
 			return l.line, nil, false
-		} else if err == ErrAborted {
-			return l.line, nil, true
-		} else if err == ErrEOF {
+		} else if err == io.EOF || err == liner.ErrPromptAborted {
 			return l.line, nil, true
 		} else {
 			return l.line, err, false
@@ -150,7 +142,7 @@ func (l *iCli) SetSpace(space string) {
 }
 
 func (l *iCli) Close() {
-	if f, err := os.Create(l.historyFile); err != nil {
+	if f, err := os.OpenFile(l.historyFile, os.O_WRONLY, 0600); err != nil {
 		log.Panicf("Writing history file %s failed, %s", l.historyFile, err.Error())
 	} else {
 		l.terminal.WriteHistory(f)
