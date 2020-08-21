@@ -108,7 +108,7 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 // Loop the request util fatal or timeout
 // We treat one line as one query
 // Add line break yourself as `SHOW \<CR>HOSTS`
-func loop(client *ngdb.GraphClient, c cli.CliManager) error {
+func loop(client *ngdb.GraphClient, c cli.Cli) error {
 	for {
 		line, err, exit := c.ReadLine()
 		if exit { // Ctrl+D
@@ -141,17 +141,24 @@ func loop(client *ngdb.GraphClient, c cli.CliManager) error {
 		fmt.Println()
 		c.SetSpace(string(resp.SpaceName))
 	}
+}
 
-	return nil
+var address *string = flag.String("address", "127.0.0.1", "The Nebula Graph IP address")
+var port *int = flag.Int("port", 3699, "The Nebula Graph Port")
+var username *string = flag.String("u", "user", "The Nebula Graph login user name")
+var password *string = flag.String("p", "password", "The Nebula Graph login password")
+var script *string = flag.String("e", "", "The nGQL directly")
+var file *string = flag.String("f", "", "The nGQL script file name")
+
+func init() {
+	flag.StringVar(address, "addr", "127.0.0.1", "The Nebula Graph IP address")
+	flag.StringVar(username, "user", "user", "The Nebula Graph login user name")
+	flag.StringVar(password, "password", "password", "The Nebula Graph login password")
+	flag.StringVar(script, "eval", "", "The nGQL directly")
+	flag.StringVar(file, "file", "", "The nGQL script file name")
 }
 
 func main() {
-	address := flag.String("address", "127.0.0.1", "The Nebula Graph IP address")
-	port := flag.Int("port", 3699, "The Nebula Graph Port")
-	username := flag.String("u", "user", "The Nebula Graph login user name")
-	password := flag.String("p", "password", "The Nebula Graph login password")
-	script := flag.String("e", "", "The nGQL directly")
-	file := flag.String("f", "", "The nGQL script file name")
 	flag.Parse()
 
 	interactive := *script == "" && *file == ""

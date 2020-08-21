@@ -18,7 +18,7 @@ import (
 	"github.com/vesoft-inc/nebula-console/completer"
 )
 
-type CliManager interface {
+type Cli interface {
 	ReadLine() (line string, err error, exit bool)
 	Interactive() bool
 	SetSpace(string)
