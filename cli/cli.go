@@ -160,21 +160,89 @@ func (l *iCli) Close() {
 // non-interactive
 type nCli struct {
 	io *bufio.Reader
+	// prompt
+	user        string
+	space       string
+	promptLen   int
+	promptColor int
+
+	// multi-line seperated by '\'
+	line   string
+	joined bool
 }
 
-func NewnCli(i io.Reader) nCli {
-	return nCli{bufio.NewReader(i)}
+func NewnCli(i io.Reader, user string) *nCli {
+	ncli := &nCli{
+		io:          bufio.NewReader(i),
+		user:        user,
+		space:       "(none)",
+		promptLen:   -1,
+		promptColor: -1,
+		line:        "",
+		joined:      false,
+	}
+	return ncli
 }
 
-func (l nCli) ReadLine() (string, error, bool) {
-	s, _, e := l.io.ReadLine()
-	if e == io.EOF {
-		return string(s), nil, true
+func (l *nCli) checkJoined(input string) {
+	runes := []rune(input)
+	var backSlashFound = false
+	if len(runes) > 1 && runes[len(runes)-1] == 92 { // '\'
+		backSlashFound = true
 	}
-	if e != nil {
-		return string(s), e, true
+	if l.joined {
+		if backSlashFound {
+			l.line += string(runes[:len(runes)-1])
+		} else {
+			l.line += string(runes)
+			l.joined = false
+		}
+	} else {
+		if backSlashFound {
+			l.line = string(runes[:len(runes)-1])
+			l.joined = true
+		} else {
+			l.line = string(runes)
+		}
 	}
-	return string(s), e, false
+}
+
+func (l *nCli) nebulaPrompt() string {
+	//ttyColor := prompter.color + 31
+	//prompter.color = (prompter.color + 1) % 6
+	prompt := ""
+	//prompt += fmt.Sprintf("\033[%v;1m", ttyColor)
+	if l.joined {
+		prompt += strings.Repeat(" ", l.promptLen-3)
+		prompt += "-> "
+	} else {
+		promptString := fmt.Sprintf("(%s@nebula) [%s]> ", l.user, l.space)
+		l.promptLen = len(promptString)
+		prompt += promptString
+	}
+	//prompt += "\033[0m"
+	return prompt
+}
+
+func (l *nCli) ReadLine() (string, error, bool) {
+	for {
+		s, _, err := l.io.ReadLine()
+		input := string(s)
+		if err == nil {
+			fmt.Printf(l.nebulaPrompt())
+			// not record input to historyFile now
+			fmt.Println(input)
+			l.checkJoined(input)
+			if l.joined {
+				continue
+			}
+			return l.line, nil, false
+		} else if err == io.EOF {
+			return "", nil, true
+		} else {
+			return "", err, false
+		}
+	}
 }
 
 func (l nCli) Interactive() bool {

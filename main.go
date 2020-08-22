@@ -37,9 +37,6 @@ func welcome(interactive bool) {
 }
 
 func bye(username string, interactive bool) {
-	if !interactive {
-		return
-	}
 	fmt.Printf("Bye %s!\n", username)
 	fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
 	fmt.Println()
@@ -160,14 +157,14 @@ func main() {
 		defer c.Close()
 		err = loop(client, c)
 	} else if *script != "" {
-		err = loop(client, cli.NewnCli(strings.NewReader(*script)))
+		err = loop(client, cli.NewnCli(strings.NewReader(*script), *username))
 	} else if *file != "" {
 		fd, err := os.Open(*file)
 		if err != nil {
 			log.Panicf("Open file %s failed, %s", *file, err.Error())
 		}
 		defer fd.Close()
-		err = loop(client, cli.NewnCli(fd))
+		err = loop(client, cli.NewnCli(fd, *username))
 	}
 
 	if err != nil {
