@@ -44,11 +44,8 @@ func (o *OutCsv) UnsetOutCsv() {
 	o.out = false
 }
 
-func valueToString(value *nebula.Value, depth uint) string {
+func valueToString(value *nebula.Value) string {
 	// TODO(shylock) get golang runtime limit
-	//if depth == 0 { // Avoid too deep recursive
-	//	return "..."
-	//}
 	if value.IsSetNVal() { // null
 		switch value.GetNVal() {
 		case nebula.NullType___NULL__:
@@ -96,7 +93,7 @@ func valueToString(value *nebula.Value, depth uint) string {
 				buffer.WriteString(".")
 				buffer.WriteString(k)
 				buffer.WriteString(":")
-				buffer.WriteString(valueToString(v, depth-1))
+				buffer.WriteString(valueToString(v))
 				buffer.WriteString(",")
 			}
 		}
@@ -117,7 +114,7 @@ func valueToString(value *nebula.Value, depth uint) string {
 			filled = true
 			buffer.WriteString(k)
 			buffer.WriteString(":")
-			buffer.WriteString(valueToString(v, depth-1))
+			buffer.WriteString(valueToString(v))
 			buffer.WriteString(",")
 		}
 		if filled {
@@ -139,7 +136,7 @@ func valueToString(value *nebula.Value, depth uint) string {
 		var buffer bytes.Buffer
 		buffer.WriteString("[")
 		for _, v := range l.GetValues() {
-			buffer.WriteString(valueToString(v, depth-1))
+			buffer.WriteString(valueToString(v))
 			buffer.WriteString(",")
 		}
 		if buffer.Len() > 1 {
@@ -155,7 +152,7 @@ func valueToString(value *nebula.Value, depth uint) string {
 		for k, v := range m.GetKvs() {
 			buffer.WriteString("\"" + k + "\"")
 			buffer.WriteString(":")
-			buffer.WriteString(valueToString(v, depth-1))
+			buffer.WriteString(valueToString(v))
 			buffer.WriteString(",")
 		}
 		if buffer.Len() > 1 {
@@ -169,7 +166,7 @@ func valueToString(value *nebula.Value, depth uint) string {
 		var buffer bytes.Buffer
 		buffer.WriteString("{")
 		for _, v := range s.GetValues() {
-			buffer.WriteString(valueToString(v, depth-1))
+			buffer.WriteString(valueToString(v))
 			buffer.WriteString(",")
 		}
 		if buffer.Len() > 1 {
@@ -194,7 +191,7 @@ func PrintDataSet(dataset *nebula.DataSet, o *OutCsv) {
 	for _, row := range dataset.GetRows() {
 		var newRow []interface{}
 		for _, column := range row.GetValues() {
-			newRow = append(newRow, valueToString(column, 256))
+			newRow = append(newRow, valueToString(column))
 		}
 		writer.AppendRow(table.Row(newRow))
 	}

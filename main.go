@@ -59,10 +59,10 @@ func clientCmd(cmd string) (isLocal, exit bool, err error) {
 	runes := strings.Fields(plain[1:])
 	if len(runes) == 1 && (runes[0] == "exit" || runes[0] == "quit") {
 		exit = true
-	} else if len(runes) == 3 && (runes[0] == "set" && runes[1] == "outcsv") {
+	} else if len(runes) == 3 && (runes[0] == "set" && runes[1] == "csv") {
 		o.SetOutCsv(runes[2])
 		exit = false
-	} else if len(runes) == 2 && (runes[0] == "unset" && runes[1] == "outcsv") {
+	} else if len(runes) == 2 && (runes[0] == "unset" && runes[1] == "csv") {
 		o.UnsetOutCsv()
 		exit = false
 	} else {
