@@ -9,17 +9,51 @@ package printer
 import (
 	"bytes"
 	"fmt"
-	"strconv"
-
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/vesoft-inc/nebula-go/v2/nebula"
+	"os"
+	"strconv"
 )
 
-func valueToString(value *nebula.Value, depth uint) string {
-	// TODO(shylock) get golang runtime limit
-	if depth == 0 { // Avoid too deep recursive
-		return "..."
+type DataSetPrinter struct {
+	writer   table.Writer
+	fd       *os.File
+	filename string
+}
+
+func NewDataSetPrinter() DataSetPrinter {
+	writer := table.NewWriter()
+	configTableWriter(&writer)
+	return DataSetPrinter{
+		writer: writer,
 	}
+}
+
+func (p *DataSetPrinter) SetOutCsv(filename string) {
+	if p.fd != nil {
+		p.UnsetOutCsv()
+	}
+	fd, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+	if err != nil {
+		fmt.Printf("Open or Create file %s failed, %s", filename, err.Error())
+	}
+	p.fd = fd
+	p.filename = filename
+}
+
+func (p *DataSetPrinter) UnsetOutCsv() {
+	if p.fd == nil {
+		return
+	}
+	if err := p.fd.Close(); err != nil {
+		fmt.Printf("Close file % failed, %s", p.filename, err.Error())
+	}
+	p.fd = nil
+	p.filename = ""
+}
+
+func valueToString(value *nebula.Value) string {
+	// TODO(shylock) get golang runtime limit
 	if value.IsSetNVal() { // null
 		switch value.GetNVal() {
 		case nebula.NullType___NULL__:
@@ -67,7 +101,7 @@ func valueToString(value *nebula.Value, depth uint) string {
 				buffer.WriteString(".")
 				buffer.WriteString(k)
 				buffer.WriteString(":")
-				buffer.WriteString(valueToString(v, depth-1))
+				buffer.WriteString(valueToString(v))
 				buffer.WriteString(",")
 			}
 		}
@@ -88,7 +122,7 @@ func valueToString(value *nebula.Value, depth uint) string {
 			filled = true
 			buffer.WriteString(k)
 			buffer.WriteString(":")
-			buffer.WriteString(valueToString(v, depth-1))
+			buffer.WriteString(valueToString(v))
 			buffer.WriteString(",")
 		}
 		if filled {
@@ -110,7 +144,7 @@ func valueToString(value *nebula.Value, depth uint) string {
 		var buffer bytes.Buffer
 		buffer.WriteString("[")
 		for _, v := range l.GetValues() {
-			buffer.WriteString(valueToString(v, depth-1))
+			buffer.WriteString(valueToString(v))
 			buffer.WriteString(",")
 		}
 		if buffer.Len() > 1 {
@@ -126,7 +160,7 @@ func valueToString(value *nebula.Value, depth uint) string {
 		for k, v := range m.GetKvs() {
 			buffer.WriteString("\"" + k + "\"")
 			buffer.WriteString(":")
-			buffer.WriteString(valueToString(v, depth-1))
+			buffer.WriteString(valueToString(v))
 			buffer.WriteString(",")
 		}
 		if buffer.Len() > 1 {
@@ -140,7 +174,7 @@ func valueToString(value *nebula.Value, depth uint) string {
 		var buffer bytes.Buffer
 		buffer.WriteString("{")
 		for _, v := range s.GetValues() {
-			buffer.WriteString(valueToString(v, depth-1))
+			buffer.WriteString(valueToString(v))
 			buffer.WriteString(",")
 		}
 		if buffer.Len() > 1 {
@@ -152,23 +186,32 @@ func valueToString(value *nebula.Value, depth uint) string {
 	return ""
 }
 
-func PrintDataSet(dataset *nebula.DataSet) {
-	writer := table.NewWriter()
-	configTableWriter(&writer)
+func (p *DataSetPrinter) PrintDataSet(dataset *nebula.DataSet) {
+	if len(dataset.GetRows()) == 0 {
+		return
+	}
 
+	p.writer.ResetHeaders()
+	p.writer.ResetRows()
 	var header []interface{}
 	for _, columName := range dataset.GetColumnNames() {
 		header = append(header, string(columName))
 	}
-	writer.AppendHeader(table.Row(header))
+	p.writer.AppendHeader(table.Row(header))
 
 	for _, row := range dataset.GetRows() {
 		var newRow []interface{}
 		for _, column := range row.GetValues() {
-			newRow = append(newRow, valueToString(column, 256))
+			newRow = append(newRow, valueToString(column))
 		}
-		writer.AppendRow(table.Row(newRow))
+		p.writer.AppendRow(table.Row(newRow))
 	}
 
-	fmt.Println(writer.Render())
+	fmt.Println(p.writer.Render())
+	if p.fd != nil {
+		go func() {
+			fmt.Fprintln(p.fd, p.writer.RenderCSV())
+			fmt.Fprintln(p.fd)
+		}()
+	}
 }

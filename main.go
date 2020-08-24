@@ -27,7 +27,10 @@ const (
 	Version = "v2.0.0-alpha"
 )
 
+var dataSetPrinter = printer.NewDataSetPrinter()
+
 func welcome(interactive bool) {
+	defer dataSetPrinter.UnsetOutCsv()
 	if !interactive {
 		return
 	}
@@ -45,13 +48,32 @@ func bye(username string, interactive bool) {
 	fmt.Println()
 }
 
-// return , does exit
-func clientCmd(query string) bool {
-	plain := strings.ToLower(strings.TrimSpace(query))
-	if plain == "exit" || plain == "quit" {
-		return true
+// client side cmd, will not be sent to server
+func clientCmd(cmd string) (isLocal, exit bool) {
+	plain := strings.TrimSpace(strings.ToLower(cmd))
+	if len(plain) < 1 || plain[0] != ':' {
+		return
 	}
-	return false
+
+	isLocal = true
+	runes := strings.Fields(plain[1:])
+	if len(runes) == 1 && (runes[0] == "exit" || runes[0] == "quit") {
+		exit = true
+	} else if len(runes) == 3 && (runes[0] == "set" && runes[1] == "csv") {
+		dataSetPrinter.SetOutCsv(runes[2])
+		exit = false
+	} else if len(runes) == 2 && (runes[0] == "unset" && runes[1] == "csv") {
+		dataSetPrinter.UnsetOutCsv()
+		exit = false
+	} else {
+		exit = false
+		fmt.Println("Error: this local command not exists!")
+		fmt.Println()
+		fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
+		fmt.Println()
+	}
+
+	return
 }
 
 func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
@@ -64,7 +86,7 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 	}
 	// Show table
 	if resp.IsSetData() {
-		printer.PrintDataSet(resp.GetData())
+		dataSetPrinter.PrintDataSet(resp.GetData())
 		if len(resp.GetData().GetRows()) > 0 {
 			fmt.Printf("Got %d rows (time spent %d/%d us)\n",
 				len(resp.GetData().GetRows()), resp.GetLatencyInUs(), duration/1000)
@@ -92,6 +114,7 @@ func loop(client *ngdb.GraphClient, c cli.Cli) error {
 	for {
 		line, err, exit := c.ReadLine()
 		if exit { // Ctrl+D
+			fmt.Println()
 			return nil
 		}
 		if err != nil {
@@ -100,11 +123,15 @@ func loop(client *ngdb.GraphClient, c cli.Cli) error {
 		if len(line) == 0 {
 			continue
 		}
-		// Client Side command
-		if clientCmd(line) {
-			// Quit
-			return nil
+		// Client side command
+		if isLocal, quit := clientCmd(line); isLocal {
+			if quit { // :exit, :quit
+				return nil
+			} else {
+				continue
+			}
 		}
+		// Server side command
 		start := time.Now()
 		resp, err := client.Execute(line)
 		duration := time.Since(start)
