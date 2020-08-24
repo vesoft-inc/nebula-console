@@ -15,33 +15,41 @@ import (
 	"strconv"
 )
 
-type OutCsv struct {
+type DataSetPrinter struct {
+	writer   table.Writer
 	fd       *os.File
 	filename string
-	out      bool
 }
 
-func (o *OutCsv) SetOutCsv(filename string) {
-	if o.out {
-		o.UnsetOutCsv()
+func NewDataSetPrinter() DataSetPrinter {
+	writer := table.NewWriter()
+	configTableWriter(&writer)
+	return DataSetPrinter{
+		writer: writer,
+	}
+}
+
+func (p *DataSetPrinter) SetOutCsv(filename string) {
+	if p.fd != nil {
+		p.UnsetOutCsv()
 	}
 	fd, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
 		fmt.Printf("Open or Create file %s failed, %s", filename, err.Error())
 	}
-	o.out = true
-	o.filename = filename
-	o.fd = fd
+	p.fd = fd
+	p.filename = filename
 }
 
-func (o *OutCsv) UnsetOutCsv() {
-	if !o.out {
+func (p *DataSetPrinter) UnsetOutCsv() {
+	if p.fd == nil {
 		return
 	}
-	if err := o.fd.Close(); err != nil {
-		fmt.Printf("Close file % failed, %s", o.filename, err.Error())
+	if err := p.fd.Close(); err != nil {
+		fmt.Printf("Close file % failed, %s", p.filename, err.Error())
 	}
-	o.out = false
+	p.fd = nil
+	p.filename = ""
 }
 
 func valueToString(value *nebula.Value) string {
@@ -178,32 +186,31 @@ func valueToString(value *nebula.Value) string {
 	return ""
 }
 
-func PrintDataSet(dataset *nebula.DataSet, o *OutCsv) {
-	writer := table.NewWriter()
-	configTableWriter(&writer)
-
+func (p *DataSetPrinter) PrintDataSet(dataset *nebula.DataSet) {
+	p.writer.ResetHeaders()
+	p.writer.ResetRows()
 	var header []interface{}
 	for _, columName := range dataset.GetColumnNames() {
 		header = append(header, string(columName))
 	}
-	writer.AppendHeader(table.Row(header))
+	p.writer.AppendHeader(table.Row(header))
 
 	for _, row := range dataset.GetRows() {
 		var newRow []interface{}
 		for _, column := range row.GetValues() {
 			newRow = append(newRow, valueToString(column))
 		}
-		writer.AppendRow(table.Row(newRow))
+		p.writer.AppendRow(table.Row(newRow))
 	}
-	if writer.Length() < 1 {
+	if p.writer.Length() < 1 {
 		return
 	}
 
-	fmt.Println(writer.Render())
-	if o.out {
+	fmt.Println(p.writer.Render())
+	if p.fd != nil {
 		go func() {
-			fmt.Fprintln(o.fd, writer.RenderCSV())
-			fmt.Fprintln(o.fd)
+			fmt.Fprintln(p.fd, p.writer.RenderCSV())
+			fmt.Fprintln(p.fd)
 		}()
 	}
 }

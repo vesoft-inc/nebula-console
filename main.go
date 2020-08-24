@@ -27,10 +27,10 @@ const (
 	Version = "v2.0.0-alpha"
 )
 
-var o = &printer.OutCsv{}
+var dataSetPrinter = printer.NewDataSetPrinter()
 
 func welcome(interactive bool) {
-	defer o.UnsetOutCsv()
+	defer dataSetPrinter.UnsetOutCsv()
 	if !interactive {
 		return
 	}
@@ -49,7 +49,7 @@ func bye(username string, interactive bool) {
 }
 
 // client side cmd, will not be sent to server
-func clientCmd(cmd string) (isLocal, exit bool, err error) {
+func clientCmd(cmd string) (isLocal, exit bool) {
 	plain := strings.TrimSpace(strings.ToLower(cmd))
 	if len(plain) < 1 || plain[0] != ':' {
 		return
@@ -60,10 +60,10 @@ func clientCmd(cmd string) (isLocal, exit bool, err error) {
 	if len(runes) == 1 && (runes[0] == "exit" || runes[0] == "quit") {
 		exit = true
 	} else if len(runes) == 3 && (runes[0] == "set" && runes[1] == "csv") {
-		o.SetOutCsv(runes[2])
+		dataSetPrinter.SetOutCsv(runes[2])
 		exit = false
 	} else if len(runes) == 2 && (runes[0] == "unset" && runes[1] == "csv") {
-		o.UnsetOutCsv()
+		dataSetPrinter.UnsetOutCsv()
 		exit = false
 	} else {
 		exit = false
@@ -86,7 +86,7 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 	}
 	// Show table
 	if resp.IsSetData() {
-		printer.PrintDataSet(resp.GetData(), o)
+		dataSetPrinter.PrintDataSet(resp.GetData())
 		if len(resp.GetData().GetRows()) > 0 {
 			fmt.Printf("Got %d rows (time spent %d/%d us)\n",
 				len(resp.GetData().GetRows()), resp.GetLatencyInUs(), duration/1000)
@@ -124,11 +124,9 @@ func loop(client *ngdb.GraphClient, c cli.Cli) error {
 			continue
 		}
 		// Client side command
-		if isLocal, quit, err := clientCmd(line); isLocal {
-			if quit {
-				return nil // :exit, :quit
-			} else if err != nil {
-				return err
+		if isLocal, quit := clientCmd(line); isLocal {
+			if quit { // :exit, :quit
+				return nil
 			} else {
 				continue
 			}
