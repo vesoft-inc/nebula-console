@@ -14,6 +14,13 @@ import (
 	"github.com/vesoft-inc/nebula-go/v2/nebula/graph"
 )
 
+func graphvizString(s string) string {
+	ret := strings.Replace(s, "{", "\\{", -1)
+	ret = strings.Replace(s, "}", "\\}", -1)
+	ret = strings.Replace(s, "\"", "\\\"", -1)
+	return ret
+}
+
 type PlanDescPrinter struct {
 	writer   table.Writer
 	planDesc *graph.PlanDescription
@@ -92,7 +99,23 @@ func (p PlanDescPrinter) renderDotGraphByStruct() string {
 		case "loop":
 			builder.WriteString(fmt.Sprintf("\t\"%s\"[shape=diamond];\n", planNodeName))
 		default:
-			builder.WriteString(fmt.Sprintf("\t\"%s\"[shape=box, style=rounded];\n", planNodeName))
+			var outputVar = string(planNodeDesc.GetOutputVar())
+			var inputVar, colNames string
+			if planNodeDesc.IsSetDescription() {
+				desc := planNodeDesc.GetDescription()
+				for _, pair := range desc {
+					key := string(pair.GetKey())
+					val := string(pair.GetValue())
+					if key == "inputVar" {
+						inputVar = val
+					} else if key == "colNames" {
+						colNames = graphvizString(val)
+					}
+				}
+			}
+			builder.WriteString(fmt.Sprintf("\t%s [label=\"%s|outputVar: %s\\l|inputVar: %s\\l|colNames: %s\\l\", shape=Mrecord];\n",
+				planNodeName, planNodeName, outputVar, inputVar, colNames))
+			// builder.WriteString(fmt.Sprintf("\t\"%s\"[shape=box, style=rounded];\n", planNodeName))
 		}
 
 		if planNodeDesc.IsSetDependencies() {
@@ -175,10 +198,25 @@ func (p PlanDescPrinter) renderDotGraph() string {
 			// dep
 			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(dep), planNodeName))
 		default:
-			builder.WriteString(fmt.Sprintf("\t\"%s\"[shape=box, style=rounded];\n", planNodeName))
+			var outputVar = string(planNodeDesc.GetOutputVar())
+			var inputVar, colNames string
+			if planNodeDesc.IsSetDescription() {
+				desc := planNodeDesc.GetDescription()
+				for _, pair := range desc {
+					key := string(pair.GetKey())
+					val := string(pair.GetValue())
+					if key == "inputVar" {
+						inputVar = val
+					} else if key == "colNames" {
+						colNames = graphvizString(val)
+					}
+				}
+			}
+			builder.WriteString(fmt.Sprintf("\t%s [label=\"%s|outputVar: %s\\l|inputVar: %s\\l|colNames: %s\\l\", shape=Mrecord];\n",
+				planNodeName, planNodeName, outputVar, inputVar, colNames))
 			if planNodeDesc.IsSetDependencies() {
 				for _, depId := range planNodeDesc.GetDependencies() {
-					builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(p.nodeById(depId)), planNodeName))
+					builder.WriteString(fmt.Sprintf("\t%s->%s;\n", name(p.nodeById(depId)), planNodeName))
 				}
 			}
 		}
