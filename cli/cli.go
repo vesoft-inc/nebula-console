@@ -25,9 +25,7 @@ type Cli interface {
 	Close()
 }
 
-// interactive
-type iCli struct {
-	terminal *liner.State
+type status struct {
 	// prompt
 	historyFile string
 	user        string
@@ -38,6 +36,52 @@ type iCli struct {
 	// multi-line seperated by '\'
 	line   string
 	joined bool
+}
+
+func (stat *status) checkJoined(input string) {
+	runes := []rune(input)
+	var backSlashFound = false
+	if len(runes) > 1 && runes[len(runes)-1] == 92 { // '\'
+		backSlashFound = true
+	}
+	if stat.joined {
+		if backSlashFound {
+			stat.line += string(runes[:len(runes)-1])
+		} else {
+			stat.line += string(runes)
+			stat.joined = false
+		}
+	} else {
+		if backSlashFound {
+			stat.line = string(runes[:len(runes)-1])
+			stat.joined = true
+		} else {
+			stat.line = string(runes)
+		}
+	}
+}
+
+func (stat *status) nebulaPrompt() string {
+	//ttyColor := prompter.color + 31
+	//prompter.color = (prompter.color + 1) % 6
+	prompt := ""
+	//prompt += fmt.Sprintf("\033[%v;1m", ttyColor)
+	if stat.joined {
+		prompt += strings.Repeat(" ", stat.promptLen-3)
+		prompt += "-> "
+	} else {
+		promptString := fmt.Sprintf("(%s@nebula) [%s]> ", stat.user, stat.space)
+		stat.promptLen = len(promptString)
+		prompt += promptString
+	}
+	//prompt += "\033[0m"
+	return prompt
+}
+
+// interactive
+type iCli struct {
+	terminal *liner.State
+	stat     status
 }
 
 func NewiCli(historyFile, user string) *iCli {
@@ -60,72 +104,34 @@ func NewiCli(historyFile, user string) *iCli {
 		c.ReadHistory(f)
 	}
 	icli := &iCli{
-		terminal:    c,
-		historyFile: historyFile,
-		user:        user,
-		space:       "(none)",
-		promptLen:   -1,
-		promptColor: -1,
-		line:        "",
-		joined:      false,
+		terminal: c,
+		stat: status{
+			historyFile: historyFile,
+			user:        user,
+			space:       "(none)",
+			promptLen:   -1,
+			promptColor: -1,
+			line:        "",
+			joined:      false,
+		},
 	}
 	return icli
 }
 
-func (l *iCli) checkJoined(input string) {
-	runes := []rune(input)
-	var backSlashFound = false
-	if len(runes) > 1 && runes[len(runes)-1] == 92 { // '\'
-		backSlashFound = true
-	}
-	if l.joined {
-		if backSlashFound {
-			l.line += string(runes[:len(runes)-1])
-		} else {
-			l.line += string(runes)
-			l.joined = false
-		}
-	} else {
-		if backSlashFound {
-			l.line = string(runes[:len(runes)-1])
-			l.joined = true
-		} else {
-			l.line = string(runes)
-		}
-	}
-}
-
-func (l *iCli) nebulaPrompt() string {
-	//ttyColor := prompter.color + 31
-	//prompter.color = (prompter.color + 1) % 6
-	prompt := ""
-	//prompt += fmt.Sprintf("\033[%v;1m", ttyColor)
-	if l.joined {
-		prompt += strings.Repeat(" ", l.promptLen-3)
-		prompt += "-> "
-	} else {
-		promptString := fmt.Sprintf("(%s@nebula) [%s]> ", l.user, l.space)
-		l.promptLen = len(promptString)
-		prompt += promptString
-	}
-	//prompt += "\033[0m"
-	return prompt
-}
-
 func (l *iCli) ReadLine() (string, error, bool) {
 	for {
-		input, err := l.terminal.Prompt(l.nebulaPrompt())
+		input, err := l.terminal.Prompt(l.stat.nebulaPrompt())
 		if err == nil {
 			if len(input) > 0 {
 				l.terminal.AppendHistory(input)
 			}
-			l.checkJoined(input)
-			if l.joined {
+			l.stat.checkJoined(input)
+			if l.stat.joined {
 				continue
 			}
-			return l.line, nil, false
+			return l.stat.line, nil, false
 		} else if err == liner.ErrPromptAborted {
-			l.joined = false
+			l.stat.joined = false
 			return "", nil, false
 		} else if err == io.EOF {
 			return "", nil, true
@@ -141,16 +147,16 @@ func (l iCli) Interactive() bool {
 
 func (l *iCli) SetSpace(space string) {
 	if len(space) > 0 {
-		l.space = space
+		l.stat.space = space
 	} else {
-		l.space = "(none)"
+		l.stat.space = "(none)"
 	}
 }
 
 func (l *iCli) Close() {
 	defer l.terminal.Close()
-	if f, err := os.Create(l.historyFile); err != nil {
-		log.Panicf("Write history file %s failed, %s", l.historyFile, err.Error())
+	if f, err := os.Create(l.stat.historyFile); err != nil {
+		log.Panicf("Write history file %s failed, %s", l.stat.historyFile, err.Error())
 	} else {
 		defer f.Close()
 		l.terminal.WriteHistory(f)
@@ -159,69 +165,23 @@ func (l *iCli) Close() {
 
 // non-interactive
 type nCli struct {
-	io *bufio.Reader
-	// prompt
-	user        string
-	space       string
-	promptLen   int
-	promptColor int
-
-	// multi-line seperated by '\'
-	line   string
-	joined bool
+	io   *bufio.Reader
+	stat status
 }
 
 func NewnCli(i io.Reader, user string) *nCli {
 	ncli := &nCli{
-		io:          bufio.NewReader(i),
-		user:        user,
-		space:       "(none)",
-		promptLen:   -1,
-		promptColor: -1,
-		line:        "",
-		joined:      false,
+		io: bufio.NewReader(i),
+		stat: status{
+			user:        user,
+			space:       "(none)",
+			promptLen:   -1,
+			promptColor: -1,
+			line:        "",
+			joined:      false,
+		},
 	}
 	return ncli
-}
-
-func (l *nCli) checkJoined(input string) {
-	runes := []rune(input)
-	var backSlashFound = false
-	if len(runes) > 1 && runes[len(runes)-1] == 92 { // '\'
-		backSlashFound = true
-	}
-	if l.joined {
-		if backSlashFound {
-			l.line += string(runes[:len(runes)-1])
-		} else {
-			l.line += string(runes)
-			l.joined = false
-		}
-	} else {
-		if backSlashFound {
-			l.line = string(runes[:len(runes)-1])
-			l.joined = true
-		} else {
-			l.line = string(runes)
-		}
-	}
-}
-
-func (l *nCli) nebulaPrompt() string {
-	//ttyColor := prompter.color + 31
-	//prompter.color = (prompter.color + 1) % 6
-	prompt := ""
-	//prompt += fmt.Sprintf("\033[%v;1m", ttyColor)
-	if l.joined {
-		prompt += strings.Repeat(" ", l.promptLen-3)
-		prompt += "-> "
-	} else {
-		promptString := fmt.Sprintf("(%s@nebula) [%s]> ", l.user, l.space)
-		l.promptLen = len(promptString)
-		prompt += promptString
-	}
-	//prompt += "\033[0m"
-	return prompt
 }
 
 func (l *nCli) ReadLine() (string, error, bool) {
@@ -229,14 +189,14 @@ func (l *nCli) ReadLine() (string, error, bool) {
 		s, _, err := l.io.ReadLine()
 		input := string(s)
 		if err == nil {
-			fmt.Printf(l.nebulaPrompt())
+			fmt.Printf(l.stat.nebulaPrompt())
 			// not record input to historyFile now
 			fmt.Println(input)
-			l.checkJoined(input)
-			if l.joined {
+			l.stat.checkJoined(input)
+			if l.stat.joined {
 				continue
 			}
-			return l.line, nil, false
+			return l.stat.line, nil, false
 		} else if err == io.EOF {
 			return "", nil, true
 		} else {
