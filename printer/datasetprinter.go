@@ -187,6 +187,10 @@ func valueToString(value *nebula.Value) string {
 }
 
 func (p *DataSetPrinter) PrintDataSet(dataset *nebula.DataSet) {
+	if len(dataset.GetRows()) == 0 {
+		return
+	}
+
 	p.writer.ResetHeaders()
 	p.writer.ResetRows()
 	var header []interface{}
@@ -201,9 +205,6 @@ func (p *DataSetPrinter) PrintDataSet(dataset *nebula.DataSet) {
 			newRow = append(newRow, valueToString(column))
 		}
 		p.writer.AppendRow(table.Row(newRow))
-	}
-	if p.writer.Length() < 1 {
-		return
 	}
 
 	fmt.Println(p.writer.Render())
