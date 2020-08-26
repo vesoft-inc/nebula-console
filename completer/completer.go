@@ -129,7 +129,7 @@ func NewCompleter(line string, pos int) (head string, completions []string, tail
 	tail = line[pos:]
 	if line[pos-1] == ' ' { // find sub cmd
 		if subs, ok := subCmds[lastWord]; ok {
-			completions = subs
+			completions = append(completions, subs...)
 		}
 	} else {
 		for _, k := range keywords {
@@ -138,8 +138,10 @@ func NewCompleter(line string, pos int) (head string, completions []string, tail
 			}
 		}
 	}
+
 	if len(completions) == 1 {
 		completions[0] += " "
 	}
+
 	return
 }
