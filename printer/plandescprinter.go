@@ -67,6 +67,25 @@ func condEdgeLabel(condNode *graph.PlanNodeDescription, doBranch bool) string {
 	return ""
 }
 
+func defaultPlanNode(planNodeDesc *graph.PlanNodeDescription, planNodeName string, builder *strings.Builder) {
+	var outputVar = string(planNodeDesc.GetOutputVar())
+	var inputVar, colNames string
+	if planNodeDesc.IsSetDescription() {
+		desc := planNodeDesc.GetDescription()
+		for _, pair := range desc {
+			key := string(pair.GetKey())
+			val := string(pair.GetValue())
+			if key == "inputVar" {
+				inputVar = val
+			} else if key == "colNames" {
+				colNames = graphvizString(val)
+			}
+		}
+	}
+	(*builder).WriteString(fmt.Sprintf("\t\"%s\"[label=\"%s|outputVar: %s\\l|inputVar: %s\\l|colNames: %s\\l\", shape=Mrecord];\n",
+		planNodeName, planNodeName, outputVar, inputVar, colNames))
+}
+
 func (p PlanDescPrinter) configWriterDotRenderStyle() {
 	p.writer.Style().Box.Left = " "
 	p.writer.Style().Box.Right = " "
@@ -99,23 +118,7 @@ func (p PlanDescPrinter) renderDotGraphByStruct() string {
 		case "loop":
 			builder.WriteString(fmt.Sprintf("\t\"%s\"[shape=diamond];\n", planNodeName))
 		default:
-			var outputVar = string(planNodeDesc.GetOutputVar())
-			var inputVar, colNames string
-			if planNodeDesc.IsSetDescription() {
-				desc := planNodeDesc.GetDescription()
-				for _, pair := range desc {
-					key := string(pair.GetKey())
-					val := string(pair.GetValue())
-					if key == "inputVar" {
-						inputVar = val
-					} else if key == "colNames" {
-						colNames = graphvizString(val)
-					}
-				}
-			}
-			builder.WriteString(fmt.Sprintf("\t%s [label=\"%s|outputVar: %s\\l|inputVar: %s\\l|colNames: %s\\l\", shape=Mrecord];\n",
-				planNodeName, planNodeName, outputVar, inputVar, colNames))
-			// builder.WriteString(fmt.Sprintf("\t\"%s\"[shape=box, style=rounded];\n", planNodeName))
+			defaultPlanNode(planNodeDesc, planNodeName, &builder)
 		}
 
 		if planNodeDesc.IsSetDependencies() {
@@ -198,27 +201,13 @@ func (p PlanDescPrinter) renderDotGraph() string {
 			// dep
 			builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(dep), planNodeName))
 		default:
-			var outputVar = string(planNodeDesc.GetOutputVar())
-			var inputVar, colNames string
-			if planNodeDesc.IsSetDescription() {
-				desc := planNodeDesc.GetDescription()
-				for _, pair := range desc {
-					key := string(pair.GetKey())
-					val := string(pair.GetValue())
-					if key == "inputVar" {
-						inputVar = val
-					} else if key == "colNames" {
-						colNames = graphvizString(val)
-					}
-				}
-			}
-			builder.WriteString(fmt.Sprintf("\t%s [label=\"%s|outputVar: %s\\l|inputVar: %s\\l|colNames: %s\\l\", shape=Mrecord];\n",
-				planNodeName, planNodeName, outputVar, inputVar, colNames))
+			defaultPlanNode(planNodeDesc, planNodeName, &builder)
 			if planNodeDesc.IsSetDependencies() {
 				for _, depId := range planNodeDesc.GetDependencies() {
-					builder.WriteString(fmt.Sprintf("\t%s->%s;\n", name(p.nodeById(depId)), planNodeName))
+					builder.WriteString(fmt.Sprintf("\t\"%s\"->\"%s\";\n", name(p.nodeById(depId)), planNodeName))
 				}
 			}
+
 		}
 	}
 	builder.WriteString("}")
