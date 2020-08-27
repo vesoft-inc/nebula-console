@@ -17,13 +17,13 @@ $ make
 ./nebula-console [-address ip] [-port port] [-u use]r [-p password] [-e "nGQL query statement" |  -f file.nGQL]
 ```
 
--h          : help
--address    : the Nebula Graph IP address, default value is `127.0.0.1`
--port       : the Nebula Graph Port, default value is `3699`
--u          : the Nebula Graph login user name, default value is `user`
--p          : the Nebula Graph login password, default value is `password`
--e          : the nGQL directly
--f          : the nGQL script file name
+-h : help
+-address : the Nebula Graph IP address, default value is 127.0.0.1
+-port : the Nebula Graph Port, default value is 3699
+-u : the Nebula Graph login user name, default value is user
+-p : the Nebula Graph login password, default value is password
+-e : the nGQL directly
+-f : the nGQL script file name
 
 Check options for `./nebula-console -h`, try `./nebula-console` in interactive mode directly.
 And try `./nebula-console -e 'show hosts'` for the direct script mode.
