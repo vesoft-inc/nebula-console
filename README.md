@@ -18,10 +18,10 @@ $ make
 ```
 
 -h          : help
--address    : the Nebula Graph IP address, default value is 127.0.0.1
--port       : the Nebula Graph Port, default value is 3699
--u          : the Nebula Graph login user name, default value is user
--p          : the Nebula Graph login password, default value is password
+-address    : the Nebula Graph IP address, default value is `127.0.0.1`
+-port       : the Nebula Graph Port, default value is `3699`
+-u          : the Nebula Graph login user name, default value is `user`
+-p          : the Nebula Graph login password, default value is `password`
 -e          : the nGQL directly
 -f          : the nGQL script file name
 
@@ -50,7 +50,7 @@ The query results will be output to both the console and the csv file
 The query results will only be output to the console
 
 ```shell
-(root@nebula) [nba] :unset csv
+(root@nebula) [nba]> :unset csv
 ```
 
 # Feature
