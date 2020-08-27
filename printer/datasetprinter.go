@@ -13,6 +13,7 @@ import (
 	"github.com/vesoft-inc/nebula-go/v2/nebula"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type DataSetPrinter struct {
@@ -71,7 +72,16 @@ func valueToString(value *nebula.Value) string {
 	} else if value.IsSetIVal() { // int64
 		return strconv.FormatInt(value.GetIVal(), 10)
 	} else if value.IsSetFVal() { // float64
-		return strconv.FormatFloat(value.GetFVal(), 'g', -1, 64)
+		val := strconv.FormatFloat(value.GetFVal(), 'g', -1, 64)
+		if !strings.Contains(val, ".") {
+			idx := strings.LastIndex(val, "e")
+			if idx == -1 {
+				val += ".0"
+			} else {
+				val = val[0:idx] + ".0" + val[idx:]
+			}
+		}
+		return val
 	} else if value.IsSetSVal() { // string
 		return string(value.GetSVal())
 	} else if value.IsSetDVal() { // yyyy-mm-dd
@@ -198,7 +208,6 @@ func (p *DataSetPrinter) PrintDataSet(dataset *nebula.DataSet) {
 		header = append(header, string(columName))
 	}
 	p.writer.AppendHeader(table.Row(header))
-
 	for _, row := range dataset.GetRows() {
 		var newRow []interface{}
 		for _, column := range row.GetValues() {
