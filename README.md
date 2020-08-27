@@ -14,7 +14,7 @@ $ make
 # Usage
 
 ```shell
-./nebula-console [-address ip] [-port port] [-u use]r [-p password] [-e "nGQL query statement" |  -f file.nGQL]
+./nebula-console [-address ip] [-port port] [-u user] [-p password] [-e "nGQL query statement" |  -f file.nGQL]
 ```
 
 ```shell
