@@ -67,7 +67,7 @@ func condEdgeLabel(condNode *graph.PlanNodeDescription, doBranch bool) string {
 	return ""
 }
 
-func defaultPlanNode(planNodeDesc *graph.PlanNodeDescription, planNodeName string) string {
+func nodeString(planNodeDesc *graph.PlanNodeDescription, planNodeName string) string {
 	var outputVar = string(planNodeDesc.GetOutputVar())
 	var inputVar, colNames string
 	if planNodeDesc.IsSetDescription() {
@@ -92,10 +92,6 @@ func edgeString(start, end string) string {
 
 func conditionalEdgeString(start, end, label string) string {
 	return fmt.Sprintf("\t\"%s\"->\"%s\"[label=\"%s\", style=dashed];\n", start, end, label)
-}
-
-func nodeString(name string) string {
-	return fmt.Sprintf("\t\"%s\"[shape=box, style=rounded];\n", name)
 }
 
 func conditionalNodeString(name string) string {
@@ -134,7 +130,7 @@ func (p PlanDescPrinter) renderDotGraphByStruct() string {
 		case "loop":
 			builder.WriteString(conditionalNodeString(planNodeName))
 		default:
-			builder.WriteString(defaultPlanNode(planNodeDesc, planNodeName))
+			builder.WriteString(nodeString(planNodeDesc, planNodeName))
 		}
 
 		if planNodeDesc.IsSetDependencies() {
@@ -217,7 +213,7 @@ func (p PlanDescPrinter) renderDotGraph() string {
 			// dep
 			builder.WriteString(edgeString(name(dep), planNodeName))
 		default:
-			builder.WriteString(defaultPlanNode(planNodeDesc, planNodeName))
+			builder.WriteString(nodeString(planNodeDesc, planNodeName))
 			if planNodeDesc.IsSetDependencies() {
 				for _, depId := range planNodeDesc.GetDependencies() {
 					builder.WriteString(edgeString(name(p.nodeById(depId)), planNodeName))
