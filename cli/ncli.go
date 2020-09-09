@@ -12,14 +12,16 @@ import (
 	"io"
 )
 
+type Cleanup func()
+
 // non-interactive
 type nCli struct {
 	status
-	io       *bufio.Reader
-	callback func()
+	io      *bufio.Reader
+	cleanup Cleanup
 }
 
-func NewnCli(i io.Reader, user string) Cli {
+func NewnCli(i io.Reader, user string, cleanup Cleanup) Cli {
 	return &nCli{
 		status: status{
 			user:        user,
@@ -29,7 +31,8 @@ func NewnCli(i io.Reader, user string) Cli {
 			line:        "",
 			joined:      false,
 		},
-		io: bufio.NewReader(i),
+		io:      bufio.NewReader(i),
+		cleanup: cleanup,
 	}
 }
 
@@ -38,7 +41,7 @@ func (l *nCli) ReadLine() (string, bool, error) {
 		s, _, err := l.io.ReadLine()
 		input := string(s)
 		if err == nil {
-			fmt.Printf(l.status.nebulaPrompt())
+			fmt.Print(l.status.nebulaPrompt())
 			// not record input to historyFile now
 			fmt.Println(input)
 			l.status.checkJoined(input)
@@ -63,5 +66,5 @@ func (l *nCli) SetSpace(space string) {
 }
 
 func (l *nCli) Close() {
-	// nothing
+	l.cleanup()
 }

@@ -183,25 +183,27 @@ func main() {
 	defer bye(*username, interactive)
 	defer client.Disconnect()
 
+	var c cli.Cli = nil
 	// Loop the request
 	if interactive {
 		historyFile := path.Join(historyHome, ".nebula_history")
-		c := cli.NewiCli(historyFile, *username)
-		err = loop(client, c)
+		c = cli.NewiCli(historyFile, *username)
 	} else if *script != "" {
-		c := cli.NewnCli(strings.NewReader(*script), *username)
-		err = loop(client, c)
+		c = cli.NewnCli(strings.NewReader(*script), *username, func() {})
 	} else if *file != "" {
 		fd, err := os.Open(*file)
 		if err != nil {
 			log.Panicf("Open file %s failed, %s", *file, err.Error())
 		}
-		defer fd.Close()
-		c := cli.NewnCli(fd, *username)
-		defer c.Close()
-		err = loop(client, c)
+		c = cli.NewnCli(fd, *username, func() { fd.Close() })
 	}
 
+	if c == nil {
+		return
+	}
+
+	defer c.Close()
+	err = loop(client, c)
 	if err != nil {
 		log.Panicf("Loop error, %s", err.Error())
 	}
