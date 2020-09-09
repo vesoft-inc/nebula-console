@@ -74,8 +74,7 @@ func clientCmd(cmd string) (isLocal, exit bool) {
 }
 
 func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
-	// Error
-	if resp.GetErrorCode() != graph.ErrorCode_SUCCEEDED {
+	if ngdb.IsError(resp) {
 		fmt.Printf("[ERROR (%d)]: %s", resp.GetErrorCode(), resp.GetErrorMsg())
 		fmt.Println()
 		fmt.Println()
@@ -84,9 +83,9 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 	// Show table
 	if resp.IsSetData() {
 		dataSetPrinter.PrintDataSet(resp.GetData())
-		if len(resp.GetData().GetRows()) > 0 {
-			fmt.Printf("Got %d rows (time spent %d/%d us)\n",
-				len(resp.GetData().GetRows()), resp.GetLatencyInUs(), duration/1000)
+		numRows := len(resp.GetData().GetRows())
+		if numRows > 0 {
+			fmt.Printf("Got %d rows (time spent %d/%d us)\n", numRows, resp.GetLatencyInUs(), duration/1000)
 		} else {
 			fmt.Printf("Empty set (time spent %d/%d us)\n", resp.GetLatencyInUs(), duration/1000)
 		}
@@ -109,13 +108,13 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 // Add line break yourself as `SHOW \<CR>HOSTS`
 func loop(client *ngdb.GraphClient, c cli.Cli) error {
 	for {
-		line, err, exit := c.ReadLine()
+		line, exit, err := c.ReadLine()
+		if err != nil {
+			return err
+		}
 		if exit { // Ctrl+D
 			fmt.Println()
 			return nil
-		}
-		if err != nil {
-			return err
 		}
 		if len(line) == 0 {
 			continue
@@ -131,10 +130,10 @@ func loop(client *ngdb.GraphClient, c cli.Cli) error {
 		// Server side command
 		start := time.Now()
 		resp, err := client.Execute(line)
-		duration := time.Since(start)
 		if err != nil {
 			return err
 		}
+		duration := time.Since(start)
 		printResp(resp, duration)
 		fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
 		fmt.Println()
@@ -188,17 +187,19 @@ func main() {
 	if interactive {
 		historyFile := path.Join(historyHome, ".nebula_history")
 		c := cli.NewiCli(historyFile, *username)
-		defer c.Close()
 		err = loop(client, c)
 	} else if *script != "" {
-		err = loop(client, cli.NewnCli(strings.NewReader(*script), *username))
+		c := cli.NewnCli(strings.NewReader(*script), *username)
+		err = loop(client, c)
 	} else if *file != "" {
 		fd, err := os.Open(*file)
 		if err != nil {
 			log.Panicf("Open file %s failed, %s", *file, err.Error())
 		}
 		defer fd.Close()
-		err = loop(client, cli.NewnCli(fd, *username))
+		c := cli.NewnCli(fd, *username)
+		defer c.Close()
+		err = loop(client, c)
 	}
 
 	if err != nil {
