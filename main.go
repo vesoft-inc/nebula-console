@@ -16,7 +16,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/vesoft-inc/nebula-console/cli"
 	"github.com/vesoft-inc/nebula-console/printer"
 	ngdb "github.com/vesoft-inc/nebula-go/v2"
@@ -40,6 +39,7 @@ func welcome(interactive bool) {
 }
 
 func bye(username string, interactive bool) {
+	fmt.Println()
 	fmt.Printf("Bye %s!\n", username)
 	fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
 	fmt.Println()
@@ -74,8 +74,7 @@ func clientCmd(cmd string) (isLocal, exit bool) {
 }
 
 func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
-	// Error
-	if resp.GetErrorCode() != graph.ErrorCode_SUCCEEDED {
+	if ngdb.IsError(resp) {
 		fmt.Printf("[ERROR (%d)]: %s", resp.GetErrorCode(), resp.GetErrorMsg())
 		fmt.Println()
 		fmt.Println()
@@ -84,9 +83,9 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 	// Show table
 	if resp.IsSetData() {
 		dataSetPrinter.PrintDataSet(resp.GetData())
-		if len(resp.GetData().GetRows()) > 0 {
-			fmt.Printf("Got %d rows (time spent %d/%d us)\n",
-				len(resp.GetData().GetRows()), resp.GetLatencyInUs(), duration/1000)
+		numRows := len(resp.GetData().GetRows())
+		if numRows > 0 {
+			fmt.Printf("Got %d rows (time spent %d/%d us)\n", numRows, resp.GetLatencyInUs(), duration/1000)
 		} else {
 			fmt.Printf("Empty set (time spent %d/%d us)\n", resp.GetLatencyInUs(), duration/1000)
 		}
@@ -96,7 +95,7 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 
 	if resp.IsSetPlanDesc() {
 		fmt.Println()
-		fmt.Println(text.Bold.Sprint("Execution Plan"))
+		fmt.Println("Execution Plan")
 		fmt.Println()
 		p := printer.NewPlanDescPrinter(resp.GetPlanDesc())
 		fmt.Println(p.Print())
@@ -109,13 +108,13 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 // Add line break yourself as `SHOW \<CR>HOSTS`
 func loop(client *ngdb.GraphClient, c cli.Cli) error {
 	for {
-		line, err, exit := c.ReadLine()
+		line, exit, err := c.ReadLine()
+		if err != nil {
+			return err
+		}
 		if exit { // Ctrl+D
 			fmt.Println()
 			return nil
-		}
-		if err != nil {
-			return err
 		}
 		if len(line) == 0 {
 			continue
@@ -131,26 +130,33 @@ func loop(client *ngdb.GraphClient, c cli.Cli) error {
 		// Server side command
 		start := time.Now()
 		resp, err := client.Execute(line)
-		duration := time.Since(start)
 		if err != nil {
 			return err
 		}
+		duration := time.Since(start)
 		printResp(resp, duration)
 		fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
 		fmt.Println()
 		c.SetSpace(string(resp.SpaceName))
 	}
+}
 
-	return nil
+var address *string = flag.String("address", "127.0.0.1", "The Nebula Graph IP address")
+var port *int = flag.Int("port", 3699, "The Nebula Graph Port")
+var username *string = flag.String("u", "user", "The Nebula Graph login user name")
+var password *string = flag.String("p", "password", "The Nebula Graph login password")
+var script *string = flag.String("e", "", "The nGQL directly")
+var file *string = flag.String("f", "", "The nGQL script file name")
+
+func init() {
+	flag.StringVar(address, "addr", "127.0.0.1", "The Nebula Graph IP address")
+	flag.StringVar(username, "user", "user", "The Nebula Graph login user name")
+	flag.StringVar(password, "password", "password", "The Nebula Graph login password")
+	flag.StringVar(script, "eval", "", "The nGQL directly")
+	flag.StringVar(file, "file", "", "The nGQL script file name")
 }
 
 func main() {
-	address := flag.String("address", "127.0.0.1", "The Nebula Graph IP address")
-	port := flag.Int("port", 3699, "The Nebula Graph Port")
-	username := flag.String("u", "user", "The Nebula Graph login user name")
-	password := flag.String("p", "password", "The Nebula Graph login password")
-	script := flag.String("e", "", "The nGQL directly")
-	file := flag.String("f", "", "The nGQL script file name")
 	flag.Parse()
 
 	interactive := *script == "" && *file == ""
@@ -163,7 +169,6 @@ func main() {
 		}
 		historyHome = filepath.Dir(ex) // Set to executable folder
 	}
-	historyFile := path.Join(historyHome, ".nebula_history")
 	client, err := ngdb.NewClient(fmt.Sprintf("%s:%d", *address, *port))
 	if err != nil {
 		log.Panicf("Fail to create client, address: %s, port: %d, %s", *address, *port, err.Error())
@@ -178,22 +183,27 @@ func main() {
 	defer bye(*username, interactive)
 	defer client.Disconnect()
 
+	var c cli.Cli = nil
 	// Loop the request
 	if interactive {
-		c := cli.NewiCli(historyFile, *username)
-		defer c.Close()
-		err = loop(client, c)
+		historyFile := path.Join(historyHome, ".nebula_history")
+		c = cli.NewiCli(historyFile, *username)
 	} else if *script != "" {
-		err = loop(client, cli.NewnCli(strings.NewReader(*script), *username))
+		c = cli.NewnCli(strings.NewReader(*script), *username, nil)
 	} else if *file != "" {
 		fd, err := os.Open(*file)
 		if err != nil {
 			log.Panicf("Open file %s failed, %s", *file, err.Error())
 		}
-		defer fd.Close()
-		err = loop(client, cli.NewnCli(fd, *username))
+		c = cli.NewnCli(fd, *username, func() { fd.Close() })
 	}
 
+	if c == nil {
+		return
+	}
+
+	defer c.Close()
+	err = loop(client, c)
 	if err != nil {
 		log.Panicf("Loop error, %s", err.Error())
 	}

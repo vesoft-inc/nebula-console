@@ -9,11 +9,12 @@ package printer
 import (
 	"bytes"
 	"fmt"
-	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/vesoft-inc/nebula-go/v2/nebula"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/vesoft-inc/nebula-go/v2/nebula"
 )
 
 type DataSetPrinter struct {
