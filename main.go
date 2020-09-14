@@ -189,7 +189,7 @@ func main() {
 		historyFile := path.Join(historyHome, ".nebula_history")
 		c = cli.NewiCli(historyFile, *username)
 	} else if *script != "" {
-		c = cli.NewnCli(strings.NewReader(*script), *username, func() {})
+		c = cli.NewnCli(strings.NewReader(*script), *username, nil)
 	} else if *file != "" {
 		fd, err := os.Open(*file)
 		if err != nil {

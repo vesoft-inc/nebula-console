@@ -66,5 +66,7 @@ func (l *nCli) SetSpace(space string) {
 }
 
 func (l *nCli) Close() {
-	l.cleanup()
+	if l.cleanup != nil {
+		l.cleanup()
+	}
 }
