@@ -6,6 +6,6 @@ require (
 	github.com/jedib0t/go-pretty/v6 v6.0.4
 	github.com/peterh/liner v1.2.0
 	github.com/stretchr/testify v1.3.0 // indirect
-	github.com/vesoft-inc/nebula-go/v2 v2.0.0-20200807084617-b348832aabd3
+	github.com/vesoft-inc/nebula-go/v2 v2.0.0-20200917082518-10778ef6a6cf
 	golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae // indirect
 )

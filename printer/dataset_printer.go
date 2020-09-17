@@ -89,12 +89,16 @@ func valueToString(value *nebula.Value) string {
 		date := value.GetDVal()
 		str := fmt.Sprintf("%d-%d-%d", date.GetYear(), date.GetMonth(), date.GetDay())
 		return str
-	} else if value.IsSetTVal() { // yyyy-mm-dd HH:MM:SS:MS TZ
-		datetime := value.GetTVal()
-		str := fmt.Sprintf("%d-%d-%d %d:%d:%d:%d UTC%d",
+	} else if value.IsSetTVal() {
+		time := value.GetTVal()
+		str := fmt.Sprintf("%d:%d:%d:%d",
+			time.GetHour(), time.GetMinute(), time.GetSec(), time.GetMicrosec())
+		return str
+	} else if value.IsSetDtVal() { // yyyy-mm-dd HH:MM:SS:MS TZ
+		datetime := value.GetDtVal()
+		str := fmt.Sprintf("%d-%d-%d %d:%d:%d:%d",
 			datetime.GetYear(), datetime.GetMonth(), datetime.GetDay(),
-			datetime.GetHour(), datetime.GetMinute(), datetime.GetSec(), datetime.GetMicrosec(),
-			datetime.GetTimezone())
+			datetime.GetHour(), datetime.GetMinute(), datetime.GetSec(), datetime.GetMicrosec())
 		return str
 	} else if value.IsSetVVal() { // Vertex
 		var buffer bytes.Buffer
