@@ -149,19 +149,19 @@ func loop(client *ngdb.GraphClient, c cli.Cli) error {
 	}
 }
 
-var address *string = flag.String("address", "127.0.0.1", "The Nebula Graph IP address")
+var address *string = flag.String("addr", "127.0.0.1", "The Nebula Graph IP address")
 var port *int = flag.Int("port", 3699, "The Nebula Graph Port")
 var username *string = flag.String("u", "", "The Nebula Graph login user name")
 var password *string = flag.String("p", "", "The Nebula Graph login password")
-var timeout *int = flag.Int("t", 30, "The Nebula Graph client connection timeout in seconds")
+var timeout *int = flag.Int("t", 120, "The Nebula Graph client connection timeout in seconds")
 var script *string = flag.String("e", "", "The nGQL directly")
 var file *string = flag.String("f", "", "The nGQL script file name")
 
 func init() {
-	flag.StringVar(address, "addr", "127.0.0.1", "The Nebula Graph IP address")
-	flag.StringVar(username, "user", "user", "The Nebula Graph login user name")
-	flag.StringVar(password, "password", "password", "The Nebula Graph login password")
-	flag.IntVar(timeout, "timeout", 30, "The Nebula Graph client connection timeout in seconds")
+	flag.StringVar(address, "address", "127.0.0.1", "The Nebula Graph IP address")
+	flag.StringVar(username, "user", "", "The Nebula Graph login user name")
+	flag.StringVar(password, "password", "", "The Nebula Graph login password")
+	flag.IntVar(timeout, "timeout", 120, "The Nebula Graph client connection timeout in seconds")
 	flag.StringVar(script, "eval", "", "The nGQL directly")
 	flag.StringVar(file, "file", "", "The nGQL script file name")
 }
