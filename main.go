@@ -191,7 +191,7 @@ func main() {
 	}
 
 	if err = client.Connect(*username, *password); err != nil {
-		log.Panicf("Fail to connect server, ", err.Error())
+		log.Panicf("Fail to connect server, %s", err.Error())
 	}
 
 	welcome(interactive)
