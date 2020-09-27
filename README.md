@@ -14,17 +14,18 @@ $ make
 # Usage
 
 ```shell
-./nebula-console [-address ip] [-port port] [-u user] [-p password] [-e "nGQL query statement" |  -f file.nGQL]
+./nebula-console [-addr ip] [-port port] -u user -p password [-t 120] [-e "nGQL query statement" |  -f file.nGQL]
 ```
 
 ```shell
 -h : help
--address : the Nebula Graph IP address, default value is 127.0.0.1
+-addr, -address : the Nebula Graph IP address, default value is 127.0.0.1
 -port : the Nebula Graph Port, default value is 3699
--u : the Nebula Graph login user name, default value is user
--p : the Nebula Graph login password, default value is password
--e : the nGQL directly
--f : the nGQL script file name
+-u, -user : the Nebula Graph login user name
+-p, -password : the Nebula Graph login password
+-t, -timeout : The Nebula Graph client connection timeout in seconds, default value is 120 seconds
+-e, -eval : the nGQL directly
+-f, -file : the nGQL script file name
 ```
 
 Check options for `./nebula-console -h`, try `./nebula-console` in interactive mode directly.
@@ -33,10 +34,12 @@ And try `./nebula-console -f demo.nGQL` for the script file mode.
 
 # Local Command
 Nebula-console supports 4 local commands now, which starts with a ':',
-
+(currently "exit" and "quit" which doesn't start with a ':' is also supported for convenience)
 ## Quit from the console
 
 ```shell
+(root@nebula) [nba]> exit
+(root@nebula) [nba]> quit
 (root@nebula) [nba]> :exit
 (root@nebula) [nba]> :quit
 ```

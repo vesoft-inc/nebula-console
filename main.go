@@ -47,6 +47,13 @@ func bye(username string, interactive bool) {
 
 // client side cmd, will not be sent to server
 func clientCmd(cmd string) (isLocal, exit bool) {
+	// currently, command "exit" and  "quit" can also exit the console
+	if cmd == "exit" || cmd == "quit" {
+		isLocal = true
+		exit = true
+		return
+	}
+
 	plain := strings.TrimSpace(strings.ToLower(cmd))
 	if len(plain) < 1 || plain[0] != ':' {
 		return
@@ -121,7 +128,7 @@ func loop(client *ngdb.GraphClient, c cli.Cli) error {
 		}
 		// Client side command
 		if isLocal, quit := clientCmd(line); isLocal {
-			if quit { // :exit, :quit
+			if quit { // :exit, :quit, exit, quit
 				return nil
 			} else {
 				continue
@@ -133,6 +140,7 @@ func loop(client *ngdb.GraphClient, c cli.Cli) error {
 		if err != nil {
 			return err
 		}
+
 		duration := time.Since(start)
 		printResp(resp, duration)
 		fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
@@ -141,17 +149,19 @@ func loop(client *ngdb.GraphClient, c cli.Cli) error {
 	}
 }
 
-var address *string = flag.String("address", "127.0.0.1", "The Nebula Graph IP address")
+var address *string = flag.String("addr", "127.0.0.1", "The Nebula Graph IP address")
 var port *int = flag.Int("port", 3699, "The Nebula Graph Port")
-var username *string = flag.String("u", "user", "The Nebula Graph login user name")
-var password *string = flag.String("p", "password", "The Nebula Graph login password")
+var username *string = flag.String("u", "", "The Nebula Graph login user name")
+var password *string = flag.String("p", "", "The Nebula Graph login password")
+var timeout *int = flag.Int("t", 120, "The Nebula Graph client connection timeout in seconds")
 var script *string = flag.String("e", "", "The nGQL directly")
 var file *string = flag.String("f", "", "The nGQL script file name")
 
 func init() {
-	flag.StringVar(address, "addr", "127.0.0.1", "The Nebula Graph IP address")
-	flag.StringVar(username, "user", "user", "The Nebula Graph login user name")
-	flag.StringVar(password, "password", "password", "The Nebula Graph login password")
+	flag.StringVar(address, "address", "127.0.0.1", "The Nebula Graph IP address")
+	flag.StringVar(username, "user", "", "The Nebula Graph login user name")
+	flag.StringVar(password, "password", "", "The Nebula Graph login password")
+	flag.IntVar(timeout, "timeout", 120, "The Nebula Graph client connection timeout in seconds")
 	flag.StringVar(script, "eval", "", "The nGQL directly")
 	flag.StringVar(file, "file", "", "The nGQL script file name")
 }
@@ -169,13 +179,19 @@ func main() {
 		}
 		historyHome = filepath.Dir(ex) // Set to executable folder
 	}
-	client, err := ngdb.NewClient(fmt.Sprintf("%s:%d", *address, *port))
+	// when the value of timeout is set to 0, connection will not timeout
+	clientTimeout := ngdb.WithTimeout(time.Duration(*timeout) * time.Second)
+	client, err := ngdb.NewClient(fmt.Sprintf("%s:%d", *address, *port), clientTimeout)
 	if err != nil {
 		log.Panicf("Fail to create client, address: %s, port: %d, %s", *address, *port, err.Error())
 	}
 
+	if len(*username) == 0 || len(*password) == 0 {
+		log.Panicf("Error: username or password is empty!")
+	}
+
 	if err = client.Connect(*username, *password); err != nil {
-		log.Panicf("Fail to connect server, username: %s, password: %s, %s", *username, *password, err.Error())
+		log.Panicf("Fail to connect server, %s", err.Error())
 	}
 
 	welcome(interactive)
