@@ -33,7 +33,7 @@ type status struct {
 
 func (stat *status) checkJoined(input string) {
 	runes := []rune(input)
-	var backSlashFound = len(runes) > 1 && runes[len(runes)-1] == 92 // '\'
+	var backSlashFound = len(runes) >= 1 && runes[len(runes)-1] == 92 // '\'
 	if stat.joined {
 		if backSlashFound {
 			stat.line += string(runes[:len(runes)-1])
