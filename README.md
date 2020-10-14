@@ -19,7 +19,7 @@ $ make
 
 ```shell
 -h : help
--addr, -address : the Nebula Graph IP address, default value is 127.0.0.1
+-addr, -address : the Nebula Graph IP/HOST address, default value is 127.0.0.1
 -port : the Nebula Graph Port, default value is 3699
 -u, -user : the Nebula Graph login user name
 -p, -password : the Nebula Graph login password
