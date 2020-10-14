@@ -37,6 +37,8 @@ jobs:
         env:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
+      - name: Builder 1 name
+        run: echo ${{ steps.build.outputs.name }}
       - name: vars
         id: vars
         env:
