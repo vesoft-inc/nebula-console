@@ -36,11 +36,13 @@ jobs:
           if [ "${{ matrix.os }}" = "windows" ];
           then
             windows=".exe"
+            echo "is win"
           else
             windows=""
+            echo "not win"
           fi
       - name: build
-        run: go build -o nebula-console-${{ matrix.os }}-${{ matrix.arch }}$windows
+        run: GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o nebula-console-${{ matrix.os }}-${{ matrix.arch }}$windows
       - name: vars
         id: vars
         env:
