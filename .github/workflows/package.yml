@@ -1,0 +1,45 @@
+name: package
+
+on:
+  schedule:
+    - cron: '0 18 * * *'
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  package:
+    name: build package
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - linux
+          - darwin
+          - windows
+        arch:
+          - amd64
+          - arm
+        exclude:
+          - os: darwin
+            arch: arm
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: set package name
+        id: name
+        run: |
+          output_name=nebula-console-${{ matrix.os }}-${{ matrix.arch }}-nightly
+          if [ "${{ matrix.os }}" = "windows"  ]; then
+              output_name+='.exe'
+          fi
+          echo "::set-output name=package_name::$output_name"
+      - name: build
+        run: go build -o ${{ steps.name.outputs.package_name }}
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ${{ steps.name.outputs.package_name }}
+          path: ./${{ steps.name.outputs.package_name }}
