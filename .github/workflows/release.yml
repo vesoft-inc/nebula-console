@@ -44,12 +44,7 @@ jobs:
           fi
           echo "::set-output name=iswin::$windows"
       - name: build
-        run: |
-          echo ${{ matrix.os }}
-          echo $windows
-          echo $iswin
-          echo ${{ steps.build.outputs.iswin}}
-          GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o nebula-console-${{ matrix.os }}-${{ matrix.arch }}${{ steps.check.outputs.iswin }}
+        run: GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o nebula-console-${{ matrix.os }}-${{ matrix.arch }}${{ steps.check.outputs.iswin }}
       - name: vars
         id: vars
         env:
