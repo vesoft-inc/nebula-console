@@ -80,5 +80,5 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: ${{ secrets.DOCKER_USERNAME }}/nebula-console
-          tags: latest
+          tags: v2-preview-latest
           add_git_labels: true
