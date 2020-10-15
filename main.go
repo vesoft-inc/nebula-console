@@ -10,6 +10,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"path"
 	"path/filepath"
@@ -110,6 +111,20 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 	fmt.Println()
 }
 
+func parseIP(address string) (string, error) {
+	addrs, err := net.LookupHost(address)
+	if err != nil {
+		return "", err
+	}
+	// Return the first matched Ipv4 address
+	for _, addr := range addrs {
+		if net.ParseIP(addr).To4() != nil {
+			return addr, nil
+		}
+	}
+	return "", fmt.Errorf("No matching IPv4 address was found")
+}
+
 // Loop the request util fatal or timeout
 // We treat one line as one query
 // Add line break yourself as `SHOW \<CR>HOSTS`
@@ -149,7 +164,7 @@ func loop(client *ngdb.GraphClient, c cli.Cli) error {
 	}
 }
 
-var address *string = flag.String("addr", "127.0.0.1", "The Nebula Graph IP address")
+var address *string = flag.String("addr", "127.0.0.1", "The Nebula Graph IP/HOST address")
 var port *int = flag.Int("port", 3699, "The Nebula Graph Port")
 var username *string = flag.String("u", "", "The Nebula Graph login user name")
 var password *string = flag.String("p", "", "The Nebula Graph login password")
@@ -158,7 +173,7 @@ var script *string = flag.String("e", "", "The nGQL directly")
 var file *string = flag.String("f", "", "The nGQL script file name")
 
 func init() {
-	flag.StringVar(address, "address", "127.0.0.1", "The Nebula Graph IP address")
+	flag.StringVar(address, "address", "127.0.0.1", "The Nebula Graph IP/HOST address")
 	flag.StringVar(username, "user", "", "The Nebula Graph login user name")
 	flag.StringVar(password, "password", "", "The Nebula Graph login password")
 	flag.IntVar(timeout, "timeout", 120, "The Nebula Graph client connection timeout in seconds")
@@ -179,11 +194,15 @@ func main() {
 		}
 		historyHome = filepath.Dir(ex) // Set to executable folder
 	}
+	ip, err := parseIP(*address)
+	if err != nil {
+		log.Panicf("Error: address is invalid, %s", err.Error())
+	}
 	// when the value of timeout is set to 0, connection will not timeout
 	clientTimeout := ngdb.WithTimeout(time.Duration(*timeout) * time.Second)
-	client, err := ngdb.NewClient(fmt.Sprintf("%s:%d", *address, *port), clientTimeout)
+	client, err := ngdb.NewClient(fmt.Sprintf("%s:%d", ip, *port), clientTimeout)
 	if err != nil {
-		log.Panicf("Fail to create client, address: %s, port: %d, %s", *address, *port, err.Error())
+		log.Panicf("Fail to create client, address: %s, port: %d, %s", ip, *port, err.Error())
 	}
 
 	if len(*username) == 0 || len(*password) == 0 {
