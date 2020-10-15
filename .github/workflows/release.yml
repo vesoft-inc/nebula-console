@@ -22,8 +22,6 @@ jobs:
         exclude:
           - os: darwin
             arch: arm
-          - os: windows
-            arch: arm
 
     steps:
       - uses: actions/checkout@v2
@@ -33,8 +31,16 @@ jobs:
         uses: actions/setup-go@v1
         with:
           go-version: 1.14
-      - name: package
-        run: ./scripts/package.sh
+      - name: check if the current os is windows
+        run: |
+          if [ "${{ matrix.os }}" = "windows" ];
+          then
+            windows=".exe"
+          else
+            windows=""
+          fi
+      - name: build
+        run: go build -o nebula-console-${{ matrix.os }}-${{ matrix.arch }}$windows
       - name: vars
         id: vars
         env:
