@@ -42,9 +42,9 @@ jobs:
         arch:
           - amd64
           - arm
-        # exclude:
-        #   - os: darwin
-        #     arch: arm
+        exclude:
+          - os: darwin
+            arch: arm
     steps:
       - uses: actions/checkout@v2
         with:
