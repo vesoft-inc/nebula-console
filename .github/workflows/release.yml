@@ -58,7 +58,10 @@ jobs:
         run: |
           tag=$(echo ${{ github.ref }} | rev | cut -d/ -f1 | rev)
           filename=$(find . -type f \( -iname nebula-console-${{ matrix.os }}-${{ matrix.arch }}\* \) -exec basename {} \; )
-          sha256sum $filename > $filename.$SHA_EXT
+          echo "jie filename:"
+          echo "$filename"
+          echo "jie sha ${filename} ${SHA_EXT}"
+          sha256sum $filename > "$filename"."$SHA_EXT"
           echo "::set-output name=tag::$tag"
           echo "::set-output name=filepath::$filename"
           echo "::set-output name=shafilepath::$filename.$SHA_EXT"
