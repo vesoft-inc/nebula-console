@@ -8,7 +8,7 @@ on:
 jobs:
   package:
     name: package and upload release assets
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
