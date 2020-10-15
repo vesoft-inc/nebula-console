@@ -39,8 +39,11 @@ jobs:
           SHA_EXT: sha256sum.txt
         run: |
           tag=$(echo ${{ github.ref }} | rev | cut -d/ -f1 | rev)
-          filename=$(find . -type f \( -iname nebula-console\* \) -exec basename {} \;)
-          sha256sum $filename > $filename.$SHA_EXT
+          filename=$(find . -type f \( -iname nebula-console\* \) -exec basename {} \; )
+          for file in $filename
+          do
+            sha256sum $file > $file.$SHA_EXT
+          done
           echo "::set-output name=tag::$tag"
           echo "::set-output name=filepath::$filename"
           echo "::set-output name=shafilepath::$filename.$SHA_EXT"
