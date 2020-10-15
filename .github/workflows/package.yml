@@ -38,7 +38,7 @@ jobs:
           fi
           echo "::set-output name=package_name::$output_name"
       - name: build
-        run: go build -o ${{ steps.name.outputs.package_name }}
+        run: GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o ${{ steps.name.outputs.package_name }}
       - uses: actions/upload-artifact@v2
         with:
           name: ${{ steps.name.outputs.package_name }}
