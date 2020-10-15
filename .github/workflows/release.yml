@@ -9,19 +9,19 @@ jobs:
   package:
     name: package and upload release assets
     runs-on: ubuntu-latest
-    # strategy:
-    #   fail-fast: false
-    #   matrix:
-    #     os:
-    #       - linux
-    #       - darwin
-    #       - windows
-    #     arch:
-    #       - amd64
-    #       - arm
-    #     exclude:
-    #       - os: darwin
-    #         arch: arm
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - linux
+          - darwin
+          - windows
+        arch:
+          - amd64
+          - arm
+        exclude:
+          - os: darwin
+            arch: arm
 
     steps:
       - uses: actions/checkout@v2
@@ -39,11 +39,8 @@ jobs:
           SHA_EXT: sha256sum.txt
         run: |
           tag=$(echo ${{ github.ref }} | rev | cut -d/ -f1 | rev)
-          filename=$(find . -type f \( -iname nebula-console\* \) -exec basename {} \; )
-          for file in $filename
-          do
-            sha256sum $file > $file.$SHA_EXT
-          done
+          filename=$(find . -type f \( -iname nebula-console-${{ matrix.os }}-${{ matrix.arch }}\* \) -exec basename {} \; )
+          sha256sum $filename > $filename.$SHA_EXT
           echo "::set-output name=tag::$tag"
           echo "::set-output name=filepath::$filename"
           echo "::set-output name=shafilepath::$filename.$SHA_EXT"
