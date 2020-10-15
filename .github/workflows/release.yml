@@ -41,8 +41,16 @@ jobs:
             windows=""
           fi
           echo "::set-output name=iswin::$windows"
+      - name: set package name
+        id: name
+        run: |
+          package_name=nebula-console-${{ matrix.os }}-${{ matrix.arch }}
+          if [ "${{ matrix.os }}" = "windows"  ]; then
+              package_name+='.exe'
+          fi
+          echo "::set-output name=iswin::$package_name"
       - name: build
-        run: GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o nebula-console-${{ matrix.os }}-${{ matrix.arch }}
+        run: GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o {{ steps.name.outputs.iswin }}
       - name: vars
         id: vars
         env:
