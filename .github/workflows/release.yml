@@ -40,6 +40,9 @@ jobs:
           echo "::set-output name=package_name::$output_name"
       - name: build
         run: go build -o ${{ steps.name.outputs.package_name }}
+        env:
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
       - name: vars
         id: vars
         env:
