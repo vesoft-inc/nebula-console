@@ -31,26 +31,26 @@ jobs:
         uses: actions/setup-go@v1
         with:
           go-version: 1.14
-      - name: check if the current os is windows
-        id: check
-        run: |
-          if [ "${{ matrix.os }}" = "windows" ];
-          then
-            windows=".exe"
-          else
-            windows=""
-          fi
-          echo "::set-output name=iswin::$windows"
+      # - name: check if the current os is windows
+      #   id: check
+      #   run: |
+      #     if [ "${{ matrix.os }}" = "windows" ];
+      #     then
+      #       windows=".exe"
+      #     else
+      #       windows=""
+      #     fi
+      #     echo "::set-output name=iswin::$windows"
       - name: set package name
         id: name
         run: |
-          package_name=nebula-console-${{ matrix.os }}-${{ matrix.arch }}
+          output_name=nebula-console-${{ matrix.os }}-${{ matrix.arch }}
           if [ "${{ matrix.os }}" = "windows"  ]; then
-              package_name+='.exe'
+              output_name+='.exe'
           fi
-          echo "::set-output name=iswin::$package_name"
+          echo "::set-output name=package_name::$output_name"
       - name: build
-        run: GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o {{ steps.name.outputs.iswin }}
+        run: GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o {{ steps.name.outputs.package_name}}
       - name: vars
         id: vars
         env:
