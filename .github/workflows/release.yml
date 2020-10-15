@@ -44,7 +44,7 @@ jobs:
       - name: set package name
         id: name
         run: |
-          output_name='nebula-console-'${{ matrix.os }}'-'${{ matrix.arch }}
+          output_name=nebula-console-${{ matrix.os }}-${{ matrix.arch }}
           if [ "${{ matrix.os }}" = "windows"  ]; then
               output_name+='.exe'
           fi
@@ -58,9 +58,6 @@ jobs:
         run: |
           tag=$(echo ${{ github.ref }} | rev | cut -d/ -f1 | rev)
           filename=$(find . -type f \( -iname nebula-console-${{ matrix.os }}-${{ matrix.arch }}\* \) -exec basename {} \; )
-          echo "jie filename:"
-          echo "$filename"
-          echo "jie sha ${filename} ${SHA_EXT}"
           sha256sum $filename > "$filename"."$SHA_EXT"
           echo "::set-output name=tag::$tag"
           echo "::set-output name=filepath::$filename"
