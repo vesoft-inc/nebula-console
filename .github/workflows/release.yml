@@ -31,16 +31,6 @@ jobs:
         uses: actions/setup-go@v1
         with:
           go-version: 1.14
-      # - name: check if the current os is windows
-      #   id: check
-      #   run: |
-      #     if [ "${{ matrix.os }}" = "windows" ];
-      #     then
-      #       windows=".exe"
-      #     else
-      #       windows=""
-      #     fi
-      #     echo "::set-output name=iswin::$windows"
       - name: set package name
         id: name
         run: |
@@ -50,7 +40,7 @@ jobs:
           fi
           echo "::set-output name=package_name::$output_name"
       - name: build
-        run: GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o ${{ steps.name.outputs.package_name}}
+        run: go build -o ${{ steps.name.outputs.package_name}}
       - name: vars
         id: vars
         env:
