@@ -8,7 +8,7 @@ on:
 jobs:
   package:
     name: package and upload release assets
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -41,8 +41,14 @@ jobs:
             windows=""
             echo "not win"
           fi
+          echo "::set-output name=iswin::$windows"
       - name: build
-        run: GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o nebula-console-${{ matrix.os }}-${{ matrix.arch }}$windows
+        id: build
+        run: |
+          echo ${{ matrix.os }}
+          echo $windows
+          echo $iswin
+          GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o nebula-console-${{ matrix.os }}-${{ matrix.arch }}${{ steps.build.outputs.iswin }}
       - name: vars
         id: vars
         env:
