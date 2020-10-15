@@ -44,13 +44,13 @@ jobs:
       - name: set package name
         id: name
         run: |
-          output_name=nebula-console-${{ matrix.os }}-${{ matrix.arch }}
+          output_name='nebula-console-'${{ matrix.os }}'-'${{ matrix.arch }}
           if [ "${{ matrix.os }}" = "windows"  ]; then
               output_name+='.exe'
           fi
           echo "::set-output name=package_name::$output_name"
       - name: build
-        run: GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o {{ steps.name.outputs.package_name}}
+        run: GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o ${{ steps.name.outputs.package_name}}
       - name: vars
         id: vars
         env:
