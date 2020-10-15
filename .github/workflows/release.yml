@@ -22,7 +22,6 @@ jobs:
         exclude:
           - os: darwin
             arch: arm
-        exclude:
           - os: windows
             arch: arm
 
