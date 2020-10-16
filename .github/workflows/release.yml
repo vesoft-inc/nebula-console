@@ -31,7 +31,7 @@ jobs:
         with:
           go-version: 1.14
       - name: set package name
-        id: name
+        id: package-name
         run: |
           output_name=nebula-console-${{ matrix.os }}-${{ matrix.arch }}
           if [ "${{ matrix.os }}" = "windows"  ]; then
@@ -39,34 +39,36 @@ jobs:
           fi
           echo "::set-output name=package_name::$output_name"
       - name: build
-        run: go build -o ${{ steps.name.outputs.package_name }}
+        run: go build -o ${{ steps.package-name.outputs.package_name }}
         env:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
-      - name: vars
-        id: vars
+      - name: checksum
+        id: checksum-name
         env:
           SHA_EXT: sha256sum.txt
         run: |
-          tag=$(echo ${{ github.ref }} | rev | cut -d/ -f1 | rev)
-          filename=$(find . -type f \( -iname nebula-console-${{ matrix.os }}-${{ matrix.arch }}\* \) -exec basename {} \; )
-          sha256sum $filename > "$filename"."$SHA_EXT"
-          echo "::set-output name=tag::$tag"
-          echo "::set-output name=filepath::$filename"
-          echo "::set-output name=shafilepath::$filename.$SHA_EXT"
+          packagefile=$(find . -type f \( -iname nebula-console-${{ matrix.os }}-${{ matrix.arch }}\* \) -exec basename {} \; )
+          sha256sum $packagefile > "$packagefile"."$SHA_EXT"
+          echo "::set-output name=checksum_name::$packagefile.$SHA_EXT"
       - name: upload release asset
-        run: |
-          ./scripts/upload-github-release-asset.sh \
-            github_token=${{ secrets.GITHUB_TOKEN }} \
-            repo=${{ github.repository }} \
-            tag=${{ steps.vars.outputs.tag }} \
-            filepath=${{ steps.vars.outputs.filepath }}
-          ./scripts/upload-github-release-asset.sh \
-            github_token=${{ secrets.GITHUB_TOKEN }} \
-            repo=${{ github.repository }} \
-            tag=${{ steps.vars.outputs.tag }} \
-            filepath=${{ steps.vars.outputs.shafilepath }}
-
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./${{ steps.package-name.outputs.package_name }}
+          asset_name: ${{ steps.package-name.outputs.package_name }}
+          asset_content_type: application/octet-stream
+      - name: upload checksum file
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./${{ steps.checksum-name.outputs.checksum_name }}
+          asset_name: ${{ steps.checksum-name.outputs.checksum_name }}
+          asset_content_type: text/plain
   docker:
     name: build docker image
     runs-on: ubuntu-latest
