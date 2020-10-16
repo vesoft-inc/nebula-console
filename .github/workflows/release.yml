@@ -69,19 +69,6 @@ jobs:
           asset_path: ./${{ steps.checksum-name.outputs.checksum_name }}
           asset_name: ${{ steps.checksum-name.outputs.checksum_name }}
           asset_content_type: text/plain
-
-      # - name: upload release asset
-      #   run: |
-      #     ./scripts/upload-github-release-asset.sh \
-      #       github_token=${{ secrets.GITHUB_TOKEN }} \
-      #       repo=${{ github.repository }} \
-      #       tag=${{ steps.checksum.outputs.tag }} \
-      #       filepath=${{ steps.checksum.outputs.filepath }}
-      #     ./scripts/upload-github-release-asset.sh \
-      #       github_token=${{ secrets.GITHUB_TOKEN }} \
-      #       repo=${{ github.repository }} \
-      #       tag=${{ steps.checksum.outputs.tag }} \
-      #       filepath=${{ steps.checksum.outputs.shafilepath }}
   docker:
     name: build docker image
     runs-on: ubuntu-latest
