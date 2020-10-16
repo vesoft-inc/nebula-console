@@ -39,7 +39,7 @@ jobs:
           fi
           echo "::set-output name=package_name::$output_name"
       - name: build
-        run: go build -o ${{ steps.name.outputs.package_name }}
+        run: go build -o ${{ steps.package-name.outputs.package_name }}
         env:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
