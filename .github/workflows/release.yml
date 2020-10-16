@@ -55,18 +55,27 @@ jobs:
           echo "::set-output name=filepath::$filename"
           echo "::set-output name=shafilepath::$filename.$SHA_EXT"
       - name: upload release asset
-        run: |
-          ./scripts/upload-github-release-asset.sh \
-            github_token=${{ secrets.GITHUB_TOKEN }} \
-            repo=${{ github.repository }} \
-            tag=${{ steps.vars.outputs.tag }} \
-            filepath=${{ steps.vars.outputs.filepath }}
-          ./scripts/upload-github-release-asset.sh \
-            github_token=${{ secrets.GITHUB_TOKEN }} \
-            repo=${{ github.repository }} \
-            tag=${{ steps.vars.outputs.tag }} \
-            filepath=${{ steps.vars.outputs.shafilepath }}
-
+        id: upload-release-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./${{ steps.name.outputs.package_name }}
+          asset_name: ${{ steps.name.outputs.package_name }}
+          asset_content_type: application/zip
+      # - name: upload release asset
+      #   run: |
+      #     ./scripts/upload-github-release-asset.sh \
+      #       github_token=${{ secrets.GITHUB_TOKEN }} \
+      #       repo=${{ github.repository }} \
+      #       tag=${{ steps.vars.outputs.tag }} \
+      #       filepath=${{ steps.vars.outputs.filepath }}
+      #     ./scripts/upload-github-release-asset.sh \
+      #       github_token=${{ secrets.GITHUB_TOKEN }} \
+      #       repo=${{ github.repository }} \
+      #       tag=${{ steps.vars.outputs.tag }} \
+      #       filepath=${{ steps.vars.outputs.shafilepath }}
   docker:
     name: build docker image
     runs-on: ubuntu-latest
