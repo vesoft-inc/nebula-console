@@ -48,7 +48,7 @@ func (p *DataSetPrinter) UnsetOutCsv() {
 		return
 	}
 	if err := p.fd.Close(); err != nil {
-		fmt.Printf("Close file % failed, %s", p.filename, err.Error())
+		fmt.Printf("Close file %s failed, %s", p.filename, err.Error())
 	}
 	p.fd = nil
 	p.filename = ""

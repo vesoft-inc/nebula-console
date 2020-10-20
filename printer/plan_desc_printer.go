@@ -15,10 +15,12 @@ import (
 )
 
 func graphvizString(s string) string {
-	ret := strings.Replace(s, "{", "\\{", -1)
-	ret = strings.Replace(s, "}", "\\}", -1)
-	ret = strings.Replace(s, "\"", "\\\"", -1)
-	return ret
+	s = strings.Replace(s, "{", "\\{", -1)
+	s = strings.Replace(s, "}", "\\}", -1)
+	s = strings.Replace(s, "\"", "\\\"", -1)
+	s = strings.Replace(s, "[", "\\[", -1)
+	s = strings.Replace(s, "]", "\\]", -1)
+	return s
 }
 
 type PlanDescPrinter struct {
@@ -68,22 +70,19 @@ func condEdgeLabel(condNode *graph.PlanNodeDescription, doBranch bool) string {
 }
 
 func nodeString(planNodeDesc *graph.PlanNodeDescription, planNodeName string) string {
-	var outputVar = string(planNodeDesc.GetOutputVar())
-	var inputVar, colNames string
+	var outputVar = graphvizString(string(planNodeDesc.GetOutputVar()))
+	var inputVar string
 	if planNodeDesc.IsSetDescription() {
 		desc := planNodeDesc.GetDescription()
 		for _, pair := range desc {
 			key := string(pair.GetKey())
-			val := string(pair.GetValue())
 			if key == "inputVar" {
-				inputVar = val
-			} else if key == "colNames" {
-				colNames = graphvizString(val)
+				inputVar = graphvizString(string(pair.GetValue()))
 			}
 		}
 	}
-	return fmt.Sprintf("\t\"%s\"[label=\"%s|outputVar: %s\\l|inputVar: %s\\l|colNames: %s\\l\", shape=Mrecord];\n",
-		planNodeName, planNodeName, outputVar, inputVar, colNames)
+	return fmt.Sprintf("\t\"%s\"[label=\"%s|outputVar: %s\\l|inputVar: %s\\l\", shape=Mrecord];\n",
+		planNodeName, planNodeName, outputVar, inputVar)
 }
 
 func edgeString(start, end string) string {
