@@ -35,7 +35,7 @@ func (p *DataSetPrinter) SetOutCsv(filename string) {
 	if p.fd != nil {
 		p.UnsetOutCsv()
 	}
-	fd, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+	fd, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
 	if err != nil {
 		fmt.Printf("Open or Create file %s failed, %s", filename, err.Error())
 	}
