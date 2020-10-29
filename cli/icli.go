@@ -33,6 +33,8 @@ func NewiCli(historyFile, user string) Cli {
 	// TabCircular is the default style.
 	c.SetTabCompletionStyle(liner.TabPrints)
 	c.SetWordCompleter(completer.NewCompleter)
+	// SetMultiLineMode sets whether line is auto-wrapped. The default is false (single line)
+	c.SetMultiLineMode(true)
 
 	f, err := os.OpenFile(historyFile, os.O_RDONLY|os.O_CREATE, 0666)
 	if err != nil {
