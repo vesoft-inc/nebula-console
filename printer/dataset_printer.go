@@ -84,7 +84,7 @@ func valueToString(value *nebula.Value) string {
 		}
 		return val
 	} else if value.IsSetSVal() { // string
-		return string(value.GetSVal())
+		return `"` + string(value.GetSVal()) + `"`
 	} else if value.IsSetDVal() { // yyyy-mm-dd
 		date := value.GetDVal()
 		str := fmt.Sprintf("%d-%d-%d", date.GetYear(), date.GetMonth(), date.GetDay())
@@ -103,46 +103,53 @@ func valueToString(value *nebula.Value) string {
 	} else if value.IsSetVVal() { // Vertex
 		var buffer bytes.Buffer
 		vertex := value.GetVVal()
-		buffer.WriteString("(")
+		buffer.WriteString(`("`)
 		buffer.WriteString(string(vertex.GetVid()))
-		buffer.WriteString(")")
-		buffer.WriteString(" ")
+		buffer.WriteString(`")`)
 		filled := false
 		for _, tag := range vertex.GetTags() {
 			tagName := string(tag.GetName())
+			buffer.WriteString(" :")
+			buffer.WriteString(tagName)
+			buffer.WriteString("{")
 			for k, v := range tag.GetProps() {
 				filled = true
-				buffer.WriteString(tagName)
-				buffer.WriteString(".")
 				buffer.WriteString(k)
 				buffer.WriteString(":")
 				buffer.WriteString(valueToString(v))
-				buffer.WriteString(",")
+				buffer.WriteString(", ")
 			}
 		}
 		if filled {
 			// remove last ,
-			buffer.Truncate(buffer.Len() - 1)
+			buffer.Truncate(buffer.Len() - 2)
 		}
+		buffer.WriteString("}")
 		return buffer.String()
 	} else if value.IsSetEVal() { // Edge
-		// src-[TypeName]->dst@ranking
+		// (src)-[edge]->(dst)@ranking {props}
 		edge := value.GetEVal()
 		var buffer bytes.Buffer
 		filled := false
-		buffer.WriteString(fmt.Sprintf("%s-[%s]->%s@%d", string(edge.GetSrc()), edge.GetName(), string(edge.GetDst()),
-			edge.GetRanking()))
-		buffer.WriteString(" ")
+		src := string(edge.GetSrc())
+		dst := string(edge.GetDst())
+		if edge.GetType() < 0 {
+			src, dst = dst, src
+		}
+		buffer.WriteString(fmt.Sprintf(`("%s")-[%s]->("%s")@%d`,
+			src, edge.GetName(), dst, edge.GetRanking()))
+		buffer.WriteString(" {")
 		for k, v := range edge.GetProps() {
 			filled = true
 			buffer.WriteString(k)
 			buffer.WriteString(":")
 			buffer.WriteString(valueToString(v))
-			buffer.WriteString(",")
+			buffer.WriteString(", ")
 		}
 		if filled {
-			buffer.Truncate(buffer.Len() - 1)
+			buffer.Truncate(buffer.Len() - 2)
 		}
+		buffer.WriteString("}")
 		return buffer.String()
 	} else if value.IsSetPVal() { // Path
 		// src-[TypeName]->dst@ranking-[TypeName]->dst@ranking ...
