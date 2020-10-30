@@ -24,7 +24,6 @@ type iCli struct {
 func NewiCli(historyFile, user string) Cli {
 	c := liner.NewLiner()
 	c.SetCtrlCAborts(true)
-	c.SetMultiLineMode(true)
 	// Two tab styles are currently available:
 	// 1.TabCircular cycles through each completion item and displays it directly on
 	// the prompt.
@@ -39,7 +38,7 @@ func NewiCli(historyFile, user string) Cli {
 
 	f, err := os.OpenFile(historyFile, os.O_RDONLY|os.O_CREATE, 0666)
 	if err != nil {
-		log.Panicf("Open history file %s failed, %s", historyFile, err.Error())
+		log.Fatalf("Open history file %s failed, %s", historyFile, err.Error())
 	}
 	defer f.Close()
 	c.ReadHistory(f)

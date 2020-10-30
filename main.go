@@ -190,27 +190,27 @@ func main() {
 	if historyHome == "" {
 		ex, err := os.Executable()
 		if err != nil {
-			log.Panicf("Get executable failed: %s", err.Error())
+			log.Fatalf("Get executable failed: %s", err.Error())
 		}
 		historyHome = filepath.Dir(ex) // Set to executable folder
 	}
 	ip, err := parseIP(*address)
 	if err != nil {
-		log.Panicf("Error: address is invalid, %s", err.Error())
+		log.Fatalf("Error: address is invalid, %s", err.Error())
 	}
 	// when the value of timeout is set to 0, connection will not timeout
 	clientTimeout := ngdb.WithTimeout(time.Duration(*timeout) * time.Second)
 	client, err := ngdb.NewClient(fmt.Sprintf("%s:%d", ip, *port), clientTimeout)
 	if err != nil {
-		log.Panicf("Fail to create client, address: %s, port: %d, %s", ip, *port, err.Error())
+		log.Fatalf("Fail to create client, address: %s, port: %d, %s", ip, *port, err.Error())
 	}
 
 	if len(*username) == 0 || len(*password) == 0 {
-		log.Panicf("Error: username or password is empty!")
+		log.Fatalf("Error: username or password is empty!")
 	}
 
 	if err = client.Connect(*username, *password); err != nil {
-		log.Panicf("Fail to connect server, %s", err.Error())
+		log.Fatalf("Fail to connect server, %s", err.Error())
 	}
 
 	welcome(interactive)
@@ -228,7 +228,7 @@ func main() {
 	} else if *file != "" {
 		fd, err := os.Open(*file)
 		if err != nil {
-			log.Panicf("Open file %s failed, %s", *file, err.Error())
+			log.Fatalf("Open file %s failed, %s", *file, err.Error())
 		}
 		c = cli.NewnCli(fd, *username, func() { fd.Close() })
 	}
@@ -240,6 +240,6 @@ func main() {
 	defer c.Close()
 	err = loop(client, c)
 	if err != nil {
-		log.Panicf("Loop error, %s", err.Error())
+		log.Fatalf("Loop error, %s", err.Error())
 	}
 }
