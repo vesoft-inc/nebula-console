@@ -11,7 +11,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/peterh/liner"
+	"github.com/dutor/liner"
 	"github.com/vesoft-inc/nebula-console/completer"
 )
 
@@ -24,6 +24,7 @@ type iCli struct {
 func NewiCli(historyFile, user string) Cli {
 	c := liner.NewLiner()
 	c.SetCtrlCAborts(true)
+	c.SetMultiLineMode(true)
 	// Two tab styles are currently available:
 	// 1.TabCircular cycles through each completion item and displays it directly on
 	// the prompt.
