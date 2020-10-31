@@ -90,13 +90,6 @@ nebula> exit
 Bye root!
 ```
 
-## FAQ
-
-TODO [This section should include connection-related FAQs. When users meet a problem on connection, they should first come here for a solution. If the content gets stacked, remove this section to a single topic.]
-
-
-
-
 ## Keyboard Shortcuts
 
 Key Binding                                     | Description
