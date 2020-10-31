@@ -15,3 +15,5 @@
 vendor/
 
 nebula-console
+
+*.DS_Store

@@ -1,71 +1,103 @@
 # Nebula Graph Console
 
-The console for Nebula Graph 2.0
+This repository contains the Nebula Graph Console for Nebula Graph 2.0.
 
-# Build
+## Features
 
-Install golang by https://golang.org/doc/install, then build with following commands:
+- Supports interactive and non-interactive mode.
+- Supports viewing the history statements.
+- Supports autocompletion.
+- Supports Multiple OS and arch (We recommend linux/amd64).
 
-```shell
+## Build Nebula Graph Console
+
+To build Nebula Graph Console, make sure that you have installed [Go](https://golang.org/doc/install).
+
+Run the following command to examine if Go is installed on your machine.
+
+```bash
+$ go version
+```
+
+Run the following command to build Nebula Graph Console.
+
+```bash
 $ cd nebula-console
 $ make
 ```
 
-# Usage
+## Connect Nebula Graph Console
 
-```shell
-./nebula-console [-addr ip] [-port port] -u user -p password [-t 120] [-e "nGQL query statement" |  -f file.nGQL]
+To connect your Nebula Graph services with the Nebula Graph Console, use the following command.
+
+```bash
+$ ./nebula-console -addr <ip> -port <port> -u <username> -p <password>
+    [-t 120] [-e "nGQL_statement" | -f filename.nGQL]
 ```
 
-```shell
--h : help
--addr, -address : the Nebula Graph IP/HOST address, default value is 127.0.0.1
--port : the Nebula Graph Port, default value is 3699
--u, -user : the Nebula Graph login user name
--p, -password : the Nebula Graph login password
--t, -timeout : The Nebula Graph client connection timeout in seconds, default value is 120 seconds
--e, -eval : the nGQL directly
--f, -file : the nGQL script file name
-```
+| Option       | Description                                                                                                                                                                   |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|`-h`           | Shows the help menu.                                                                                                                                                           |
+| `-addr`        | Sets the IP address of the graphd service. The default address is 127.0.0.1.                                                                                                   |
+| `-port`        | Sets the port number of the graphd service. The default port number is 3699.                                                                                                   |
+| `-u/-user`     | Sets the username of your Nebula Graph account. The default username is root.                                                                                                  |
+| `-p/-password` | Sets the password of your Nebula Graph account. The default password for the root user is nebula.                                                                              |
+| `-t/-timeout`  | Sets an integer-type timeout threshold for the connection. The unit is second. The default value is 120.                                                                        |
+| `-e/-eval`     | Sets a string-type nGQL statement. The nGQL statement is executed once the connection succeeds. The connection stops after the result is returned..             |
+| `-f/-file`     | Sets the path of an nGQL file. The nGQL statements in the file are executed once the connection succeeds. You'll get the return messages and the connection stops then. |
 
 Check options for `./nebula-console -h`, try `./nebula-console` in interactive mode directly.
 And try `./nebula-console -e 'show hosts'` for the direct script mode.
 And try `./nebula-console -f demo.nGQL` for the script file mode.
 
-# Local Command
-Nebula-console supports 4 local commands now, which starts with a ':',
-(currently "exit" and "quit" which doesn't start with a ':' is also supported for convenience)
-## Quit from the console
+## Export mode for Nebula Graph Console
 
-```shell
-(root@nebula) [nba]> exit
-(root@nebula) [nba]> quit
-(root@nebula) [nba]> :exit
-(root@nebula) [nba]> :quit
+When the export mode is enabled, Nebula Graph Console exports all the query results into a CSV file. When the export mode is disabled, the export stops. The syntax is as follows.
+
+> **NOTE**: The following commands are case insensitive.
+
+* Enable nebula-console export mode:
+
+```nGQL
+nebula> :SET CSV <your_file.csv>
 ```
 
-## Output the query results to a csv file
-The query results will be output to both the console and the csv file
+* Disable nebula-console export mode:
 
-```shell
-(root@nebula) [nba]> :set csv filename.csv
+```nGQL
+nebula> :UNSET CSV
 ```
 
-## Cancel outputting the query results to the csv file
-The query results will only be output to the console
+## Disconnect Nebula Graph Console from Nebula Graph
 
-```shell
-(root@nebula) [nba]> :unset csv
+You can use `:EXIT` or `:QUIT` to disconnect from Nebula Graph. For convenience, nebula-console supports using these commands in lower case without the colon (":"), such as `quit`.
+
+```nGQL
+nebula> :QUIT
+
+Bye root!
+
+nebula> :EXIT
+
+Bye root!
+
+nebula> quit
+
+Bye root!
+
+nebula> exit
+
+Bye root!
 ```
 
-# Feature
+## FAQ
 
-- Interactive and non-interactive
-- History
-- Autocompletion
-- Multiple OS and arch supported (linux/amd64 recommend)
+TODO [This section should include connection-related FAQs. When users meet a problem on connection, they should first come here for a solution. If the content gets stacked, remove this section to a single topic.]
 
-# Keyboard Shortcuts
+
+
+
+## Keyboard Shortcuts
 
 Key Binding                                     | Description
 ------------------------------------------------|-----------------------------------------------------------
@@ -92,7 +124,7 @@ Key Binding                                     | Description
 <kbd>Tab</kbd>                                  | Next completion
 <kbd>Shift-Tab</kbd>                            | (after Tab) Previous completion
 
-# TODO
+## TODO
 
 - CI/CD
 - package to RPM/DEB/DOCKER
