@@ -26,7 +26,7 @@ $ cd nebula-console
 $ make
 ```
 
-## Connect Nebula Graph Console
+## Connect to Nebula Graph Console
 
 To connect your Nebula Graph services with the Nebula Graph Console, use the following command.
 
