@@ -7,7 +7,7 @@ This repository contains the Nebula Graph Console for Nebula Graph 2.0.
 - Supports interactive and non-interactive mode.
 - Supports viewing the history statements.
 - Supports autocompletion.
-- Supports Multiple OS and arch (We recommend linux/amd64).
+- Supports multiple OS and architecture (We recommend Linux/AMD64).
 
 ## Build Nebula Graph Console
 
@@ -17,6 +17,12 @@ Run the following command to examine if Go is installed on your machine.
 
 ```bash
 $ go version
+```
+
+Use Git to clone the source code of Nebula Graph to your host.
+
+```bash
+$ git clone git@github.com:vesoft-inc/nebula-console.git
 ```
 
 Run the following command to build Nebula Graph Console.
@@ -40,10 +46,10 @@ $ ./nebula-console -addr <ip> -port <port> -u <username> -p <password>
 |`-h`           | Shows the help menu.                                                                                                                                                           |
 | `-addr`        | Sets the IP address of the graphd service. The default address is 127.0.0.1.                                                                                                   |
 | `-port`        | Sets the port number of the graphd service. The default port number is 3699.                                                                                                   |
-| `-u/-user`     | Sets the username of your Nebula Graph account. The default username is root.                                                                                                  |
-| `-p/-password` | Sets the password of your Nebula Graph account. The default password for the root user is nebula.                                                                              |
+| `-u/-user`     | Sets the username of your Nebula Graph account. The default username is `root`.                                                                                                  |
+| `-p/-password` | Sets the password of your Nebula Graph account. The default password for the `root` user is `nebula`.                                                                              |
 | `-t/-timeout`  | Sets an integer-type timeout threshold for the connection. The unit is second. The default value is 120.                                                                        |
-| `-e/-eval`     | Sets a string-type nGQL statement. The nGQL statement is executed once the connection succeeds. The connection stops after the result is returned..             |
+| `-e/-eval`     | Sets a string-type nGQL statement. The nGQL statement is executed once the connection succeeds. The connection stops after the result is returned.             |
 | `-f/-file`     | Sets the path of an nGQL file. The nGQL statements in the file are executed once the connection succeeds. You'll get the return messages and the connection stops then. |
 
 Check options for `./nebula-console -h`, try `./nebula-console` in interactive mode directly.
