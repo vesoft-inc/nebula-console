@@ -1,8 +1,8 @@
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/dutor/liner v1.2.1-0.20201030074448-2b958bf9011f h1:a7fLst1zewGaEECgPjdvXmwD6fM9THrUOM9afZLcazE=
-github.com/dutor/liner v1.2.1-0.20201030074448-2b958bf9011f/go.mod h1:iISLitO9p3LAhQh4i77/YxQIghYZzLwb6jxMglT+bkQ=
+github.com/dutor/liner v1.2.2 h1:bet1doARkm1DKTuQ45DgMmgaKLJ9S4taUWQGH3kjlyo=
+github.com/dutor/liner v1.2.2/go.mod h1:TLqJOMU/a2J4ualIteF7J7DkL2Tv3WE8hZs5o+ogcDI=
 github.com/facebook/fbthrift v0.0.0-20190922225929-2f9839604e25 h1:dezRDs9oGYxeavyvcNg/Js+dK6kIvfzERoJ7K8Xkv14=
 github.com/facebook/fbthrift v0.0.0-20190922225929-2f9839604e25/go.mod h1:2tncLx5rmw69e5kMBv/yJneERbzrr1yr5fdlnTbu8lU=
 github.com/jedib0t/go-pretty/v6 v6.0.4 h1:7WaHUeKo5yc2vABlsh30p4VWxQoXaWktBY/nR/2qnPg=
