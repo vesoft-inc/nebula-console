@@ -35,7 +35,7 @@ func (p *DataSetPrinter) SetOutCsv(filename string) {
 	if p.fd != nil {
 		p.UnsetOutCsv()
 	}
-	fd, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+	fd, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
 	if err != nil {
 		fmt.Printf("Open or Create file %s failed, %s", filename, err.Error())
 	}
@@ -231,8 +231,10 @@ func (p *DataSetPrinter) PrintDataSet(dataset *nebula.DataSet) {
 	fmt.Println(p.writer.Render())
 	if p.fd != nil {
 		go func() {
-			fmt.Fprintln(p.fd, p.writer.RenderCSV())
-			fmt.Fprintln(p.fd)
+			p.fd.Truncate(0)
+			p.fd.Seek(0, 0)
+			s := strings.Replace(p.writer.RenderCSV(), "\\\"", "", -1)
+			fmt.Fprintln(p.fd, s)
 		}()
 	}
 }
