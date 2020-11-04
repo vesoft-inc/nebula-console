@@ -81,7 +81,7 @@ func nodeString(planNodeDesc *graph.PlanNodeDescription, planNodeName string) st
 			}
 		}
 	}
-	return fmt.Sprintf("\t\"%s\"[label=\"%s|outputVar: %s\\l|inputVar: %s\\l\", shape=Mrecord];\n",
+	return fmt.Sprintf("\t\"%s\"[label=\"{%s|outputVar: %s|inputVar: %s}\", shape=Mrecord];\n",
 		planNodeName, planNodeName, outputVar, inputVar)
 }
 
@@ -120,7 +120,7 @@ func (p PlanDescPrinter) renderDotGraphByStruct() string {
 	planNodeDescs := p.planDesc.GetPlanNodeDescs()
 	var builder strings.Builder
 	builder.WriteString("digraph exec_plan {\n")
-	builder.WriteString("\trankdir=LR;\n")
+	builder.WriteString("\trankdir=BT;\n")
 	for _, planNodeDesc := range planNodeDescs {
 		planNodeName := name(planNodeDesc)
 		switch strings.ToLower(string(planNodeDesc.GetName())) {
@@ -184,7 +184,7 @@ func (p PlanDescPrinter) renderDotGraph() string {
 	planNodeDescs := p.planDesc.GetPlanNodeDescs()
 	var builder strings.Builder
 	builder.WriteString("digraph exec_plan {\n")
-	builder.WriteString("\trankdir=LR;\n")
+	builder.WriteString("\trankdir=BT;\n")
 	for _, planNodeDesc := range planNodeDescs {
 		planNodeName := name(planNodeDesc)
 		switch strings.ToLower(string(planNodeDesc.GetName())) {
