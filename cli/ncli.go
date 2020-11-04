@@ -39,8 +39,8 @@ func NewnCli(i io.Reader, user string, cleanup Cleanup) Cli {
 func readln(r *bufio.Reader) (string, error) {
 	var (
 		isPartial bool  = true
-		err      error = nil
-		line, ln []byte
+		err       error = nil
+		line, ln  []byte
 	)
 	for isPartial && err == nil {
 		line, isPartial, err = r.ReadLine()
