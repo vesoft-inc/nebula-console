@@ -36,10 +36,22 @@ func NewnCli(i io.Reader, user string, cleanup Cleanup) Cli {
 	}
 }
 
+func readln(r *bufio.Reader) (string, error) {
+	var (
+		isPartial bool  = true
+		err      error = nil
+		line, ln []byte
+	)
+	for isPartial && err == nil {
+		line, isPartial, err = r.ReadLine()
+		ln = append(ln, line...)
+	}
+	return string(ln), err
+}
+
 func (l *nCli) ReadLine() (string, bool, error) {
 	for {
-		s, _, err := l.io.ReadLine()
-		input := string(s)
+		input, err := readln(l.io)
 		if err == nil {
 			fmt.Print(l.status.nebulaPrompt())
 			// not record input to historyFile now
