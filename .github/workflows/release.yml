@@ -31,7 +31,7 @@ jobs:
       - name: set package name
         id: package-name
         run: |
-          output_name=nebula-console-${{ matrix.os }}-${{ matrix.arch }}
+          output_name=nebula-console-${{ matrix.os }}-${{ matrix.arch }}-${GITHUB_REF#refs/tags/}
           if [ "${{ matrix.os }}" = "windows"  ]; then
               output_name+='.exe'
           fi
