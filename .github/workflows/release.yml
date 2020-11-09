@@ -24,8 +24,6 @@ jobs:
             arch: arm
     steps:
       - uses: actions/checkout@v2
-        with:
-          fetch-depth: 1
       - name: setup-go 1.14
         uses: actions/setup-go@v1
         with:
@@ -33,24 +31,16 @@ jobs:
       - name: set package name
         id: package-name
         run: |
-          output_name=nebula-console-${{ matrix.os }}-${{ matrix.arch }}
+          output_name=nebula-console-${{ matrix.os }}-${{ matrix.arch }}-${GITHUB_REF#refs/tags/}
           if [ "${{ matrix.os }}" = "windows"  ]; then
               output_name+='.exe'
           fi
           echo "::set-output name=package_name::$output_name"
       - name: build
-        run: go build -o ${{ steps.package-name.outputs.package_name }}
         env:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
-      - name: checksum
-        id: checksum-name
-        env:
-          SHA_EXT: sha256sum.txt
-        run: |
-          packagefile=$(find . -type f \( -iname nebula-console-${{ matrix.os }}-${{ matrix.arch }}\* \) -exec basename {} \; )
-          sha256sum $packagefile > "$packagefile"."$SHA_EXT"
-          echo "::set-output name=checksum_name::$packagefile.$SHA_EXT"
+        run: go build -o ${{ steps.package-name.outputs.package_name }}
       - name: upload release asset
         uses: actions/upload-release-asset@v1
         env:
@@ -60,27 +50,18 @@ jobs:
           asset_path: ./${{ steps.package-name.outputs.package_name }}
           asset_name: ${{ steps.package-name.outputs.package_name }}
           asset_content_type: application/octet-stream
-      - name: upload checksum file
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.checksum-name.outputs.checksum_name }}
-          asset_name: ${{ steps.checksum-name.outputs.checksum_name }}
-          asset_content_type: text/plain
+
   docker:
     name: build docker image
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-        with:
-          fetch-depth: 1
       - name: Build and push Docker images
         uses: docker/build-push-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: ${{ secrets.DOCKER_USERNAME }}/nebula-console
-          tags: v2-preview-latest
+          tags: v2
+          tag_with_ref: true
           add_git_labels: true
