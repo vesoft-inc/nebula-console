@@ -136,7 +136,7 @@ func valueToString(value *nebula.Value) string {
 			src, edge.GetName(), dst, edge.GetRanking(), propsString))
 		return buffer.String()
 	} else if value.IsSetPVal() { // Path
-		// src-[TypeName]->dst@ranking-[TypeName]->dst@ranking ...
+		// (src)-[TypeName@ranking]->(dst)-[TypeName@ranking]->(dst) ...
 		var buffer bytes.Buffer
 		p := value.GetPVal()
 		srcVid := string(p.GetSrc().GetVid())
