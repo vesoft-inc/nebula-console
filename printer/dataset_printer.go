@@ -106,76 +106,60 @@ func valueToString(value *nebula.Value) string {
 		buffer.WriteString(`("`)
 		buffer.WriteString(string(vertex.GetVid()))
 		buffer.WriteString(`")`)
-		filled := false
+		var tags []string
 		for _, tag := range vertex.GetTags() {
-			tagName := string(tag.GetName())
-			buffer.WriteString(" :")
-			buffer.WriteString(tagName)
-			buffer.WriteString("{")
+			var props []string
 			for k, v := range tag.GetProps() {
-				filled = true
-				buffer.WriteString(k)
-				buffer.WriteString(":")
-				buffer.WriteString(valueToString(v))
-				buffer.WriteString(", ")
+				props = append(props, fmt.Sprintf("%s: %s", k, valueToString(v)))
 			}
+			tagName := string(tag.GetName())
+			tagString := fmt.Sprintf(" :%s{%s}", tagName, strings.Join(props, ", "))
+			tags = append(tags, tagString)
 		}
-		if filled {
-			// remove last ,
-			buffer.Truncate(buffer.Len() - 2)
-		}
-		buffer.WriteString("}")
+		buffer.WriteString(strings.Join(tags, ","))
 		return buffer.String()
 	} else if value.IsSetEVal() { // Edge
 		// (src)-[edge]->(dst)@ranking {props}
 		edge := value.GetEVal()
 		var buffer bytes.Buffer
-		filled := false
 		src := string(edge.GetSrc())
 		dst := string(edge.GetDst())
 		if edge.GetType() < 0 {
 			src, dst = dst, src
 		}
-		buffer.WriteString(fmt.Sprintf(`("%s")-[%s]->("%s")@%d`,
-			src, edge.GetName(), dst, edge.GetRanking()))
-		buffer.WriteString(" {")
+		var props []string
 		for k, v := range edge.GetProps() {
-			filled = true
-			buffer.WriteString(k)
-			buffer.WriteString(":")
-			buffer.WriteString(valueToString(v))
-			buffer.WriteString(", ")
+			props = append(props, fmt.Sprintf("%s: %s", k, valueToString(v)))
 		}
-		if filled {
-			buffer.Truncate(buffer.Len() - 2)
-		}
-		buffer.WriteString("}")
+		propsString := strings.Join(props, ", ")
+		buffer.WriteString(fmt.Sprintf(`("%s")-[%s]->("%s")@%d{%s}`,
+			src, edge.GetName(), dst, edge.GetRanking(), propsString))
 		return buffer.String()
 	} else if value.IsSetPVal() { // Path
 		// src-[TypeName]->dst@ranking-[TypeName]->dst@ranking ...
+		var buffer bytes.Buffer
 		p := value.GetPVal()
-		str := string(p.GetSrc().GetVid())
+		srcVid := string(p.GetSrc().GetVid())
+		buffer.WriteString(fmt.Sprintf("(%q)", srcVid))
 		for _, step := range p.GetSteps() {
-			pStr := fmt.Sprintf("-[%s]->%s@%d", step.GetName(), string(step.GetDst().GetVid()), step.GetRanking())
-			str += pStr
+			dstVid := string(step.GetDst().GetVid())
+			buffer.WriteString(fmt.Sprintf("-[%s@%d]->(%q)", step.GetName(), step.GetRanking(), dstVid))
 		}
-		return str
+		return buffer.String()
 	} else if value.IsSetLVal() { // List
-		// TODO(shylock) optimize the recursive
 		l := value.GetLVal()
 		var buffer bytes.Buffer
 		buffer.WriteString("[")
 		for _, v := range l.GetValues() {
 			buffer.WriteString(valueToString(v))
-			buffer.WriteString(",")
+			buffer.WriteString(", ")
 		}
 		if buffer.Len() > 1 {
-			buffer.Truncate(buffer.Len() - 1)
+			buffer.Truncate(buffer.Len() - 2)
 		}
 		buffer.WriteString("]")
 		return buffer.String()
 	} else if value.IsSetMVal() { // Map
-		// TODO(shylock) optimize the recursive
 		m := value.GetMVal()
 		var buffer bytes.Buffer
 		buffer.WriteString("{")
@@ -183,24 +167,23 @@ func valueToString(value *nebula.Value) string {
 			buffer.WriteString("\"" + k + "\"")
 			buffer.WriteString(":")
 			buffer.WriteString(valueToString(v))
-			buffer.WriteString(",")
+			buffer.WriteString(", ")
 		}
 		if buffer.Len() > 1 {
-			buffer.Truncate(buffer.Len() - 1)
+			buffer.Truncate(buffer.Len() - 2)
 		}
 		buffer.WriteString("}")
 		return buffer.String()
 	} else if value.IsSetUVal() { // Set
-		// TODO(shylock) optimize the recursive
 		s := value.GetUVal()
 		var buffer bytes.Buffer
 		buffer.WriteString("{")
 		for _, v := range s.GetValues() {
 			buffer.WriteString(valueToString(v))
-			buffer.WriteString(",")
+			buffer.WriteString(", ")
 		}
 		if buffer.Len() > 1 {
-			buffer.Truncate(buffer.Len() - 1)
+			buffer.Truncate(buffer.Len() - 2)
 		}
 		buffer.WriteString("}")
 		return buffer.String()
