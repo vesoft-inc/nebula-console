@@ -57,6 +57,10 @@ func NewiCli(historyFile, user string) Cli {
 	}
 }
 
+func (l *iCli) Output() bool {
+	return true
+}
+
 func (l *iCli) ReadLine() (string, bool, error) {
 	for {
 		input, err := l.terminal.Prompt(l.status.nebulaPrompt())
@@ -84,12 +88,24 @@ func (l *iCli) Interactive() bool {
 	return true
 }
 
+func (l *iCli) SetRespError(msg string) {
+	l.status.respErr = msg
+}
+
+func (l *iCli) GetRespError() string {
+	return l.status.respErr
+}
+
 func (l *iCli) SetSpace(space string) {
 	if len(space) > 0 {
 		l.status.space = space
 	} else {
 		l.status.space = "(none)"
 	}
+}
+
+func (l *iCli) GetSpace() string {
+	return l.status.space
 }
 
 func (l *iCli) Close() {

@@ -14,6 +14,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -23,11 +24,26 @@ import (
 	graph "github.com/vesoft-inc/nebula-go/v2/nebula/graph"
 )
 
+// Nebula Console version
 const (
 	Version = "v2.0.0-alpha"
 )
 
+// Console side commands
+const (
+	Unknown  = -1
+	Quit     = 0
+	SetCsv   = 1
+	UnsetCsv = 2
+	PlayData = 3
+	Sleep    = 4
+)
+
 var dataSetPrinter = printer.NewDataSetPrinter()
+
+var datasets = map[string]string{
+	"nba": "./data/nba.ngql",
+}
 
 func welcome(interactive bool) {
 	defer dataSetPrinter.UnsetOutCsv()
@@ -46,12 +62,41 @@ func bye(username string, interactive bool) {
 	fmt.Println()
 }
 
-// client side cmd, will not be sent to server
-func clientCmd(cmd string) (isLocal, exit bool) {
-	// currently, command "exit" and  "quit" can also exit the console
+func printConsoleResp(msg string) {
+	fmt.Println(msg)
+	fmt.Println()
+	fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
+	fmt.Println()
+}
+
+func playData(client *ngdb.GraphClient, data string) (string, error) {
+	path, exist := datasets[data]
+	if !exist {
+		return "", fmt.Errorf("dataset %s, not existed", data)
+	}
+	fd, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	c := cli.NewnCli(fd, false, "", func() { fd.Close() })
+	fmt.Printf("Start loading dataset %s...\n", data)
+	err = loop(client, c, true)
+	if err != nil {
+		return "", err
+	}
+	respErr := c.GetRespError()
+	if respErr != "" {
+		return "", fmt.Errorf(respErr)
+	}
+	return c.GetSpace(), nil
+}
+
+// Console side cmd will not be sent to server
+func isConsoleCmd(client *ngdb.GraphClient, cmd string) (isLocal bool, localCmd int, arg string) {
+	// Currently, command "exit" and  "quit" can also exit the console
 	if cmd == "exit" || cmd == "quit" {
 		isLocal = true
-		exit = true
+		localCmd = Quit
 		return
 	}
 
@@ -61,24 +106,58 @@ func clientCmd(cmd string) (isLocal, exit bool) {
 	}
 
 	isLocal = true
-	runes := strings.Fields(plain[1:])
-	if len(runes) == 1 && (runes[0] == "exit" || runes[0] == "quit") {
-		exit = true
-	} else if len(runes) == 3 && (runes[0] == "set" && runes[1] == "csv") {
-		dataSetPrinter.SetOutCsv(runes[2])
-		exit = false
-	} else if len(runes) == 2 && (runes[0] == "unset" && runes[1] == "csv") {
-		dataSetPrinter.UnsetOutCsv()
-		exit = false
-	} else {
-		exit = false
-		fmt.Println("Error: this local command not exists!")
-		fmt.Println()
-		fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
-		fmt.Println()
+	words := strings.Fields(plain[1:])
+	switch len(words) {
+	case 1:
+		if words[0] == "exit" || words[0] == "quit" {
+			localCmd = Quit
+		}
+	case 2:
+		if words[0] == "unset" && words[1] == "csv" {
+			localCmd = UnsetCsv
+		} else if words[0] == "sleep" {
+			localCmd = Sleep
+			arg = words[1]
+		} else if words[0] == "play" {
+			localCmd = PlayData
+			arg = words[1]
+		}
+	case 3:
+		if words[0] == "set" && words[1] == "csv" {
+			localCmd = SetCsv
+			arg = words[2]
+		}
+	default:
+		localCmd = Unknown
 	}
 
 	return
+}
+
+func executeConsoleCmd(client *ngdb.GraphClient, cmd int, arg string) (newSpace string) {
+	switch cmd {
+	case SetCsv:
+		dataSetPrinter.SetOutCsv(arg)
+	case UnsetCsv:
+		dataSetPrinter.UnsetOutCsv()
+	case PlayData:
+		var err error
+		newSpace, err = playData(client, arg)
+		if err != nil {
+			printConsoleResp("Error: load dataset failed, " + err.Error())
+		} else {
+			printConsoleResp("Load dataset succeeded!")
+		}
+	case Sleep:
+		i, err := strconv.Atoi(arg)
+		if err != nil {
+			printConsoleResp("Error: invalid integer, " + err.Error())
+		}
+		time.Sleep(time.Duration(i) * time.Second)
+	default:
+		printConsoleResp("Error: this local command not exists!")
+	}
+	return newSpace
 }
 
 func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
@@ -128,7 +207,7 @@ func parseIP(address string) (string, error) {
 // Loop the request util fatal or timeout
 // We treat one line as one query
 // Add line break yourself as `SHOW \<CR>HOSTS`
-func loop(client *ngdb.GraphClient, c cli.Cli) error {
+func loop(client *ngdb.GraphClient, c cli.Cli, isPlayingData bool) error {
 	for {
 		line, exit, err := c.ReadLine()
 		if err != nil {
@@ -141,13 +220,16 @@ func loop(client *ngdb.GraphClient, c cli.Cli) error {
 		if len(line) == 0 {
 			continue
 		}
-		// Client side command
-		if isLocal, quit := clientCmd(line); isLocal {
-			if quit { // :exit, :quit, exit, quit
+		// Console side command
+		if isLocal, cmd, arg := isConsoleCmd(client, line); isLocal {
+			if cmd == Quit {
 				return nil
-			} else {
-				continue
 			}
+			newSpace := executeConsoleCmd(client, cmd, arg)
+			if newSpace != "" {
+				c.SetSpace(newSpace)
+			}
+			continue
 		}
 		// Server side command
 		start := time.Now()
@@ -155,13 +237,21 @@ func loop(client *ngdb.GraphClient, c cli.Cli) error {
 		if err != nil {
 			return err
 		}
-
+		if ngdb.IsError(resp) {
+			c.SetRespError(fmt.Sprintf("[ERROR (%d)]: %s", resp.GetErrorCode(), resp.GetErrorMsg()))
+			if isPlayingData {
+				break
+			}
+		}
 		duration := time.Since(start)
-		printResp(resp, duration)
-		fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
-		fmt.Println()
+		if c.Output() {
+			printResp(resp, duration)
+			fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
+			fmt.Println()
+		}
 		c.SetSpace(string(resp.SpaceName))
 	}
+	return nil
 }
 
 var address *string = flag.String("addr", "127.0.0.1", "The Nebula Graph IP/HOST address")
@@ -224,13 +314,13 @@ func main() {
 		historyFile := path.Join(historyHome, ".nebula_history")
 		c = cli.NewiCli(historyFile, *username)
 	} else if *script != "" {
-		c = cli.NewnCli(strings.NewReader(*script), *username, nil)
+		c = cli.NewnCli(strings.NewReader(*script), true, *username, nil)
 	} else if *file != "" {
 		fd, err := os.Open(*file)
 		if err != nil {
 			log.Fatalf("Open file %s failed, %s", *file, err.Error())
 		}
-		c = cli.NewnCli(fd, *username, func() { fd.Close() })
+		c = cli.NewnCli(fd, true, *username, func() { fd.Close() })
 	}
 
 	if c == nil {
@@ -238,7 +328,7 @@ func main() {
 	}
 
 	defer c.Close()
-	err = loop(client, c)
+	err = loop(client, c, false)
 	if err != nil {
 		log.Fatalf("Loop error, %s", err.Error())
 	}

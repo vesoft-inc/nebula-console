@@ -26,6 +26,7 @@ var keywords = []string{
 	"GET", "OF", "ORDER", "INGEST", "COMPACT", "FLUSH", "SUBMIT",
 	"ASC", "DISTINCT", "FETCH", "PROP", "BALANCE", "STOP", "LIMIT",
 	"OFFSET", "IS", "NULL", "RECOVER", "EXPLAIN", "PROFILE", "FORMAT",
+	"CASE", "MATCH",
 	/* Unreserved keyword */
 	"HOSTS", "SPACE", "SPACES", "VALUES", "USER", "USERS", "PASSWORD",
 	"ROLE", "ROLES", "GOD", "ADMIN", "DBA", "GUEST", "GROUP", "PARTITION_NUM",
@@ -35,22 +36,11 @@ var keywords = []string{
 	"STD", "BIT_AND", "BIT_OR", "BIT_XOR", "PATH", "BIDIRECT", "STATUS", "FORCE",
 	"PART", "PARTS", "DEFAULT", "HDFS", "CONFIGS", "TTL_DURATION", "TTL_COL",
 	"GRAPH", "META", "STORAGE", "SHORTEST", "OUT", "BOTH", "SUBGRAPH", "CONTAINS",
-	"TRUE", "FALSE",
+	"TRUE", "FALSE", "THEN", "ELSE", "END", "STARTS", "ENDS", "WITH",
 	"<-", "->", "_id", "_type", "_src", "_dst", "_rank", "$$", "$^", "$-",
 	/* ".", ",", ":", ";", "@", "+", "-", "*", "/", "%", "!", "^", "<", "<=",
 	   ">", ">=", "==", "!=", "||", "&&", "|", "=", "(", ")", "[", "]" */
 }
-
-// lowercase letters of data types
-/*
-var types = []string{
-    "int", "int8", "int16", "int32", "int64",
-    "float", "double",
-    "string", "fixed_string",
-    "timestamp", "date", "datetime",
-    "bool", "true", "false",
-}
-*/
 
 var subCmds = map[string][]string{
 	/* SHOW */
@@ -101,6 +91,8 @@ var subCmds = map[string][]string{
 	"FETCH":     []string{"PROP"},
 	"PROP":      []string{"ON"},
 	"LOOKUP":    []string{"ON"},
+	"STARTS":    []string{"WITH"},
+	"ENDS":      []string{"WITH"},
 
 	/* DML */
 	"INSERT": []string{"VERTEX", "EDGE"},
