@@ -8,6 +8,7 @@ package printer
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -26,19 +27,44 @@ func graphvizString(s string) string {
 type PlanDescPrinter struct {
 	writer   table.Writer
 	planDesc *graph.PlanDescription
+	fd       *os.File
+	filename string
 }
 
-func NewPlanDescPrinter(planDesc *graph.PlanDescription) PlanDescPrinter {
+func NewPlanDescPrinter() PlanDescPrinter {
 	writer := table.NewWriter()
 	configTableWriter(&writer)
 	return PlanDescPrinter{
 		writer:   writer,
-		planDesc: planDesc,
+		planDesc: nil,
 	}
 }
 
-func (p PlanDescPrinter) Print() string {
-	switch strings.ToLower(string(p.planDesc.GetFormat())) {
+func (p *PlanDescPrinter) SetOutDot(filename string) {
+	if p.fd != nil {
+		p.UnsetOutDot()
+	}
+	fd, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
+	if err != nil {
+		fmt.Printf("Open or Create file %s failed, %s", filename, err.Error())
+	}
+	p.fd = fd
+	p.filename = filename
+}
+
+func (p *PlanDescPrinter) UnsetOutDot() {
+	if p.fd == nil {
+		return
+	}
+	if err := p.fd.Close(); err != nil {
+		fmt.Printf("Close file %s failed, %s", p.filename, err.Error())
+	}
+	p.fd = nil
+	p.filename = ""
+}
+
+func (p PlanDescPrinter) Print(planDesc *graph.PlanDescription) string {
+	switch strings.ToLower(string(planDesc.GetFormat())) {
 	case "row":
 		return p.renderByRow()
 	case "dot":
@@ -114,6 +140,9 @@ func (p PlanDescPrinter) nodeById(nodeId int64) *graph.PlanNodeDescription {
 }
 
 func (p PlanDescPrinter) renderDotGraphByStruct() string {
+	p.writer.ResetHeaders()
+	p.writer.ResetRows()
+
 	p.configWriterDotRenderStyle()
 	p.writer.AppendHeader(table.Row{"plan"})
 
@@ -148,7 +177,8 @@ func (p PlanDescPrinter) renderDotGraphByStruct() string {
 	}
 	builder.WriteString("}")
 	p.writer.AppendRow(table.Row{builder.String()})
-	return p.writer.Render()
+	fmt.Println(p.writer.Render())
+	return builder.String()
 }
 
 func (p PlanDescPrinter) findBranchEndNode(condNodeId int64, isDoBranch bool) int64 {
@@ -178,6 +208,9 @@ func (p PlanDescPrinter) findFirstStartNodeFrom(nodeId int64) int64 {
 }
 
 func (p PlanDescPrinter) renderDotGraph() string {
+	p.writer.ResetHeaders()
+	p.writer.ResetRows()
+
 	p.configWriterDotRenderStyle()
 	p.writer.AppendHeader(table.Row{"plan"})
 
@@ -223,10 +256,14 @@ func (p PlanDescPrinter) renderDotGraph() string {
 	}
 	builder.WriteString("}")
 	p.writer.AppendRow(table.Row{builder.String()})
-	return p.writer.Render()
+	fmt.Println(p.writer.Render())
+	return builder.String()
 }
 
 func (p PlanDescPrinter) renderByRow() string {
+	p.writer.ResetHeaders()
+	p.writer.ResetRows()
+
 	planNodeDescs := p.planDesc.GetPlanNodeDescs()
 
 	p.writer.AppendHeader(table.Row{
@@ -282,5 +319,18 @@ func (p PlanDescPrinter) renderByRow() string {
 		row = append(row, strings.Join(columnInfo, "\n"))
 		p.writer.AppendRow(table.Row(row))
 	}
-	return p.writer.Render()
+	fmt.Println(p.writer.Render())
+	return "not dot"
+}
+
+func (p *PlanDescPrinter) PrintPlanDesc(planDesc *graph.PlanDescription) {
+	p.planDesc = planDesc
+	s := p.Print(planDesc)
+	if p.fd != nil {
+		go func() {
+			p.fd.Truncate(0)
+			p.fd.Seek(0, 0)
+			fmt.Fprintln(p.fd, s)
+		}()
+	}
 }
