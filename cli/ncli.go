@@ -18,20 +18,23 @@ type Cleanup func()
 type nCli struct {
 	status
 	io      *bufio.Reader
+	output  bool
 	cleanup Cleanup
 }
 
-func NewnCli(i io.Reader, user string, cleanup Cleanup) Cli {
+func NewnCli(i io.Reader, output bool, user string, cleanup Cleanup) Cli {
 	return &nCli{
 		status: status{
 			user:        user,
 			space:       "(none)",
+			respErr:     "",
 			promptLen:   -1,
 			promptColor: -1,
 			line:        "",
 			joined:      false,
 		},
 		io:      bufio.NewReader(i),
+		output:  output,
 		cleanup: cleanup,
 	}
 }
@@ -49,13 +52,19 @@ func readln(r *bufio.Reader) (string, error) {
 	return string(ln), err
 }
 
+func (l *nCli) Output() bool {
+	return l.output
+}
+
 func (l *nCli) ReadLine() (string, bool, error) {
 	for {
 		input, err := readln(l.io)
 		if err == nil {
-			fmt.Print(l.status.nebulaPrompt())
-			// not record input to historyFile now
-			fmt.Println(input)
+			if l.output {
+				fmt.Print(l.status.nebulaPrompt())
+				// not record input to historyFile now
+				fmt.Println(input)
+			}
 			l.status.checkJoined(input)
 			if l.status.joined {
 				continue
@@ -73,8 +82,24 @@ func (l *nCli) Interactive() bool {
 	return false
 }
 
+func (l *nCli) SetRespError(msg string) {
+	l.status.respErr = msg
+}
+
+func (l *nCli) GetRespError() string {
+	return l.status.respErr
+}
+
 func (l *nCli) SetSpace(space string) {
-	// nothing
+	if len(space) > 0 {
+		l.status.space = space
+	} else {
+		l.status.space = "(none)"
+	}
+}
+
+func (l *nCli) GetSpace() string {
+	return l.status.space
 }
 
 func (l *nCli) Close() {

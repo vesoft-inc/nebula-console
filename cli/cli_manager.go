@@ -12,9 +12,13 @@ import (
 )
 
 type Cli interface {
+	Output() bool
 	ReadLine() (line string, exit bool, err error)
 	Interactive() bool
+	SetRespError(mgs string)
+	GetRespError() string
 	SetSpace(string)
+	GetSpace() string
 	Close()
 }
 
@@ -23,6 +27,7 @@ type status struct {
 	historyFile string
 	user        string
 	space       string
+	respErr     string
 	promptLen   int
 	promptColor int
 

@@ -8,4 +8,6 @@ FROM alpine
 
 COPY --from=builder /usr/src/nebula-console /usr/local/bin/nebula-console
 
+COPY --from=builder /usr/src/data/ /data/
+
 ENTRYPOINT ["nebula-console"]
