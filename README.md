@@ -1,6 +1,6 @@
 # Nebula Graph Console
 
-This repository contains the Nebula Graph Console for Nebula Graph 2.0.
+This repository contains the Nebula Graph Console for Nebula Graph 2.0. Nebula Graph Console (Console for short) is a console for Nebula Graph. With Console, you can create a graph schema, import the demonstration nba dataset, and retrieve data.
 
 ## Features
 
@@ -19,7 +19,7 @@ Run the following command to examine if Go is installed on your machine.
 $ go version
 ```
 
-Use Git to clone the source code of Nebula Graph to your host.
+Use Git to clone the source code of Nebula Graph Console to your host.
 
 ```bash
 $ git clone git@github.com:vesoft-inc/nebula-console.git
@@ -29,6 +29,30 @@ Run the following command to build Nebula Graph Console.
 
 ```bash
 $ cd nebula-console
+$ make
+```
+
+## Upgrade Nebula Graph Console
+
+To build Nebula Graph Console, make sure that you have installed [Go](https://golang.org/doc/install).
+
+Run the following command to examine if Go is installed on your machine.
+
+```bash
+$ go version
+```
+
+Use Git to update the source code of Nebula Graph Console to your host.
+
+```bash
+$ cd nebula-console
+$ git fetch upstream
+$ git rebase upstream/master
+```
+
+Run the following command to build Nebula Graph Console.
+
+```bash
 $ make
 ```
 
@@ -72,6 +96,31 @@ nebula> :SET CSV <your_file.csv>
 
 ```nGQL
 nebula> :UNSET CSV
+```
+
+## Load nba dataset
+
+To load the demonstration nba dataset, make sure that Console is connected to Nebula Graph.
+
+```ngql
+nebula> :play nba
+Start loading dataset nba...
+
+Load dataset succeeded!
+```
+
+## Export .dot file
+
+To export the graviz text to a `.dot` format, run the following command:
+
+```ngql
+nebula> :SET dot <filename>
+```
+
+For example:
+
+```ngql
+nebula> TODO
 ```
 
 ## Disconnect Nebula Graph Console from Nebula Graph
