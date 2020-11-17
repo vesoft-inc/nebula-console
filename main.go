@@ -257,7 +257,7 @@ func loop(client *ngdb.GraphClient, c cli.Cli, isPlayingData bool) error {
 var address *string = flag.String("addr", "127.0.0.1", "The Nebula Graph IP/HOST address")
 var port *int = flag.Int("port", -1, "The Nebula Graph Port")
 var username *string = flag.String("u", "", "The Nebula Graph login user name")
-var password *string = flag.String("pw", "", "The Nebula Graph login password")
+var password *string = flag.String("p", "", "The Nebula Graph login password")
 var timeout *int = flag.Int("t", 120, "The Nebula Graph client connection timeout in seconds")
 var script *string = flag.String("e", "", "The nGQL directly")
 var file *string = flag.String("f", "", "The nGQL script file name")
