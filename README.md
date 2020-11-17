@@ -89,13 +89,13 @@ When the export mode is enabled, Nebula Graph Console exports all the query resu
 * Enable nebula-console export mode:
 
 ```nGQL
-nebula> :SET CSV <your_file.csv>
+nebula> :set CSV <your_file.csv>
 ```
 
 * Disable nebula-console export mode:
 
 ```nGQL
-nebula> :UNSET CSV
+nebula> :unset CSV
 ```
 
 ## Load nba dataset
@@ -114,7 +114,7 @@ Load dataset succeeded!
 To export the graviz text to a `.dot` format, run the following command:
 
 ```ngql
-nebula> :SET dot <filename>
+nebula> :set dot <filename>
 ```
 
 For example:
