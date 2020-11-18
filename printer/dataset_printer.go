@@ -143,7 +143,11 @@ func valueToString(value *nebula.Value) string {
 		buffer.WriteString(fmt.Sprintf("(%q)", srcVid))
 		for _, step := range p.GetSteps() {
 			dstVid := string(step.GetDst().GetVid())
-			buffer.WriteString(fmt.Sprintf("-[%s@%d]->(%q)", step.GetName(), step.GetRanking(), dstVid))
+			if step.GetType() > 0 {
+				buffer.WriteString(fmt.Sprintf("-[%s@%d]->(%q)", step.GetName(), step.GetRanking(), dstVid))
+			} else {
+				buffer.WriteString(fmt.Sprintf("<-[%s@%d]-(%q)", step.GetName(), step.GetRanking(), dstVid))
+			}
 		}
 		return buffer.String()
 	} else if value.IsSetLVal() { // List
