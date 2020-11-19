@@ -123,9 +123,14 @@ func conditionalNodeString(name string) string {
 	return fmt.Sprintf("\t\"%s\"[shape=diamond];\n", name)
 }
 
-func (p PlanDescPrinter) configWriterDotRenderStyle() {
-	p.writer.Style().Box.Left = " "
-	p.writer.Style().Box.Right = " "
+func (p PlanDescPrinter) configWriterDotRenderStyle(renderByDot bool) {
+	if renderByDot {
+		p.writer.Style().Box.Left = " "
+		p.writer.Style().Box.Right = " "
+	} else {
+		p.writer.Style().Box.Left = "|"
+		p.writer.Style().Box.Right = "|"
+	}
 	p.writer.Style().Box.BottomLeft = "-"
 	p.writer.Style().Box.BottomRight = "-"
 	p.writer.Style().Box.TopLeft = "-"
@@ -142,8 +147,7 @@ func (p PlanDescPrinter) nodeById(nodeId int64) *graph.PlanNodeDescription {
 func (p PlanDescPrinter) renderDotGraphByStruct() string {
 	p.writer.ResetHeaders()
 	p.writer.ResetRows()
-
-	p.configWriterDotRenderStyle()
+	p.configWriterDotRenderStyle(true)
 	p.writer.AppendHeader(table.Row{"plan"})
 
 	planNodeDescs := p.planDesc.GetPlanNodeDescs()
@@ -210,8 +214,7 @@ func (p PlanDescPrinter) findFirstStartNodeFrom(nodeId int64) int64 {
 func (p PlanDescPrinter) renderDotGraph() string {
 	p.writer.ResetHeaders()
 	p.writer.ResetRows()
-
-	p.configWriterDotRenderStyle()
+	p.configWriterDotRenderStyle(true)
 	p.writer.AppendHeader(table.Row{"plan"})
 
 	planNodeDescs := p.planDesc.GetPlanNodeDescs()
@@ -263,7 +266,7 @@ func (p PlanDescPrinter) renderDotGraph() string {
 func (p PlanDescPrinter) renderByRow() string {
 	p.writer.ResetHeaders()
 	p.writer.ResetRows()
-
+	p.configWriterDotRenderStyle(false)
 	planNodeDescs := p.planDesc.GetPlanNodeDescs()
 
 	p.writer.AppendHeader(table.Row{
