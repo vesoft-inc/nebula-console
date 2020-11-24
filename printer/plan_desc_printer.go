@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/vesoft-inc/nebula-go/v2/nebula/graph"
+	"github.com/vesoft-inc/nebula-clients/go/nebula/graph"
 )
 
 func graphvizString(s string) string {

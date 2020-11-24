@@ -14,7 +14,7 @@ import (
 	"strings"
 
 	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/vesoft-inc/nebula-go/v2/nebula"
+	nebula0 "github.com/vesoft-inc/nebula-clients/go/nebula"
 )
 
 type DataSetPrinter struct {
@@ -55,17 +55,17 @@ func (p *DataSetPrinter) UnsetOutCsv() {
 	p.filename = ""
 }
 
-func valueToString(value *nebula.Value) string {
+func valueToString(value *nebula0.Value) string {
 	// TODO(shylock) get golang runtime limit
 	if value.IsSetNVal() { // null
 		switch value.GetNVal() {
-		case nebula.NullType___NULL__:
+		case nebula0.NullType___NULL__:
 			return "NULL"
-		case nebula.NullType_NaN:
+		case nebula0.NullType_NaN:
 			return "NaN"
-		case nebula.NullType_BAD_DATA:
+		case nebula0.NullType_BAD_DATA:
 			return "BAD_DATA"
-		case nebula.NullType_BAD_TYPE:
+		case nebula0.NullType_BAD_TYPE:
 			return "BAD_TYPE"
 		}
 		return "NULL"
@@ -198,7 +198,7 @@ func valueToString(value *nebula.Value) string {
 	return ""
 }
 
-func (p *DataSetPrinter) PrintDataSet(dataset *nebula.DataSet) {
+func (p *DataSetPrinter) PrintDataSet(dataset *nebula0.DataSet) {
 	if len(dataset.GetRows()) == 0 {
 		return
 	}

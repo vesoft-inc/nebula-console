@@ -10,7 +10,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net"
 	"os"
 	"path"
 	"path/filepath"
@@ -18,10 +17,10 @@ import (
 	"strings"
 	"time"
 
+	nebula "github.com/vesoft-inc/nebula-clients/go"
+	"github.com/vesoft-inc/nebula-clients/go/nebula/graph"
 	"github.com/vesoft-inc/nebula-console/cli"
 	"github.com/vesoft-inc/nebula-console/printer"
-	ngdb "github.com/vesoft-inc/nebula-go/v2"
-	graph "github.com/vesoft-inc/nebula-go/v2/nebula/graph"
 )
 
 // Nebula Console version
@@ -37,8 +36,6 @@ const (
 	UnsetCsv = 2
 	PlayData = 3
 	Sleep    = 4
-	SetDot   = 5
-	UnsetDot = 6
 )
 
 var dataSetPrinter = printer.NewDataSetPrinter()
@@ -51,7 +48,6 @@ var datasets = map[string]string{
 
 func welcome(interactive bool) {
 	defer dataSetPrinter.UnsetOutCsv()
-	defer planDescPrinter.UnsetOutDot()
 	if !interactive {
 		return
 	}
@@ -74,7 +70,7 @@ func printConsoleResp(msg string) {
 	fmt.Println()
 }
 
-func playData(client *ngdb.GraphClient, data string) (string, error) {
+func playData(session *nebula.Session, data string) (string, error) {
 	path, exist := datasets[data]
 	if !exist {
 		return "", fmt.Errorf("dataset %s, not existed", data)
@@ -85,7 +81,7 @@ func playData(client *ngdb.GraphClient, data string) (string, error) {
 	}
 	c := cli.NewnCli(fd, false, "", func() { fd.Close() })
 	fmt.Printf("Start loading dataset %s...\n", data)
-	err = loop(client, c, true)
+	err = loop(session, c, true)
 	if err != nil {
 		return "", err
 	}
@@ -97,7 +93,7 @@ func playData(client *ngdb.GraphClient, data string) (string, error) {
 }
 
 // Console side cmd will not be sent to server
-func isConsoleCmd(client *ngdb.GraphClient, cmd string) (isLocal bool, localCmd int, args []string) {
+func isConsoleCmd(cmd string) (isLocal bool, localCmd int, args []string) {
 	// Currently, command "exit" and  "quit" can also exit the console
 	if cmd == "exit" || cmd == "quit" {
 		isLocal = true
@@ -122,8 +118,6 @@ func isConsoleCmd(client *ngdb.GraphClient, cmd string) (isLocal bool, localCmd 
 	case 2:
 		if words[0] == "unset" && words[1] == "csv" {
 			localCmd = UnsetCsv
-		} else if words[0] == "unset" && words[1] == "dot" {
-			localCmd = UnsetDot
 		} else if words[0] == "sleep" {
 			localCmd = Sleep
 			args = []string{words[1]}
@@ -137,9 +131,6 @@ func isConsoleCmd(client *ngdb.GraphClient, cmd string) (isLocal bool, localCmd 
 		if words[0] == "set" && words[1] == "csv" {
 			localCmd = SetCsv
 			args = []string{words[2]}
-		} else if words[0] == "set" && words[1] == "dot" {
-			localCmd = SetDot
-			args = []string{words[2]}
 		} else {
 			localCmd = Unknown
 		}
@@ -150,19 +141,15 @@ func isConsoleCmd(client *ngdb.GraphClient, cmd string) (isLocal bool, localCmd 
 	return
 }
 
-func executeConsoleCmd(client *ngdb.GraphClient, cmd int, args []string) (newSpace string) {
+func executeConsoleCmd(session *nebula.Session, cmd int, args []string) (newSpace string) {
 	switch cmd {
 	case SetCsv:
 		dataSetPrinter.SetOutCsv(args[0])
 	case UnsetCsv:
 		dataSetPrinter.UnsetOutCsv()
-	case SetDot:
-		planDescPrinter.SetOutDot(args[0])
-	case UnsetDot:
-		planDescPrinter.UnsetOutDot()
 	case PlayData:
 		var err error
-		newSpace, err = playData(client, args[0])
+		newSpace, err = playData(session, args[0])
 		if err != nil {
 			printConsoleResp("Error: load dataset failed, " + err.Error())
 		} else {
@@ -181,7 +168,7 @@ func executeConsoleCmd(client *ngdb.GraphClient, cmd int, args []string) (newSpa
 }
 
 func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
-	if ngdb.IsError(resp) {
+	if nebula.IsError(resp) {
 		fmt.Printf("[ERROR (%d)]: %s", resp.GetErrorCode(), resp.GetErrorMsg())
 		fmt.Println()
 		fmt.Println()
@@ -209,24 +196,10 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 	fmt.Println()
 }
 
-func parseIP(address string) (string, error) {
-	addrs, err := net.LookupHost(address)
-	if err != nil {
-		return "", err
-	}
-	// Return the first matched Ipv4 address
-	for _, addr := range addrs {
-		if net.ParseIP(addr).To4() != nil {
-			return addr, nil
-		}
-	}
-	return "", fmt.Errorf("No matching IPv4 address was found")
-}
-
 // Loop the request util fatal or timeout
 // We treat one line as one query
 // Add line break yourself as `SHOW \<CR>HOSTS`
-func loop(client *ngdb.GraphClient, c cli.Cli, isPlayingData bool) error {
+func loop(session *nebula.Session, c cli.Cli, isPlayingData bool) error {
 	for {
 		line, exit, err := c.ReadLine()
 		if err != nil {
@@ -240,11 +213,11 @@ func loop(client *ngdb.GraphClient, c cli.Cli, isPlayingData bool) error {
 			continue
 		}
 		// Console side command
-		if isLocal, cmd, args := isConsoleCmd(client, line); isLocal {
+		if isLocal, cmd, args := isConsoleCmd(line); isLocal {
 			if cmd == Quit {
 				return nil
 			}
-			newSpace := executeConsoleCmd(client, cmd, args)
+			newSpace := executeConsoleCmd(session, cmd, args)
 			if newSpace != "" {
 				c.SetSpace(newSpace)
 			}
@@ -252,11 +225,11 @@ func loop(client *ngdb.GraphClient, c cli.Cli, isPlayingData bool) error {
 		}
 		// Server side command
 		start := time.Now()
-		resp, err := client.Execute(line)
+		resp, err := session.Execute(line)
 		if err != nil {
 			return err
 		}
-		if ngdb.IsError(resp) {
+		if nebula.IsError(resp) {
 			c.SetRespError(fmt.Sprintf("[ERROR (%d)]: %s", resp.GetErrorCode(), resp.GetErrorMsg()))
 			if isPlayingData {
 				break
@@ -291,8 +264,20 @@ func init() {
 	flag.StringVar(file, "file", "", "The nGQL script file name")
 }
 
+func validateFlags() {
+	if len(*username) == 0 || len(*password) == 0 {
+		log.Fatalf("Error: username or password is empty!")
+	}
+	if *port == -1 {
+		log.Panicf("Error: argument port is missed!")
+	}
+}
+
 func main() {
 	flag.Parse()
+	
+	// Check if flags are valid
+	validateFlags()
 
 	interactive := *script == "" && *file == ""
 
@@ -304,32 +289,29 @@ func main() {
 		}
 		historyHome = filepath.Dir(ex) // Set to executable folder
 	}
-	if *port == -1 {
-		log.Panicf("Error: argument port is missed!")
-	}
-	ip, err := parseIP(*address)
-	if err != nil {
-		log.Panicf("Error: address is invalid, %s", err.Error())
-	}
-	// when the value of timeout is set to 0, connection will not timeout
-	clientTimeout := ngdb.WithTimeout(time.Duration(*timeout) * time.Second)
-	client, err := ngdb.NewClient(fmt.Sprintf("%s:%d", ip, *port), clientTimeout)
-	if err != nil {
-		log.Panicf("Fail to create client, address: %s, port: %d, %s", ip, *port, err.Error())
-	}
 
-	if len(*username) == 0 || len(*password) == 0 {
-		log.Panicf("Error: username or password is empty!")
+	hostAddress := nebula.HostAddress{Host: *address, Port: *port}
+	hostList := []nebula.HostAddress{hostAddress}
+	poolConfig := nebula.PoolConfig{
+		TimeOut:         0 * time.Millisecond,
+		IdleTime:        0 * time.Millisecond,
+		MaxConnPoolSize: 1,
+		MinConnPoolSize: 0,
 	}
+	pool, err := nebula.NewConnectionPool(hostList, poolConfig, nebula.DefaultLogger{})
+	if err != nil {
+		log.Panicf(fmt.Sprintf("Fail to initialize the connection pool, host: %s, port: %d, %s", *address, *port, err.Error()))
+	}
+	defer pool.Close()
 
-	if err = client.Connect(*username, *password); err != nil {
-		log.Panicf("Fail to connect server, %s", err.Error())
+	session, err := pool.GetSession(*username, *password)
+	if err != nil {
+		log.Panicf("Fail to create a new session from connection pool, %s", err.Error())
 	}
+	defer session.Release()
 
 	welcome(interactive)
-
 	defer bye(*username, interactive)
-	defer client.Disconnect()
 
 	var c cli.Cli = nil
 	// Loop the request
@@ -351,7 +333,7 @@ func main() {
 	}
 
 	defer c.Close()
-	err = loop(client, c, false)
+	err = loop(session, c, false)
 	if err != nil {
 		log.Panicf("Loop error, %s", err.Error())
 	}
