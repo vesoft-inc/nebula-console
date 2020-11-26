@@ -37,9 +37,13 @@ const (
 	UnsetCsv = 2
 	PlayData = 3
 	Sleep    = 4
+	SetDot   = 5
+	UnsetDot = 6
 )
 
 var dataSetPrinter = printer.NewDataSetPrinter()
+
+var planDescPrinter = printer.NewPlanDescPrinter()
 
 var datasets = map[string]string{
 	"nba": "./data/nba.ngql",
@@ -47,6 +51,7 @@ var datasets = map[string]string{
 
 func welcome(interactive bool) {
 	defer dataSetPrinter.UnsetOutCsv()
+	defer planDescPrinter.UnsetOutDot()
 	if !interactive {
 		return
 	}
@@ -92,7 +97,7 @@ func playData(client *ngdb.GraphClient, data string) (string, error) {
 }
 
 // Console side cmd will not be sent to server
-func isConsoleCmd(client *ngdb.GraphClient, cmd string) (isLocal bool, localCmd int, arg string) {
+func isConsoleCmd(client *ngdb.GraphClient, cmd string) (isLocal bool, localCmd int, args []string) {
 	// Currently, command "exit" and  "quit" can also exit the console
 	if cmd == "exit" || cmd == "quit" {
 		isLocal = true
@@ -111,21 +116,32 @@ func isConsoleCmd(client *ngdb.GraphClient, cmd string) (isLocal bool, localCmd 
 	case 1:
 		if words[0] == "exit" || words[0] == "quit" {
 			localCmd = Quit
+		} else {
+			localCmd = Unknown
 		}
 	case 2:
 		if words[0] == "unset" && words[1] == "csv" {
 			localCmd = UnsetCsv
+		} else if words[0] == "unset" && words[1] == "dot" {
+			localCmd = UnsetDot
 		} else if words[0] == "sleep" {
 			localCmd = Sleep
-			arg = words[1]
+			args = []string{words[1]}
 		} else if words[0] == "play" {
 			localCmd = PlayData
-			arg = words[1]
+			args = []string{words[1]}
+		} else {
+			localCmd = Unknown
 		}
 	case 3:
 		if words[0] == "set" && words[1] == "csv" {
 			localCmd = SetCsv
-			arg = words[2]
+			args = []string{words[2]}
+		} else if words[0] == "set" && words[1] == "dot" {
+			localCmd = SetDot
+			args = []string{words[2]}
+		} else {
+			localCmd = Unknown
 		}
 	default:
 		localCmd = Unknown
@@ -134,22 +150,26 @@ func isConsoleCmd(client *ngdb.GraphClient, cmd string) (isLocal bool, localCmd 
 	return
 }
 
-func executeConsoleCmd(client *ngdb.GraphClient, cmd int, arg string) (newSpace string) {
+func executeConsoleCmd(client *ngdb.GraphClient, cmd int, args []string) (newSpace string) {
 	switch cmd {
 	case SetCsv:
-		dataSetPrinter.SetOutCsv(arg)
+		dataSetPrinter.SetOutCsv(args[0])
 	case UnsetCsv:
 		dataSetPrinter.UnsetOutCsv()
+	case SetDot:
+		planDescPrinter.SetOutDot(args[0])
+	case UnsetDot:
+		planDescPrinter.UnsetOutDot()
 	case PlayData:
 		var err error
-		newSpace, err = playData(client, arg)
+		newSpace, err = playData(client, args[0])
 		if err != nil {
 			printConsoleResp("Error: load dataset failed, " + err.Error())
 		} else {
 			printConsoleResp("Load dataset succeeded!")
 		}
 	case Sleep:
-		i, err := strconv.Atoi(arg)
+		i, err := strconv.Atoi(args[0])
 		if err != nil {
 			printConsoleResp("Error: invalid integer, " + err.Error())
 		}
@@ -184,8 +204,7 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 		fmt.Println()
 		fmt.Println("Execution Plan")
 		fmt.Println()
-		p := printer.NewPlanDescPrinter(resp.GetPlanDesc())
-		fmt.Println(p.Print())
+		planDescPrinter.PrintPlanDesc(resp.GetPlanDesc())
 	}
 	fmt.Println()
 }
@@ -221,11 +240,11 @@ func loop(client *ngdb.GraphClient, c cli.Cli, isPlayingData bool) error {
 			continue
 		}
 		// Console side command
-		if isLocal, cmd, arg := isConsoleCmd(client, line); isLocal {
+		if isLocal, cmd, args := isConsoleCmd(client, line); isLocal {
 			if cmd == Quit {
 				return nil
 			}
-			newSpace := executeConsoleCmd(client, cmd, arg)
+			newSpace := executeConsoleCmd(client, cmd, args)
 			if newSpace != "" {
 				c.SetSpace(newSpace)
 			}
