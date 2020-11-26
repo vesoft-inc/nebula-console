@@ -22,7 +22,7 @@ $ go version
 Use Git to clone the source code of Nebula Graph Console to your host.
 
 ```bash
-$ git clone git@github.com:vesoft-inc/nebula-console.git
+$ git clone https://github.com/vesoft-inc/nebula-console
 ```
 
 Run the following command to build Nebula Graph Console.
