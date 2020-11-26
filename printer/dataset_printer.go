@@ -117,7 +117,7 @@ func valueToString(value *nebula.Value) string {
 			tagString := fmt.Sprintf(" :%s{%s}", tagName, strings.Join(props, ", "))
 			tags = append(tags, tagString)
 		}
-		buffer.WriteString(strings.Join(tags, ","))
+		buffer.WriteString(strings.Join(tags, " "))
 		buffer.WriteString(`)`)
 		return buffer.String()
 	} else if value.IsSetEVal() { // Edge
