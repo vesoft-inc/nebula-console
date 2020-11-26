@@ -17,10 +17,9 @@ import (
 	"strings"
 	"time"
 
-	nebula "github.com/vesoft-inc/nebula-clients/go"
-	"github.com/vesoft-inc/nebula-clients/go/nebula/graph"
 	"github.com/vesoft-inc/nebula-console/cli"
 	"github.com/vesoft-inc/nebula-console/printer"
+	nebula "github.com/vesoft-inc/nebula-go"
 )
 
 // Nebula Console version
@@ -36,6 +35,8 @@ const (
 	UnsetCsv = 2
 	PlayData = 3
 	Sleep    = 4
+	SetDot   = 5
+	UnsetDot = 6
 )
 
 var dataSetPrinter = printer.NewDataSetPrinter()
@@ -48,6 +49,7 @@ var datasets = map[string]string{
 
 func welcome(interactive bool) {
 	defer dataSetPrinter.UnsetOutCsv()
+	defer planDescPrinter.UnsetOutDot()
 	if !interactive {
 		return
 	}
@@ -70,7 +72,7 @@ func printConsoleResp(msg string) {
 	fmt.Println()
 }
 
-func playData(session *nebula.Session, data string) (string, error) {
+func playData(data string) (string, error) {
 	path, exist := datasets[data]
 	if !exist {
 		return "", fmt.Errorf("dataset %s, not existed", data)
@@ -80,8 +82,15 @@ func playData(session *nebula.Session, data string) (string, error) {
 		return "", err
 	}
 	c := cli.NewnCli(fd, false, "", func() { fd.Close() })
+	c.PlayingData(true)
+	defer c.PlayingData(false)
 	fmt.Printf("Start loading dataset %s...\n", data)
-	err = loop(session, c, true)
+	childSession, err := pool.GetSession(*username, *password)
+	if err != nil {
+		log.Panicf("Fail to create a new session from connection pool, %s", err.Error())
+	}
+	defer childSession.Release()
+	err = loop(childSession, c)
 	if err != nil {
 		return "", err
 	}
@@ -118,6 +127,8 @@ func isConsoleCmd(cmd string) (isLocal bool, localCmd int, args []string) {
 	case 2:
 		if words[0] == "unset" && words[1] == "csv" {
 			localCmd = UnsetCsv
+		} else if words[0] == "unset" && words[1] == "dot" {
+			localCmd = UnsetDot
 		} else if words[0] == "sleep" {
 			localCmd = Sleep
 			args = []string{words[1]}
@@ -131,6 +142,9 @@ func isConsoleCmd(cmd string) (isLocal bool, localCmd int, args []string) {
 		if words[0] == "set" && words[1] == "csv" {
 			localCmd = SetCsv
 			args = []string{words[2]}
+		} else if words[0] == "set" && words[1] == "dot" {
+			localCmd = SetDot
+			args = []string{words[2]}
 		} else {
 			localCmd = Unknown
 		}
@@ -141,15 +155,19 @@ func isConsoleCmd(cmd string) (isLocal bool, localCmd int, args []string) {
 	return
 }
 
-func executeConsoleCmd(session *nebula.Session, cmd int, args []string) (newSpace string) {
+func executeConsoleCmd(cmd int, args []string) (newSpace string) {
 	switch cmd {
 	case SetCsv:
 		dataSetPrinter.SetOutCsv(args[0])
 	case UnsetCsv:
 		dataSetPrinter.UnsetOutCsv()
+	case SetDot:
+		planDescPrinter.SetOutDot(args[0])
+	case UnsetDot:
+		planDescPrinter.UnsetOutDot()
 	case PlayData:
 		var err error
-		newSpace, err = playData(session, args[0])
+		newSpace, err = playData(args[0])
 		if err != nil {
 			printConsoleResp("Error: load dataset failed, " + err.Error())
 		} else {
@@ -167,31 +185,31 @@ func executeConsoleCmd(session *nebula.Session, cmd int, args []string) (newSpac
 	return newSpace
 }
 
-func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
-	if nebula.IsError(resp) {
-		fmt.Printf("[ERROR (%d)]: %s", resp.GetErrorCode(), resp.GetErrorMsg())
+func printResultSet(res *nebula.ResultSet, duration time.Duration) {
+	if !res.IsSucceed() {
+		fmt.Printf("[ERROR (%d)]: %s", res.GetErrorCode(), res.GetErrorMsg())
 		fmt.Println()
 		fmt.Println()
 		return
 	}
 	// Show table
-	if resp.IsSetData() {
-		dataSetPrinter.PrintDataSet(resp.GetData())
-		numRows := len(resp.GetData().GetRows())
+	if !res.IsEmpty() {
+		dataSetPrinter.PrintDataSet(res)
+		numRows := res.GetRowSize()
 		if numRows > 0 {
-			fmt.Printf("Got %d rows (time spent %d/%d us)\n", numRows, resp.GetLatencyInUs(), duration/1000)
+			fmt.Printf("Got %d rows (time spent %d/%d us)\n", numRows, res.GetLatency(), duration/1000)
 		} else {
-			fmt.Printf("Empty set (time spent %d/%d us)\n", resp.GetLatencyInUs(), duration/1000)
+			fmt.Printf("Empty set (time spent %d/%d us)\n", res.GetLatency(), duration/1000)
 		}
 	} else {
-		fmt.Printf("Execution succeeded (time spent %d/%d us)\n", resp.GetLatencyInUs(), duration/1000)
+		fmt.Printf("Execution succeeded (time spent %d/%d us)\n", res.GetLatency(), duration/1000)
 	}
 
-	if resp.IsSetPlanDesc() {
+	if res.HasPlanDesc() {
 		fmt.Println()
 		fmt.Println("Execution Plan")
 		fmt.Println()
-		planDescPrinter.PrintPlanDesc(resp.GetPlanDesc())
+		planDescPrinter.PrintPlanDesc(res.GetPlanDesc())
 	}
 	fmt.Println()
 }
@@ -199,7 +217,7 @@ func printResp(resp *graph.ExecutionResponse, duration time.Duration) {
 // Loop the request util fatal or timeout
 // We treat one line as one query
 // Add line break yourself as `SHOW \<CR>HOSTS`
-func loop(session *nebula.Session, c cli.Cli, isPlayingData bool) error {
+func loop(session *nebula.Session, c cli.Cli) error {
 	for {
 		line, exit, err := c.ReadLine()
 		if err != nil {
@@ -217,31 +235,35 @@ func loop(session *nebula.Session, c cli.Cli, isPlayingData bool) error {
 			if cmd == Quit {
 				return nil
 			}
-			newSpace := executeConsoleCmd(session, cmd, args)
+			newSpace := executeConsoleCmd(cmd, args)
 			if newSpace != "" {
 				c.SetSpace(newSpace)
+				session.Execute(fmt.Sprintf("USE %s", newSpace))
+				if err != nil {
+					return err
+				}
 			}
 			continue
 		}
 		// Server side command
 		start := time.Now()
-		resp, err := session.Execute(line)
+		res, err := session.Execute(line)
 		if err != nil {
 			return err
 		}
-		if nebula.IsError(resp) {
-			c.SetRespError(fmt.Sprintf("[ERROR (%d)]: %s", resp.GetErrorCode(), resp.GetErrorMsg()))
-			if isPlayingData {
+		if !res.IsSucceed() {
+			c.SetRespError(fmt.Sprintf("[ERROR (%d)]: %s", res.GetErrorCode(), res.GetErrorMsg()))
+			if c.IsPlayingData() {
 				break
 			}
 		}
 		duration := time.Since(start)
 		if c.Output() {
-			printResp(resp, duration)
+			printResultSet(res, duration)
 			fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
 			fmt.Println()
 		}
-		c.SetSpace(string(resp.SpaceName))
+		c.SetSpace(res.GetSpaceName())
 	}
 	return nil
 }
@@ -265,17 +287,22 @@ func init() {
 }
 
 func validateFlags() {
-	if len(*username) == 0 || len(*password) == 0 {
-		log.Fatalf("Error: username or password is empty!")
-	}
 	if *port == -1 {
 		log.Panicf("Error: argument port is missed!")
 	}
+	if len(*username) == 0 {
+		log.Panicf("Error: username is empty!")
+	}
+	if len(*password) == 0 {
+		log.Panicf("Error: password is empty!")
+	}
 }
+
+var pool *nebula.ConnectionPool
 
 func main() {
 	flag.Parse()
-	
+
 	// Check if flags are valid
 	validateFlags()
 
@@ -295,10 +322,11 @@ func main() {
 	poolConfig := nebula.PoolConfig{
 		TimeOut:         0 * time.Millisecond,
 		IdleTime:        0 * time.Millisecond,
-		MaxConnPoolSize: 1,
+		MaxConnPoolSize: 2,
 		MinConnPoolSize: 0,
 	}
-	pool, err := nebula.NewConnectionPool(hostList, poolConfig, nebula.DefaultLogger{})
+	var err error
+	pool, err = nebula.NewConnectionPool(hostList, poolConfig, nebula.DefaultLogger{})
 	if err != nil {
 		log.Panicf(fmt.Sprintf("Fail to initialize the connection pool, host: %s, port: %d, %s", *address, *port, err.Error()))
 	}
@@ -333,7 +361,7 @@ func main() {
 	}
 
 	defer c.Close()
-	err = loop(session, c, false)
+	err = loop(session, c)
 	if err != nil {
 		log.Panicf("Loop error, %s", err.Error())
 	}

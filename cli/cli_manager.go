@@ -15,10 +15,12 @@ type Cli interface {
 	Output() bool
 	ReadLine() (line string, exit bool, err error)
 	Interactive() bool
-	SetRespError(mgs string)
+	SetRespError(msg string)
 	GetRespError() string
 	SetSpace(string)
 	GetSpace() string
+	PlayingData(bool)
+	IsPlayingData() bool
 	Close()
 }
 
@@ -28,6 +30,7 @@ type status struct {
 	user        string
 	space       string
 	respErr     string
+	playingData bool
 	promptLen   int
 	promptColor int
 

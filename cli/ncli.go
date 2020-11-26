@@ -28,6 +28,7 @@ func NewnCli(i io.Reader, output bool, user string, cleanup Cleanup) Cli {
 			user:        user,
 			space:       "(none)",
 			respErr:     "",
+			playingData: false,
 			promptLen:   -1,
 			promptColor: -1,
 			line:        "",
@@ -100,6 +101,14 @@ func (l *nCli) SetSpace(space string) {
 
 func (l *nCli) GetSpace() string {
 	return l.status.space
+}
+
+func (l *nCli) PlayingData(b bool) {
+	l.playingData = b
+}
+
+func (l nCli) IsPlayingData() bool {
+	return l.playingData
 }
 
 func (l *nCli) Close() {
