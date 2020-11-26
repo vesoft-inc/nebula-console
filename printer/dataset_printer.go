@@ -101,11 +101,12 @@ func valueToString(value *nebula.Value) string {
 			datetime.GetHour(), datetime.GetMinute(), datetime.GetSec(), datetime.GetMicrosec())
 		return str
 	} else if value.IsSetVVal() { // Vertex
+		// ("VertexID" :tag1{k0:v0,k1:v1}:tag2{k2:v2})
 		var buffer bytes.Buffer
 		vertex := value.GetVVal()
 		buffer.WriteString(`("`)
 		buffer.WriteString(string(vertex.GetVid()))
-		buffer.WriteString(`")`)
+		buffer.WriteString(`"`)
 		var tags []string
 		for _, tag := range vertex.GetTags() {
 			var props []string
@@ -116,10 +117,11 @@ func valueToString(value *nebula.Value) string {
 			tagString := fmt.Sprintf(" :%s{%s}", tagName, strings.Join(props, ", "))
 			tags = append(tags, tagString)
 		}
-		buffer.WriteString(strings.Join(tags, ","))
+		buffer.WriteString(strings.Join(tags, ""))
+		buffer.WriteString(`)`)
 		return buffer.String()
 	} else if value.IsSetEVal() { // Edge
-		// (src)-[edge]->(dst)@ranking {props}
+		// (src)-[:edge@ranking{props}]->(dst)
 		edge := value.GetEVal()
 		var buffer bytes.Buffer
 		src := string(edge.GetSrc())
@@ -132,11 +134,11 @@ func valueToString(value *nebula.Value) string {
 			props = append(props, fmt.Sprintf("%s: %s", k, valueToString(v)))
 		}
 		propsString := strings.Join(props, ", ")
-		buffer.WriteString(fmt.Sprintf(`("%s")-[%s]->("%s")@%d{%s}`,
-			src, edge.GetName(), dst, edge.GetRanking(), propsString))
+		buffer.WriteString(fmt.Sprintf(`("%s")-[:%s@%d{%s}]->("%s")`,
+			src, edge.GetName(), edge.GetRanking(), propsString, dst))
 		return buffer.String()
 	} else if value.IsSetPVal() { // Path
-		// (src)-[TypeName@ranking]->(dst)-[TypeName@ranking]->(dst) ...
+		// (src)-[:TypeName@ranking]->(dst)-[:TypeName@ranking]->(dst) ...
 		var buffer bytes.Buffer
 		p := value.GetPVal()
 		srcVid := string(p.GetSrc().GetVid())
@@ -144,9 +146,9 @@ func valueToString(value *nebula.Value) string {
 		for _, step := range p.GetSteps() {
 			dstVid := string(step.GetDst().GetVid())
 			if step.GetType() > 0 {
-				buffer.WriteString(fmt.Sprintf("-[%s@%d]->(%q)", step.GetName(), step.GetRanking(), dstVid))
+				buffer.WriteString(fmt.Sprintf("-[:%s@%d]->(%q)", step.GetName(), step.GetRanking(), dstVid))
 			} else {
-				buffer.WriteString(fmt.Sprintf("<-[%s@%d]-(%q)", step.GetName(), step.GetRanking(), dstVid))
+				buffer.WriteString(fmt.Sprintf("<-[:%s@%d]-(%q)", step.GetName(), step.GetRanking(), dstVid))
 			}
 		}
 		return buffer.String()
