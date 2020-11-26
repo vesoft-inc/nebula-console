@@ -47,6 +47,7 @@ func (p *PlanDescPrinter) SetOutDot(filename string) {
 	fd, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
 	if err != nil {
 		fmt.Printf("Open or Create file %s failed, %s", filename, err.Error())
+		return
 	}
 	p.fd = fd
 	p.filename = filename
