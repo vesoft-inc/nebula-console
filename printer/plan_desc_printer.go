@@ -63,18 +63,6 @@ func (p *PlanDescPrinter) UnsetOutDot() {
 	p.filename = ""
 }
 
-func (p PlanDescPrinter) Print(planDesc *graph.PlanDescription) string {
-	switch strings.ToLower(string(planDesc.GetFormat())) {
-	case "row":
-		return p.renderByRow()
-	case "dot":
-		return p.renderDotGraph()
-	case "dot:struct":
-		return p.renderDotGraphByStruct()
-	}
-	return ""
-}
-
 func name(planNodeDesc *graph.PlanNodeDescription) string {
 	return fmt.Sprintf("%s_%d", planNodeDesc.GetName(), planNodeDesc.GetId())
 }
@@ -144,12 +132,7 @@ func (p PlanDescPrinter) nodeById(nodeId int64) *graph.PlanNodeDescription {
 	return p.planDesc.GetPlanNodeDescs()[line]
 }
 
-func (p PlanDescPrinter) renderDotGraphByStruct() string {
-	p.writer.ResetHeaders()
-	p.writer.ResetRows()
-	p.configWriterDotRenderStyle(true)
-	p.writer.AppendHeader(table.Row{"plan"})
-
+func (p PlanDescPrinter) makeDotGraphByStruct() string {
 	planNodeDescs := p.planDesc.GetPlanNodeDescs()
 	var builder strings.Builder
 	builder.WriteString("digraph exec_plan {\n")
@@ -180,9 +163,16 @@ func (p PlanDescPrinter) renderDotGraphByStruct() string {
 		}
 	}
 	builder.WriteString("}")
-	p.writer.AppendRow(table.Row{builder.String()})
-	fmt.Println(p.writer.Render())
 	return builder.String()
+}
+
+func (p PlanDescPrinter) renderDotGraphByStruct(s string) string {
+	p.writer.ResetHeaders()
+	p.writer.ResetRows()
+	p.configWriterDotRenderStyle(true)
+	p.writer.AppendHeader(table.Row{"plan"})
+	p.writer.AppendRow(table.Row{s})
+	return p.writer.Render()
 }
 
 func (p PlanDescPrinter) findBranchEndNode(condNodeId int64, isDoBranch bool) int64 {
@@ -211,12 +201,7 @@ func (p PlanDescPrinter) findFirstStartNodeFrom(nodeId int64) int64 {
 	}
 }
 
-func (p PlanDescPrinter) renderDotGraph() string {
-	p.writer.ResetHeaders()
-	p.writer.ResetRows()
-	p.configWriterDotRenderStyle(true)
-	p.writer.AppendHeader(table.Row{"plan"})
-
+func (p PlanDescPrinter) makeDotGraph() string {
 	planNodeDescs := p.planDesc.GetPlanNodeDescs()
 	var builder strings.Builder
 	builder.WriteString("digraph exec_plan {\n")
@@ -258,9 +243,16 @@ func (p PlanDescPrinter) renderDotGraph() string {
 		}
 	}
 	builder.WriteString("}")
-	p.writer.AppendRow(table.Row{builder.String()})
-	fmt.Println(p.writer.Render())
 	return builder.String()
+}
+
+func (p PlanDescPrinter) renderDotGraph(s string) string {
+	p.writer.ResetHeaders()
+	p.writer.ResetRows()
+	p.configWriterDotRenderStyle(true)
+	p.writer.AppendHeader(table.Row{"plan"})
+	p.writer.AppendRow(table.Row{s})
+	return p.writer.Render()
 }
 
 func (p PlanDescPrinter) renderByRow() string {
@@ -322,14 +314,26 @@ func (p PlanDescPrinter) renderByRow() string {
 		row = append(row, strings.Join(columnInfo, "\n"))
 		p.writer.AppendRow(table.Row(row))
 	}
-	fmt.Println(p.writer.Render())
-	return "not dot"
+	return p.writer.Render()
 }
 
 func (p *PlanDescPrinter) PrintPlanDesc(planDesc *graph.PlanDescription) {
 	p.planDesc = planDesc
-	s := p.Print(planDesc)
-	if p.fd != nil {
+	var s string
+	format := strings.ToLower(string(planDesc.GetFormat()))
+	switch format {
+	case "row":
+		fmt.Println(p.renderByRow())
+	case "dot":
+		s = p.makeDotGraph()
+		fmt.Println(p.renderDotGraph(s))
+	case "dot:struct":
+		s = p.makeDotGraphByStruct()
+		fmt.Println(p.renderDotGraphByStruct(s))
+	}
+
+	outputDot := format != "row"
+	if p.fd != nil && outputDot {
 		go func() {
 			p.fd.Truncate(0)
 			p.fd.Seek(0, 0)
