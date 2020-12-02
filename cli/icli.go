@@ -38,7 +38,7 @@ func NewiCli(historyFile, user string) Cli {
 
 	f, err := os.OpenFile(historyFile, os.O_RDONLY|os.O_CREATE, 0666)
 	if err != nil {
-		log.Fatalf("Open history file %s failed, %s", historyFile, err.Error())
+		log.Panicf("Open history file %s failed, %s", historyFile, err.Error())
 	}
 	defer f.Close()
 	c.ReadHistory(f)
