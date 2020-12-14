@@ -50,6 +50,7 @@ func NewiCli(historyFile, user string) Cli {
 			space:       "(none)",
 			promptLen:   -1,
 			promptColor: -1,
+			playingData: false,
 			line:        "",
 			joined:      false,
 		},
@@ -106,6 +107,14 @@ func (l *iCli) SetSpace(space string) {
 
 func (l *iCli) GetSpace() string {
 	return l.status.space
+}
+
+func (l *iCli) PlayingData(b bool) {
+	l.playingData = b
+}
+
+func (l iCli) IsPlayingData() bool {
+	return l.playingData
 }
 
 func (l *iCli) Close() {
