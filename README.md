@@ -44,32 +44,34 @@ This repository contains the Nebula Graph Console for Nebula Graph 2.0. Nebula G
         [-t 120] [-e "nGQL_statement" | -f filename.nGQL]
     ```
 
-| Option          | Description                                                                                                                                                                   |
-| ------------    | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `-h`            | Shows the help menu.                                                                                                                                                          |
-| `-addr/-address`| Sets the IP/HOST address of the graphd service. The default address is 127.0.0.1.                                                                                             |
-| `-P/-port`      | Sets the port number of the graphd service.                                                                                                                                   |
-| `-u/-user`      | Sets the username of your Nebula Graph account.                                                                                                                               |
-| `-p/-password`  | Sets the password of your Nebula Graph account.                                                                                                                               |
-| `-t/-timeout`   | Sets an integer-type timeout threshold for the connection. The unit is second. The default value is 120.                                                                      |
-| `-e/-eval`      | Sets a string-type nGQL statement. The nGQL statement is executed once the connection succeeds. The connection stops after the result is returned.                            |
-| `-f/-file`      | Sets the path of an nGQL file. The nGQL statements in the file are executed once the connection succeeds. You'll get the return messages and the connection stops then.       |
+    | Option          | Description                                                                                                                                                                   |
+    | ------------    | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+    | `-h`            | Shows the help menu.                                                                                                                                                          |
+    | `-addr/-address`| Sets the IP/HOST address of the graphd service. The default address is 127.0.0.1.                                                                                             |
+    | `-P/-port`      | Sets the port number of the graphd service.                                                                                                                                   |
+    | `-u/-user`      | Sets the username of your Nebula Graph account.                                                                                                                               |
+    | `-p/-password`  | Sets the password of your Nebula Graph account.                                                                                                                               |
+    | `-t/-timeout`   | Sets an integer-type timeout threshold for the connection. The unit is second. The default value is 120.                                                                      |
+    | `-e/-eval`      | Sets a string-type nGQL statement. The nGQL statement is executed once the connection succeeds. The connection stops after the result is returned.                            |
+    | `-f/-file`      | Sets the path of an nGQL file. The nGQL statements in the file are executed once the connection succeeds. You'll get the return messages and the connection stops then.       |
 
-Check options for `./nebula-console -h`, try `./nebula-console` in interactive mode directly.
-And try `./nebula-console -e 'show hosts'` for the direct script mode.
-And try `./nebula-console -f demo.nGQL` for the script file mode.
+    Check options for `./nebula-console -h`, try `./nebula-console` in interactive mode directly.
+    And try `./nebula-console -e 'show hosts'` for the direct script mode.
+    And try `./nebula-console -f demo.nGQL` for the script file mode.
 
 ### Docker
 
-    ```
-    $ docker run --rm -ti --network nebula-docker-compose_nebula-net --entrypoint=/bin/sh vesoft/nebula-console:v2-nightly
-    ```
+Create a container:
 
-    To connect to your Nebula Graph services, run the follow command in the container:
+```bash
+$ docker run --rm -ti --network nebula-docker-compose_nebula-net --entrypoint=/bin/sh vesoft/nebula-console:v2-nightly
+```
 
-    ```
-    docker> nebula-console -u <user> -p <password> --address=graphd --port=3699
-    ```
+To connect to your Nebula Graph services, run the follow command in the container:
+
+```bash
+docker> nebula-console -u <user> -p <password> --address=graphd --port=3699
+```
 
 
 ## Export mode for Nebula Graph Console
