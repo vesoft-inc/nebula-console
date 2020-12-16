@@ -14,46 +14,35 @@ This repository contains the Nebula Graph Console for Nebula Graph 2.0. Nebula G
 ### From Source Code
 
 1. Build Nebula Graph Console
-To build Nebula Graph Console, make sure that you have installed [Go](https://golang.org/doc/install).
 
-Run the following command to examine if Go is installed on your machine.
+    To build Nebula Graph Console, make sure that you have installed [Go](https://golang.org/doc/install).
 
-```bash
-$ go version
-```
+    Run the following command to examine if Go is installed on your machine.
 
-Use Git to clone the source code of Nebula Graph Console to your host.
+    ```bash
+    $ go version
+    ```
 
-```bash
-$ git clone https://github.com/vesoft-inc/nebula-console
-```
+    Use Git to clone the source code of Nebula Graph Console to your host.
 
-Run the following command to build Nebula Graph Console.
+    ```bash
+    $ git clone https://github.com/vesoft-inc/nebula-console
+    ```
 
-```bash
-$ cd nebula-console
-$ make
-```
+    Run the following command to build Nebula Graph Console.
+
+    ```bash
+    $ cd nebula-console
+    $ make
+    ```
 2. Connect to Nebula Graph
 
-To connect to your Nebula Graph services, use the following command.
+    To connect to your Nebula Graph services, use the following command.
 
-```bash
-$ ./nebula-console -addr <ip> -port <port> -u <username> -p <password>
-    [-t 120] [-e "nGQL_statement" | -f filename.nGQL]
-```
-
-### Docker
-
-```
-$ docker run --rm -ti --network nebula-docker-compose_nebula-net --entrypoint=/bin/sh vesoft/nebula-console:v2-nightly
-```
-
-To connect to your Nebula Graph services, run the follow command in the container:
-
-```
-docker> nebula-console -u <user> -p <password> --address=graphd --port=3699
-```
+    ```bash
+    $ ./nebula-console -addr <ip> -port <port> -u <username> -p <password>
+        [-t 120] [-e "nGQL_statement" | -f filename.nGQL]
+    ```
 
 | Option          | Description                                                                                                                                                                   |
 | ------------    | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -69,6 +58,19 @@ docker> nebula-console -u <user> -p <password> --address=graphd --port=3699
 Check options for `./nebula-console -h`, try `./nebula-console` in interactive mode directly.
 And try `./nebula-console -e 'show hosts'` for the direct script mode.
 And try `./nebula-console -f demo.nGQL` for the script file mode.
+
+### Docker
+
+    ```
+    $ docker run --rm -ti --network nebula-docker-compose_nebula-net --entrypoint=/bin/sh vesoft/nebula-console:v2-nightly
+    ```
+
+    To connect to your Nebula Graph services, run the follow command in the container:
+
+    ```
+    docker> nebula-console -u <user> -p <password> --address=graphd --port=3699
+    ```
+
 
 ## Export mode for Nebula Graph Console
 
