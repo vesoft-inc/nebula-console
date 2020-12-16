@@ -9,76 +9,70 @@ This repository contains the Nebula Graph Console for Nebula Graph 2.0. Nebula G
 - Supports autocompletion.
 - Supports multiple OS and architecture (We recommend Linux/AMD64).
 
-## Build Nebula Graph Console
+## How to Install
 
-To build Nebula Graph Console, make sure that you have installed [Go](https://golang.org/doc/install).
+### From Source Code
 
-Run the following command to examine if Go is installed on your machine.
+1. Build Nebula Graph Console
+
+    To build Nebula Graph Console, make sure that you have installed [Go](https://golang.org/doc/install).
+
+    Run the following command to examine if Go is installed on your machine.
+
+    ```bash
+    $ go version
+    ```
+
+    Use Git to clone the source code of Nebula Graph Console to your host.
+
+    ```bash
+    $ git clone https://github.com/vesoft-inc/nebula-console
+    ```
+
+    Run the following command to build Nebula Graph Console.
+
+    ```bash
+    $ cd nebula-console
+    $ make
+    ```
+2. Connect to Nebula Graph
+
+    To connect to your Nebula Graph services, use the following command.
+
+    ```bash
+    $ ./nebula-console -addr <ip> -port <port> -u <username> -p <password>
+        [-t 120] [-e "nGQL_statement" | -f filename.nGQL]
+    ```
+
+    | Option          | Description                                                                                                                                                                   |
+    | ------------    | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+    | `-h`            | Shows the help menu.                                                                                                                                                          |
+    | `-addr/-address`| Sets the IP/HOST address of the graphd service. The default address is 127.0.0.1.                                                                                             |
+    | `-P/-port`      | Sets the port number of the graphd service.                                                                                                                                   |
+    | `-u/-user`      | Sets the username of your Nebula Graph account.                                                                                                                               |
+    | `-p/-password`  | Sets the password of your Nebula Graph account.                                                                                                                               |
+    | `-t/-timeout`   | Sets an integer-type timeout threshold for the connection. The unit is second. The default value is 120.                                                                      |
+    | `-e/-eval`      | Sets a string-type nGQL statement. The nGQL statement is executed once the connection succeeds. The connection stops after the result is returned.                            |
+    | `-f/-file`      | Sets the path of an nGQL file. The nGQL statements in the file are executed once the connection succeeds. You'll get the return messages and the connection stops then.       |
+
+    Check options for `./nebula-console -h`, try `./nebula-console` in interactive mode directly.
+    And try `./nebula-console -e 'show hosts'` for the direct script mode.
+    And try `./nebula-console -f demo.nGQL` for the script file mode.
+
+### Docker
+
+Create a container:
 
 ```bash
-$ go version
+$ docker run --rm -ti --network nebula-docker-compose_nebula-net --entrypoint=/bin/sh vesoft/nebula-console:v2-nightly
 ```
 
-Use Git to clone the source code of Nebula Graph Console to your host.
+To connect to your Nebula Graph services, run the follow command in the container:
 
 ```bash
-$ git clone https://github.com/vesoft-inc/nebula-console
+docker> nebula-console -u <user> -p <password> --address=graphd --port=3699
 ```
 
-Run the following command to build Nebula Graph Console.
-
-```bash
-$ cd nebula-console
-$ make
-```
-
-## Upgrade Nebula Graph Console
-
-To build Nebula Graph Console, make sure that you have installed [Go](https://golang.org/doc/install).
-
-Run the following command to examine if Go is installed on your machine.
-
-```bash
-$ go version
-```
-
-Use Git to update the source code of Nebula Graph Console to your host.
-
-```bash
-$ cd nebula-console
-$ git fetch upstream
-$ git rebase upstream/master
-```
-
-Run the following command to build Nebula Graph Console.
-
-```bash
-$ make
-```
-
-## Connect to Nebula Graph Console
-
-To connect your Nebula Graph services with the Nebula Graph Console, use the following command.
-
-```bash
-$ ./nebula-console -addr <ip> -port <port> -u <username> -p <password>
-    [-t 120] [-e "nGQL_statement" | -f filename.nGQL]
-```
-
-| Option          | Description                                                                                                                                                                   |
-| ------------    | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `-h`            | Shows the help menu.                                                                                                                                                          |
-| `-addr/-address`| Sets the IP/HOST address of the graphd service. The default address is 127.0.0.1.                                                                                             |
-| `-P/-port`      | Sets the port number of the graphd service.                                                                                                                                   |
-| `-u/-user`      | Sets the username of your Nebula Graph account.                                                                                                                               |
-| `-p/-password`  | Sets the password of your Nebula Graph account.                                                                                                                               |
-| `-t/-timeout`   | Sets an integer-type timeout threshold for the connection. The unit is second. The default value is 120.                                                                      |
-| `-e/-eval`      | Sets a string-type nGQL statement. The nGQL statement is executed once the connection succeeds. The connection stops after the result is returned.                            |
-| `-f/-file`      | Sets the path of an nGQL file. The nGQL statements in the file are executed once the connection succeeds. You'll get the return messages and the connection stops then.       |
-
-Check options for `./nebula-console -h`, try `./nebula-console` in interactive mode directly.
-And try `./nebula-console -e 'show hosts'` for the direct script mode.
-And try `./nebula-console -f demo.nGQL` for the script file mode.
 
 ## Export mode for Nebula Graph Console
 
