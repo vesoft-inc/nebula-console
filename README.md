@@ -9,8 +9,11 @@ This repository contains the Nebula Graph Console for Nebula Graph 2.0. Nebula G
 - Supports autocompletion.
 - Supports multiple OS and architecture (We recommend Linux/AMD64).
 
-## Build Nebula Graph Console
+## How to Install
 
+### From Source Code
+
+1. Build Nebula Graph Console
 To build Nebula Graph Console, make sure that you have installed [Go](https://golang.org/doc/install).
 
 Run the following command to examine if Go is installed on your machine.
@@ -31,38 +34,25 @@ Run the following command to build Nebula Graph Console.
 $ cd nebula-console
 $ make
 ```
+2. Connect to Nebula Graph
 
-## Upgrade Nebula Graph Console
-
-To build Nebula Graph Console, make sure that you have installed [Go](https://golang.org/doc/install).
-
-Run the following command to examine if Go is installed on your machine.
-
-```bash
-$ go version
-```
-
-Use Git to update the source code of Nebula Graph Console to your host.
-
-```bash
-$ cd nebula-console
-$ git fetch upstream
-$ git rebase upstream/master
-```
-
-Run the following command to build Nebula Graph Console.
-
-```bash
-$ make
-```
-
-## Connect to Nebula Graph Console
-
-To connect your Nebula Graph services with the Nebula Graph Console, use the following command.
+To connect to your Nebula Graph services, use the following command.
 
 ```bash
 $ ./nebula-console -addr <ip> -port <port> -u <username> -p <password>
     [-t 120] [-e "nGQL_statement" | -f filename.nGQL]
+```
+
+### Docker
+
+```
+$ docker run --rm -ti --network nebula-docker-compose_nebula-net --entrypoint=/bin/sh vesoft/nebula-console:v2-nightly
+```
+
+To connect to your Nebula Graph services, run the follow command in the container:
+
+```
+docker> nebula-console -u <user> -p <password> --address=graphd --port=3699
 ```
 
 | Option          | Description                                                                                                                                                                   |
