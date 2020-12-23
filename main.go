@@ -193,7 +193,7 @@ func printResultSet(res *nebula.ResultSet, duration time.Duration) {
 		return
 	}
 	// Show table
-	if !res.IsEmpty() {
+	if res.IsSetData() {
 		dataSetPrinter.PrintDataSet(res)
 		numRows := res.GetRowSize()
 		if numRows > 0 {
