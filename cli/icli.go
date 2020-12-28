@@ -45,14 +45,15 @@ func NewiCli(historyFile, user string) Cli {
 
 	return &iCli{
 		status: status{
-			historyFile: historyFile,
-			user:        user,
-			space:       "(none)",
-			promptLen:   -1,
-			promptColor: -1,
-			playingData: false,
-			line:        "",
-			joined:      false,
+			historyFile:          historyFile,
+			user:                 user,
+			space:                "(none)",
+			promptLen:            -1,
+			promptColor:          -1,
+			playingData:          false,
+			line:                 "",
+			joinedByTripleQuotes: false,
+			joinedByBackSlash:    false,
 		},
 		terminal: c,
 	}
@@ -66,16 +67,17 @@ func (l *iCli) ReadLine() (string, bool, error) {
 	for {
 		input, err := l.terminal.Prompt(l.status.nebulaPrompt())
 		if err == nil {
-			if len(input) > 0 {
-				l.terminal.AppendHistory(input)
-			}
 			l.status.checkJoined(input)
-			if l.status.joined {
+			if l.status.joinedByTripleQuotes || l.status.joinedByBackSlash {
 				continue
+			}
+			if len(l.status.line) > 0 {
+				l.terminal.AppendHistory(l.status.line)
 			}
 			return l.status.line, false, nil
 		} else if err == liner.ErrPromptAborted {
-			l.status.joined = false
+			l.status.joinedByTripleQuotes = false
+			l.status.joinedByBackSlash = false
 			return "", false, nil
 		} else if err == io.EOF {
 			return "", true, nil
