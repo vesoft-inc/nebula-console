@@ -25,14 +25,15 @@ type nCli struct {
 func NewnCli(i io.Reader, output bool, user string, cleanup Cleanup) Cli {
 	return &nCli{
 		status: status{
-			user:        user,
-			space:       "(none)",
-			respErr:     "",
-			playingData: false,
-			promptLen:   -1,
-			promptColor: -1,
-			line:        "",
-			joined:      false,
+			user:                 user,
+			space:                "(none)",
+			respErr:              "",
+			playingData:          false,
+			promptLen:            -1,
+			promptColor:          -1,
+			line:                 "",
+			joinedByTripleQuotes: false,
+			joinedByBackSlash:    false,
 		},
 		io:      bufio.NewReader(i),
 		output:  output,
@@ -67,7 +68,7 @@ func (l *nCli) ReadLine() (string, bool, error) {
 				fmt.Println(input)
 			}
 			l.status.checkJoined(input)
-			if l.status.joined {
+			if l.status.joinedByTripleQuotes || l.status.joinedByBackSlash {
 				continue
 			}
 			return l.status.line, false, nil

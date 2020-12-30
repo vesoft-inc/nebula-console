@@ -34,27 +34,42 @@ type status struct {
 	promptLen   int
 	promptColor int
 
-	// multi-line seperated by '\'
-	line   string
-	joined bool
+	// multi-line seperated by '\' or enclosed in triple quotes
+	line string
+	// tripleQuotes has a higher priority than backSlash
+	joinedByTripleQuotes bool
+	joinedByBackSlash    bool
 }
 
 func (stat *status) checkJoined(input string) {
-	runes := []rune(input)
-	var backSlashFound = len(runes) >= 1 && runes[len(runes)-1] == 92 // '\'
-	if stat.joined {
-		if backSlashFound {
-			stat.line += string(runes[:len(runes)-1])
+	var tripleQuotesFound = len(input) == 3 && (input == "\"\"\"" || input == "'''")
+	var backSlashFound = len(input) >= 1 && input[len(input)-1] == 92 // '\'
+	if stat.joinedByTripleQuotes {
+		if tripleQuotesFound {
+			stat.joinedByTripleQuotes = false
 		} else {
-			stat.line += string(runes)
-			stat.joined = false
+			if backSlashFound { // backslash can be used in a block enclosed by threequotes
+				stat.line += string(input[:len(input)-1])
+			} else {
+				stat.line += input
+			}
+		}
+	} else if stat.joinedByBackSlash {
+		if backSlashFound {
+			stat.line += string(input[:len(input)-1])
+		} else {
+			stat.line += input
+			stat.joinedByBackSlash = false
 		}
 	} else {
-		if backSlashFound {
-			stat.line = string(runes[:len(runes)-1])
-			stat.joined = true
+		if tripleQuotesFound {
+			stat.line = ""
+			stat.joinedByTripleQuotes = true
+		} else if backSlashFound {
+			stat.line = string(input[:len(input)-1])
+			stat.joinedByBackSlash = true
 		} else {
-			stat.line = string(runes)
+			stat.line = input
 		}
 	}
 }
@@ -64,7 +79,7 @@ func (stat *status) nebulaPrompt() string {
 	//prompter.color = (prompter.color + 1) % 6
 	prompt := ""
 	//prompt += fmt.Sprintf("\033[%v;1m", ttyColor)
-	if stat.joined {
+	if stat.joinedByTripleQuotes || stat.joinedByBackSlash {
 		prompt += strings.Repeat(" ", stat.promptLen-3)
 		prompt += "-> "
 	} else {
