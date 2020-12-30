@@ -42,7 +42,7 @@ type status struct {
 }
 
 func (stat *status) checkJoined(input string) {
-	var tripleQuotesFound = len(input) >= 3 && (input[(len(input)-3):] == "\"\"\"" || input[0:3] == "'''")
+	var tripleQuotesFound = len(input) == 3 && (input == "\"\"\"" || input == "'''")
 	var backSlashFound = len(input) >= 1 && input[len(input)-1] == 92 // '\'
 	if stat.joinedByTripleQuotes {
 		if tripleQuotesFound {
