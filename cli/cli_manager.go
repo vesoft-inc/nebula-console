@@ -53,6 +53,7 @@ func (stat *status) checkJoined(input string) {
 				stat.line += string(input[:len(input)-1])
 			} else {
 				stat.line += input
+				stat.line += " "
 			}
 		}
 	} else if stat.joinedByBackSlash {
