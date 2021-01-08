@@ -272,7 +272,7 @@ var address *string = flag.String("addr", "127.0.0.1", "The Nebula Graph IP/HOST
 var port *int = flag.Int("P", -1, "The Nebula Graph Port")
 var username *string = flag.String("u", "", "The Nebula Graph login user name")
 var password *string = flag.String("p", "", "The Nebula Graph login password")
-var timeout *int = flag.Int("t", 120, "The Nebula Graph client connection timeout in seconds")
+var timeout *int = flag.Int("t", 0, "The Nebula Graph client connection timeout in seconds, 0 means never timeout")
 var script *string = flag.String("e", "", "The nGQL directly")
 var file *string = flag.String("f", "", "The nGQL script file name")
 
@@ -281,7 +281,7 @@ func init() {
 	flag.IntVar(port, "port", -1, "The Nebula Graph Port")
 	flag.StringVar(username, "user", "", "The Nebula Graph login user name")
 	flag.StringVar(password, "password", "", "The Nebula Graph login password")
-	flag.IntVar(timeout, "timeout", 120, "The Nebula Graph client connection timeout in seconds")
+	flag.IntVar(timeout, "timeout", 0, "The Nebula Graph client connection timeout in seconds, 0 means never timeout")
 	flag.StringVar(script, "eval", "", "The nGQL directly")
 	flag.StringVar(file, "file", "", "The nGQL script file name")
 }
@@ -320,7 +320,7 @@ func main() {
 	hostAddress := nebula.HostAddress{Host: *address, Port: *port}
 	hostList := []nebula.HostAddress{hostAddress}
 	poolConfig := nebula.PoolConfig{
-		TimeOut:         0 * time.Millisecond,
+		TimeOut:         time.Duration(*timeout) * time.Millisecond,
 		IdleTime:        0 * time.Millisecond,
 		MaxConnPoolSize: 2,
 		MinConnPoolSize: 0,
