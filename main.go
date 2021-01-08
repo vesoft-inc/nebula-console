@@ -24,7 +24,7 @@ import (
 
 // Nebula Console version
 const (
-	Version = "v2.0.0-alpha"
+	Version = "v2.0.0-rc1"
 )
 
 // Console side commands
