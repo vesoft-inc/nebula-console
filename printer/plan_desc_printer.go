@@ -223,6 +223,8 @@ func (p PlanDescPrinter) makeDotGraph() string {
 			builder.WriteString(edgeString(name(p.nodeById(elseNodeId)), name(dep)))
 			elseStartId := p.findFirstStartNodeFrom(elseNodeId)
 			builder.WriteString(conditionalEdgeString(name(planNodeDesc), name(p.nodeById(elseStartId)), "N"))
+			// dep
+			builder.WriteString(edgeString(name(dep), planNodeName))
 		case "loop":
 			builder.WriteString(conditionalNodeString(planNodeName))
 			dep := p.nodeById(planNodeDesc.GetDependencies()[0])
@@ -240,7 +242,6 @@ func (p PlanDescPrinter) makeDotGraph() string {
 					builder.WriteString(edgeString(name(p.nodeById(depId)), planNodeName))
 				}
 			}
-
 		}
 	}
 	builder.WriteString("}")
