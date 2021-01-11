@@ -7,6 +7,8 @@
 package printer
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -257,6 +259,14 @@ func (p PlanDescPrinter) renderDotGraph(s string) string {
 	return p.writer.Render()
 }
 
+func prettyFormatJsonString(value []byte) string {
+	var prettyJson bytes.Buffer
+	if err := json.Indent(&prettyJson, value, "", "  "); err != nil {
+		return string(value)
+	}
+	return prettyJson.String()
+}
+
 func (p PlanDescPrinter) renderByRow() string {
 	p.writer.ResetHeaders()
 	p.writer.ResetRows()
@@ -304,13 +314,14 @@ func (p PlanDescPrinter) renderByRow() string {
 				branchInfo.GetIsDoBranch(), branchInfo.GetConditionNodeID()))
 		}
 
-		outputVar := fmt.Sprintf("outputVar: %s", string(planNodeDesc.GetOutputVar()))
+		outputVar := fmt.Sprintf("outputVar: %s", prettyFormatJsonString(planNodeDesc.GetOutputVar()))
 		columnInfo = append(columnInfo, outputVar)
 
 		if planNodeDesc.IsSetDescription() {
 			desc := planNodeDesc.GetDescription()
 			for _, pair := range desc {
-				columnInfo = append(columnInfo, fmt.Sprintf("%s: %s", string(pair.GetKey()), string(pair.GetValue())))
+				value := prettyFormatJsonString(pair.GetValue())
+				columnInfo = append(columnInfo, fmt.Sprintf("%s: %s", string(pair.GetKey()), value))
 			}
 		}
 		row = append(row, strings.Join(columnInfo, "\n"))
