@@ -298,9 +298,20 @@ func (p PlanDescPrinter) renderByRow() string {
 		if planNodeDesc.IsSetProfiles() {
 			var strArr []string
 			for i, profile := range planNodeDesc.GetProfiles() {
+				otherStats := profile.GetOtherStats()
+				if otherStats != nil {
+					strArr = append(strArr, "{")
+				}
 				s := fmt.Sprintf("ver: %d, rows: %d, execTime: %dus, totalTime: %dus",
 					i, profile.GetRows(), profile.GetExecDurationInUs(), profile.GetTotalDurationInUs())
 				strArr = append(strArr, s)
+
+				for k, v := range otherStats {
+					strArr = append(strArr, fmt.Sprintf("%s: %s", k, v))
+				}
+				if otherStats != nil {
+					strArr = append(strArr, "}")
+				}
 			}
 			row = append(row, strings.Join(strArr, "\n"))
 		} else {
