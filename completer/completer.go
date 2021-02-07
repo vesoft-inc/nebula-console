@@ -12,7 +12,6 @@ import (
 
 // all keywords
 var keywords = []string{
-	/* Reserved keyword */
 	"GO", "AS", "TO", "OR", "AND", "XOR", "USE", "SET", "FROM",
 	"WHERE", "MATCH", "INSERT", "YIELD", "RETURN", "DESCRIBE",
 	"DESC", "VERTEX", "EDGE", "EDGES", "UPDATE", "UPSERT",
@@ -26,8 +25,7 @@ var keywords = []string{
 	"GET", "OF", "ORDER", "INGEST", "COMPACT", "FLUSH", "SUBMIT",
 	"ASC", "DISTINCT", "FETCH", "PROP", "BALANCE", "STOP", "LIMIT",
 	"OFFSET", "IS", "NULL", "RECOVER", "EXPLAIN", "PROFILE", "FORMAT",
-	"CASE", "MATCH",
-	/* Unreserved keyword */
+	"CASE", "MATCH", "UNWIND", "SKIP", "SIGN",
 	"HOSTS", "SPACE", "SPACES", "VALUES", "USER", "USERS", "PASSWORD",
 	"ROLE", "ROLES", "GOD", "ADMIN", "DBA", "GUEST", "GROUP", "PARTITION_NUM",
 	"REPLICA_FACTOR", "VID_SIZE", "CHARSET", "COLLATE", "COLLATION", "ALL",
