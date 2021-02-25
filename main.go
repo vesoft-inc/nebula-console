@@ -205,16 +205,16 @@ func printResultSet(res *nebula.ResultSet, duration time.Duration) {
 		fmt.Printf("Execution succeeded (time spent %d/%d us)\n", res.GetLatency(), duration/1000)
 	}
 
-	if res.HasComment() {
+	if res.IsSetComment() {
 		fmt.Println()
 		fmt.Printf("[WARNING]: %s", res.GetComment())
 	}
 
-	if res.HasPlanDesc() {
+	if res.IsSetPlanDesc() {
 		fmt.Println()
 		fmt.Println("Execution Plan")
 		fmt.Println()
-		planDescPrinter.PrintPlanDesc(res.GetPlanDesc())
+		planDescPrinter.PrintPlanDesc(res)
 	}
 	fmt.Println()
 }

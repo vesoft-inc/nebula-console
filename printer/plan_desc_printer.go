@@ -7,14 +7,12 @@
 package printer
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/vesoft-inc/nebula-go/nebula/graph"
+	nebula "github.com/vesoft-inc/nebula-go"
 )
 
 func graphvizString(s string) string {
@@ -28,7 +26,6 @@ func graphvizString(s string) string {
 
 type PlanDescPrinter struct {
 	writer   table.Writer
-	planDesc *graph.PlanDescription
 	fd       *os.File
 	filename string
 }
@@ -37,8 +34,7 @@ func NewPlanDescPrinter() PlanDescPrinter {
 	writer := table.NewWriter()
 	configTableWriter(&writer)
 	return PlanDescPrinter{
-		writer:   writer,
-		planDesc: nil,
+		writer: writer,
 	}
 }
 
@@ -66,54 +62,6 @@ func (p *PlanDescPrinter) UnsetOutDot() {
 	p.filename = ""
 }
 
-func name(planNodeDesc *graph.PlanNodeDescription) string {
-	return fmt.Sprintf("%s_%d", planNodeDesc.GetName(), planNodeDesc.GetId())
-}
-
-func condEdgeLabel(condNode *graph.PlanNodeDescription, doBranch bool) string {
-	name := strings.ToLower(string(condNode.GetName()))
-	if strings.HasPrefix(name, "select") {
-		if doBranch {
-			return "Y"
-		}
-		return "N"
-	}
-	if strings.HasPrefix(name, "loop") {
-		if doBranch {
-			return "Do"
-		}
-	}
-	return ""
-}
-
-func nodeString(planNodeDesc *graph.PlanNodeDescription, planNodeName string) string {
-	var outputVar = graphvizString(string(planNodeDesc.GetOutputVar()))
-	var inputVar string
-	if planNodeDesc.IsSetDescription() {
-		desc := planNodeDesc.GetDescription()
-		for _, pair := range desc {
-			key := string(pair.GetKey())
-			if key == "inputVar" {
-				inputVar = graphvizString(string(pair.GetValue()))
-			}
-		}
-	}
-	return fmt.Sprintf("\t\"%s\"[label=\"{%s|outputVar: %s|inputVar: %s}\", shape=Mrecord];\n",
-		planNodeName, planNodeName, outputVar, inputVar)
-}
-
-func edgeString(start, end string) string {
-	return fmt.Sprintf("\t\"%s\"->\"%s\";\n", start, end)
-}
-
-func conditionalEdgeString(start, end, label string) string {
-	return fmt.Sprintf("\t\"%s\"->\"%s\"[label=\"%s\", style=dashed];\n", start, end, label)
-}
-
-func conditionalNodeString(name string) string {
-	return fmt.Sprintf("\t\"%s\"[shape=diamond];\n", name)
-}
-
 func (p PlanDescPrinter) configWriterDotRenderStyle(renderByDot bool) {
 	if renderByDot {
 		p.writer.Style().Box.Left = " "
@@ -130,43 +78,13 @@ func (p PlanDescPrinter) configWriterDotRenderStyle(renderByDot bool) {
 	p.writer.Style().Box.RightSeparator = "-"
 }
 
-func (p PlanDescPrinter) nodeById(nodeId int64) *graph.PlanNodeDescription {
-	line := p.planDesc.GetNodeIndexMap()[nodeId]
-	return p.planDesc.GetPlanNodeDescs()[line]
-}
-
-func (p PlanDescPrinter) makeDotGraphByStruct() string {
-	planNodeDescs := p.planDesc.GetPlanNodeDescs()
-	var builder strings.Builder
-	builder.WriteString("digraph exec_plan {\n")
-	builder.WriteString("\trankdir=BT;\n")
-	for _, planNodeDesc := range planNodeDescs {
-		planNodeName := name(planNodeDesc)
-		switch strings.ToLower(string(planNodeDesc.GetName())) {
-		case "select":
-			builder.WriteString(conditionalNodeString(planNodeName))
-		case "loop":
-			builder.WriteString(conditionalNodeString(planNodeName))
-		default:
-			builder.WriteString(nodeString(planNodeDesc, planNodeName))
-		}
-
-		if planNodeDesc.IsSetDependencies() {
-			for _, depId := range planNodeDesc.GetDependencies() {
-				dep := p.nodeById(depId)
-				builder.WriteString(edgeString(name(dep), planNodeName))
-			}
-		}
-
-		if planNodeDesc.IsSetBranchInfo() {
-			branchInfo := planNodeDesc.GetBranchInfo()
-			condNode := p.nodeById(branchInfo.GetConditionNodeID())
-			label := condEdgeLabel(condNode, branchInfo.GetIsDoBranch())
-			builder.WriteString(conditionalEdgeString(planNodeName, name(condNode), label))
-		}
-	}
-	builder.WriteString("}")
-	return builder.String()
+func (p PlanDescPrinter) renderDotGraph(s string) string {
+	p.writer.ResetHeaders()
+	p.writer.ResetRows()
+	p.configWriterDotRenderStyle(true)
+	p.writer.AppendHeader(table.Row{"plan"})
+	p.writer.AppendRow(table.Row{s})
+	return p.writer.Render()
 }
 
 func (p PlanDescPrinter) renderDotGraphByStruct(s string) string {
@@ -178,101 +96,10 @@ func (p PlanDescPrinter) renderDotGraphByStruct(s string) string {
 	return p.writer.Render()
 }
 
-func (p PlanDescPrinter) findBranchEndNode(condNodeId int64, isDoBranch bool) int64 {
-	for _, node := range p.planDesc.GetPlanNodeDescs() {
-		if node.IsSetBranchInfo() {
-			bInfo := node.GetBranchInfo()
-			if bInfo.GetConditionNodeID() == condNodeId && bInfo.GetIsDoBranch() == isDoBranch {
-				return node.GetId()
-			}
-		}
-	}
-	return -1
-}
-
-func (p PlanDescPrinter) findFirstStartNodeFrom(nodeId int64) int64 {
-	node := p.nodeById(nodeId)
-	for {
-		deps := node.GetDependencies()
-		if len(deps) == 0 {
-			if strings.ToLower(string(node.GetName())) != "start" {
-				return -1
-			}
-			return node.GetId()
-		}
-		node = p.nodeById(deps[0])
-	}
-}
-
-func (p PlanDescPrinter) makeDotGraph() string {
-	planNodeDescs := p.planDesc.GetPlanNodeDescs()
-	var builder strings.Builder
-	builder.WriteString("digraph exec_plan {\n")
-	builder.WriteString("\trankdir=BT;\n")
-	for _, planNodeDesc := range planNodeDescs {
-		planNodeName := name(planNodeDesc)
-		switch strings.ToLower(string(planNodeDesc.GetName())) {
-		case "select":
-			builder.WriteString(conditionalNodeString(planNodeName))
-			dep := p.nodeById(planNodeDesc.GetDependencies()[0])
-			// then branch
-			thenNodeId := p.findBranchEndNode(planNodeDesc.GetId(), true)
-			builder.WriteString(edgeString(name(p.nodeById(thenNodeId)), name(dep)))
-			thenStartId := p.findFirstStartNodeFrom(thenNodeId)
-			builder.WriteString(conditionalEdgeString(name(planNodeDesc), name(p.nodeById(thenStartId)), "Y"))
-			// else branch
-			elseNodeId := p.findBranchEndNode(planNodeDesc.GetId(), false)
-			builder.WriteString(edgeString(name(p.nodeById(elseNodeId)), name(dep)))
-			elseStartId := p.findFirstStartNodeFrom(elseNodeId)
-			builder.WriteString(conditionalEdgeString(name(planNodeDesc), name(p.nodeById(elseStartId)), "N"))
-			// dep
-			builder.WriteString(edgeString(name(dep), planNodeName))
-		case "loop":
-			builder.WriteString(conditionalNodeString(planNodeName))
-			dep := p.nodeById(planNodeDesc.GetDependencies()[0])
-			// do branch
-			doNodeId := p.findBranchEndNode(planNodeDesc.GetId(), true)
-			builder.WriteString(edgeString(name(p.nodeById(doNodeId)), name(planNodeDesc)))
-			doStartId := p.findFirstStartNodeFrom(doNodeId)
-			builder.WriteString(conditionalEdgeString(name(planNodeDesc), name(p.nodeById(doStartId)), "Do"))
-			// dep
-			builder.WriteString(edgeString(name(dep), planNodeName))
-		default:
-			builder.WriteString(nodeString(planNodeDesc, planNodeName))
-			if planNodeDesc.IsSetDependencies() {
-				for _, depId := range planNodeDesc.GetDependencies() {
-					builder.WriteString(edgeString(name(p.nodeById(depId)), planNodeName))
-				}
-			}
-		}
-	}
-	builder.WriteString("}")
-	return builder.String()
-}
-
-func (p PlanDescPrinter) renderDotGraph(s string) string {
-	p.writer.ResetHeaders()
-	p.writer.ResetRows()
-	p.configWriterDotRenderStyle(true)
-	p.writer.AppendHeader(table.Row{"plan"})
-	p.writer.AppendRow(table.Row{s})
-	return p.writer.Render()
-}
-
-func prettyFormatJsonString(value []byte) string {
-	var prettyJson bytes.Buffer
-	if err := json.Indent(&prettyJson, value, "", "  "); err != nil {
-		return string(value)
-	}
-	return prettyJson.String()
-}
-
-func (p PlanDescPrinter) renderByRow() string {
+func (p PlanDescPrinter) renderByRow(rows [][]interface{}) string {
 	p.writer.ResetHeaders()
 	p.writer.ResetRows()
 	p.configWriterDotRenderStyle(false)
-	planNodeDescs := p.planDesc.GetPlanNodeDescs()
-
 	p.writer.AppendHeader(table.Row{
 		"id",
 		"name",
@@ -281,78 +108,24 @@ func (p PlanDescPrinter) renderByRow() string {
 		"operator info",
 	})
 
-	for _, planNodeDesc := range planNodeDescs {
-		var row []interface{}
-		row = append(row, planNodeDesc.GetId(), string(planNodeDesc.GetName()))
-
-		if planNodeDesc.IsSetDependencies() {
-			var deps []string
-			for _, dep := range planNodeDesc.GetDependencies() {
-				deps = append(deps, fmt.Sprintf("%d", dep))
-			}
-			row = append(row, strings.Join(deps, ","))
-		} else {
-			row = append(row, "")
-		}
-
-		if planNodeDesc.IsSetProfiles() {
-			var strArr []string
-			for i, profile := range planNodeDesc.GetProfiles() {
-				otherStats := profile.GetOtherStats()
-				if otherStats != nil {
-					strArr = append(strArr, "{")
-				}
-				s := fmt.Sprintf("ver: %d, rows: %d, execTime: %dus, totalTime: %dus",
-					i, profile.GetRows(), profile.GetExecDurationInUs(), profile.GetTotalDurationInUs())
-				strArr = append(strArr, s)
-
-				for k, v := range otherStats {
-					strArr = append(strArr, fmt.Sprintf("%s: %s", k, v))
-				}
-				if otherStats != nil {
-					strArr = append(strArr, "}")
-				}
-			}
-			row = append(row, strings.Join(strArr, "\n"))
-		} else {
-			row = append(row, "")
-		}
-
-		var columnInfo []string
-		if planNodeDesc.IsSetBranchInfo() {
-			branchInfo := planNodeDesc.GetBranchInfo()
-			columnInfo = append(columnInfo, fmt.Sprintf("branch: %t, nodeId: %d\n",
-				branchInfo.GetIsDoBranch(), branchInfo.GetConditionNodeID()))
-		}
-
-		outputVar := fmt.Sprintf("outputVar: %s", prettyFormatJsonString(planNodeDesc.GetOutputVar()))
-		columnInfo = append(columnInfo, outputVar)
-
-		if planNodeDesc.IsSetDescription() {
-			desc := planNodeDesc.GetDescription()
-			for _, pair := range desc {
-				value := prettyFormatJsonString(pair.GetValue())
-				columnInfo = append(columnInfo, fmt.Sprintf("%s: %s", string(pair.GetKey()), value))
-			}
-		}
-		row = append(row, strings.Join(columnInfo, "\n"))
+	for _, row := range rows {
 		p.writer.AppendRow(table.Row(row))
 	}
 	return p.writer.Render()
 }
 
-func (p *PlanDescPrinter) PrintPlanDesc(planDesc *graph.PlanDescription) {
-	p.planDesc = planDesc
+func (p *PlanDescPrinter) PrintPlanDesc(res *nebula.ResultSet) {
 	var s string
-	format := strings.ToLower(string(planDesc.GetFormat()))
+	format := strings.ToLower(string(res.GetPlanDesc().GetFormat()))
 	switch format {
 	case "row":
-		fmt.Println(p.renderByRow())
+		rows := res.MakePlanByRow()
+		fmt.Println(p.renderByRow(rows))
 	case "dot":
-		s = p.makeDotGraph()
+		s = res.MakeDotGraph()
 		fmt.Println(p.renderDotGraph(s))
 	case "dot:struct":
-		s = p.makeDotGraphByStruct()
+		s = res.MakeDotGraphByStruct()
 		fmt.Println(p.renderDotGraphByStruct(s))
 	}
 
