@@ -22,11 +22,6 @@ import (
 	nebula "github.com/vesoft-inc/nebula-go"
 )
 
-// Nebula Console version
-const (
-	Version = "v2.0.0-rc1"
-)
-
 // Console side commands
 const (
 	Unknown  = -1
@@ -54,7 +49,7 @@ func welcome(interactive bool) {
 		return
 	}
 	fmt.Println()
-	fmt.Printf("Welcome to Nebula Graph %s!\n", Version)
+	fmt.Printf("Welcome to Nebula Graph!\n")
 	fmt.Println()
 }
 
@@ -273,13 +268,22 @@ func loop(session *nebula.Session, c cli.Cli) error {
 	return nil
 }
 
-var address *string = flag.String("addr", "127.0.0.1", "The Nebula Graph IP/HOST address")
-var port *int = flag.Int("P", -1, "The Nebula Graph Port")
-var username *string = flag.String("u", "", "The Nebula Graph login user name")
-var password *string = flag.String("p", "", "The Nebula Graph login password")
-var timeout *int = flag.Int("t", 0, "The Nebula Graph client connection timeout in seconds, 0 means never timeout")
-var script *string = flag.String("e", "", "The nGQL directly")
-var file *string = flag.String("f", "", "The nGQL script file name")
+// Nebula Console version related
+var (
+	gitCommit string
+	buildDate string
+)
+
+var (
+	address  *string = flag.String("addr", "127.0.0.1", "The Nebula Graph IP/HOST address")
+	port     *int    = flag.Int("P", -1, "The Nebula Graph Port")
+	username *string = flag.String("u", "", "The Nebula Graph login user name")
+	password *string = flag.String("p", "", "The Nebula Graph login password")
+	timeout  *int    = flag.Int("t", 0, "The Nebula Graph client connection timeout in seconds, 0 means never timeout")
+	script   *string = flag.String("e", "", "The nGQL directly")
+	file     *string = flag.String("f", "", "The nGQL script file name")
+	version  *bool   = flag.Bool("v", false, "The Nebula Console version")
+)
 
 func init() {
 	flag.StringVar(address, "address", "127.0.0.1", "The Nebula Graph IP/HOST address")
@@ -289,6 +293,7 @@ func init() {
 	flag.IntVar(timeout, "timeout", 0, "The Nebula Graph client connection timeout in seconds, 0 means never timeout")
 	flag.StringVar(script, "eval", "", "The nGQL directly")
 	flag.StringVar(file, "file", "", "The nGQL script file name")
+	flag.BoolVar(version, "version", false, "The Nebula Console version")
 }
 
 func validateFlags() {
@@ -307,6 +312,11 @@ var pool *nebula.ConnectionPool
 
 func main() {
 	flag.Parse()
+
+	if flag.NFlag() == 1 && *version {
+		fmt.Printf("nebula-console version Git: %s, Build Time: %s\n", gitCommit, buildDate)
+		return
+	}
 
 	// Check if flags are valid
 	validateFlags()
