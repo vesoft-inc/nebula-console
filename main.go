@@ -207,7 +207,7 @@ func printResultSet(res *nebula.ResultSet, duration time.Duration) {
 
 	if res.IsSetPlanDesc() {
 		fmt.Println()
-		fmt.Println("Execution Plan")
+		fmt.Printf("Execution Plan (optimize time %d us)\n", res.GetPlanDesc().GetOptimizeTimeInUs())
 		fmt.Println()
 		planDescPrinter.PrintPlanDesc(res)
 	}
