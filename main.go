@@ -181,7 +181,7 @@ func executeConsoleCmd(cmd int, args []string) (newSpace string) {
 }
 
 func printResultSet(res *nebula.ResultSet, duration time.Duration) {
-	if !res.IsSucceed() {
+    if !res.IsSucceed() && !res.IsPartialSucceed() {
 		fmt.Printf("[ERROR (%d)]: %s", res.GetErrorCode(), res.GetErrorMsg())
 		fmt.Println()
 		fmt.Println()
