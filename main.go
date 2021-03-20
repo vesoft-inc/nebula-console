@@ -256,7 +256,7 @@ func loop(session *nebula.Session, c cli.Cli) error {
 		if err != nil {
 			return err
 		}
-		if !res.IsSucceed() || !res.IsPartialSucceed() {
+		if !res.IsSucceed() && !res.IsPartialSucceed() {
 			c.SetRespError(fmt.Sprintf("[ERROR (%d)]: %s", res.GetErrorCode(), res.GetErrorMsg()))
 			if c.IsPlayingData() {
 				break
