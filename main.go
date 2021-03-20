@@ -200,6 +200,11 @@ func printResultSet(res *nebula.ResultSet, duration time.Duration) {
 		fmt.Printf("Execution succeeded (time spent %d/%d us)\n", res.GetLatency(), duration/1000)
 	}
 
+	if res.IsPartialSucceed() {
+		fmt.Println()
+		fmt.Printf("[WARNING]: Got partial result.")
+	}
+
 	if res.IsSetComment() {
 		fmt.Println()
 		fmt.Printf("[WARNING]: %s", res.GetComment())
@@ -251,7 +256,7 @@ func loop(session *nebula.Session, c cli.Cli) error {
 		if err != nil {
 			return err
 		}
-		if !res.IsSucceed() {
+		if !res.IsSucceed() || !res.IsPartialSucceed() {
 			c.SetRespError(fmt.Sprintf("[ERROR (%d)]: %s", res.GetErrorCode(), res.GetErrorMsg()))
 			if c.IsPlayingData() {
 				break
