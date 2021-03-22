@@ -181,7 +181,7 @@ func executeConsoleCmd(cmd int, args []string) (newSpace string) {
 }
 
 func printResultSet(res *nebula.ResultSet, duration time.Duration) {
-	if !res.IsSucceed() {
+	if !res.IsSucceed() && !res.IsPartialSucceed() {
 		fmt.Printf("[ERROR (%d)]: %s", res.GetErrorCode(), res.GetErrorMsg())
 		fmt.Println()
 		fmt.Println()
@@ -198,6 +198,11 @@ func printResultSet(res *nebula.ResultSet, duration time.Duration) {
 		}
 	} else {
 		fmt.Printf("Execution succeeded (time spent %d/%d us)\n", res.GetLatency(), duration/1000)
+	}
+
+	if res.IsPartialSucceed() {
+		fmt.Println()
+		fmt.Printf("[WARNING]: Got partial result.")
 	}
 
 	if res.IsSetComment() {
@@ -251,7 +256,7 @@ func loop(session *nebula.Session, c cli.Cli) error {
 		if err != nil {
 			return err
 		}
-		if !res.IsSucceed() {
+		if !res.IsSucceed() && !res.IsPartialSucceed() {
 			c.SetRespError(fmt.Sprintf("[ERROR (%d)]: %s", res.GetErrorCode(), res.GetErrorMsg()))
 			if c.IsPlayingData() {
 				break
