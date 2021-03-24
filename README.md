@@ -77,6 +77,18 @@ This repository contains the Nebula Graph Console for Nebula Graph 2.0. Nebula G
 
     - And try `./nebula-console -f demo.nGQL` for the script file mode.
 
+### From Binary
+
+- Get According binarys from https://github.com/vesoft-inc/nebula-console/releases
+
+- Add execute permissions to the binary
+
+- Connect to your Nebula Graph services:
+
+```bash
+docker> ./<$YOUR_BINARY> -u <user> -p <password> --address=graphd --port=9669
+```
+
 ### Docker
 
 Create a container:
