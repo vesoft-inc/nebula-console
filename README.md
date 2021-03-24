@@ -86,7 +86,8 @@ This repository contains the Nebula Graph Console for Nebula Graph 2.0. Nebula G
 - Connect to your Nebula Graph services:
 
 ```bash
-$ ./<$YOUR_BINARY> -u <user> -p <password> --address=graphd --port=9669
+$ ./<$YOUR_BINARY> -addr <ip> -port <port> -u <username> -p <password>
+        [-t 120] [-e "nGQL_statement" | -f filename.nGQL]
 ```
 
 ### Docker
