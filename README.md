@@ -79,14 +79,14 @@ This repository contains the Nebula Graph Console for Nebula Graph 2.0. Nebula G
 
 ### From Binary
 
-- Get According binarys from https://github.com/vesoft-inc/nebula-console/releases
+- Download the binaries on the [Releases page](https://github.com/vesoft-inc/nebula-console/releases)
 
 - Add execute permissions to the binary
 
 - Connect to your Nebula Graph services:
 
 ```bash
-docker> ./<$YOUR_BINARY> -u <user> -p <password> --address=graphd --port=9669
+$ ./<$YOUR_BINARY> -u <user> -p <password> --address=graphd --port=9669
 ```
 
 ### Docker
