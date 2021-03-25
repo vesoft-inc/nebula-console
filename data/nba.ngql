@@ -1,6 +1,6 @@
-CREATE SPACE nba(VID_TYPE=FIXED_STRING(128));
+CREATE SPACE nba(VID_TYPE=FIXED_STRING(32));
 
-:sleep 3
+:sleep 10
 
 USE nba;
 
@@ -16,7 +16,7 @@ CREATE EDGE IF NOT EXISTS serve(start_year int, end_year int);
 
 CREATE EDGE IF NOT EXISTS teammate(start_year int, end_year int);
 
-:sleep 3
+:sleep 10
 
 CREATE TAG INDEX IF NOT EXISTS player_name_index ON player(name(64));
 
@@ -24,7 +24,7 @@ CREATE TAG INDEX IF NOT EXISTS player_age_index ON player(age);
 
 CREATE TAG INDEX IF NOT EXISTS team_name_index ON team(name(64));
 
-:sleep 3
+:sleep 10
 
 INSERT VERTEX player(name, age) VALUES\
         "Nobody": ("Nobody", 0),\
