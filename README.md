@@ -17,7 +17,7 @@ This repository contains the Nebula Graph Console for Nebula Graph 2.0. Nebula G
 
     To build Nebula Graph Console, make sure that you have installed [Go](https://golang.org/doc/install).
 
-    > NOTE: Go version provided with apt on ubuntu is usually "outdated".  
+    > NOTE: Go version provided with apt on ubuntu is usually "outdated".
 
     Run the following command to examine if Go is installed on your machine.
 
@@ -132,6 +132,30 @@ nebula> :play nba
 Start loading dataset nba...
 
 Load dataset succeeded!
+```
+
+## Wait for heartbeat
+
+```nGQL
+nebula> :sleep 3
+```
+
+e.g.
+
+```nGQL
+cat >> nba.ngql << EOF
+CREATE SPACE nba(VID_TYPE=FIXED_STRING(32));
+:sleep 3
+
+USE nba;
+CREATE TAG IF NOT EXISTS player(name string, age int);
+:sleep 3
+
+INSERT VERTEX player(name, age) VALUES "Amar'e Stoudemire": ("Amar'e Stoudemire", 36)
+EOF
+
+nebula-console -addr 127.0.0.1 -port 9669 -u root -p nebula -f nba.ngql
+
 ```
 
 ## Export .dot file
