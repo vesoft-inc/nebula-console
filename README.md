@@ -17,13 +17,15 @@ This repository contains the Nebula Graph Console for Nebula Graph 2.0. Nebula G
 
     To build Nebula Graph Console, make sure that you have installed [Go](https://golang.org/doc/install).
 
+    > NOTE: Go version provided with apt on ubuntu is usually "outdated".
+
     Run the following command to examine if Go is installed on your machine.
 
     ```bash
     $ go version
     ```
-    
-    The Go version should be newer than 1.13.
+
+    The version should be newer than 1.13.
 
     Use Git to clone the source code of Nebula Graph Console to your host.
 
@@ -37,6 +39,8 @@ This repository contains the Nebula Graph Console for Nebula Graph 2.0. Nebula G
     $ cd nebula-console
     $ make
     ```
+    You can find a binary named `nebula-console`.
+
 2. Connect to Nebula Graph
 
     To connect to your Nebula Graph services, use the following command.
@@ -46,20 +50,45 @@ This repository contains the Nebula Graph Console for Nebula Graph 2.0. Nebula G
         [-t 120] [-e "nGQL_statement" | -f filename.nGQL]
     ```
 
-    | Option          | Description                                                                                                                                                                   |
-    | ------------    | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-    | `-h`            | Shows the help menu.                                                                                                                                                          |
-    | `-addr/-address`| Sets the IP/HOST address of the graphd service. The default address is 127.0.0.1.                                                                                             |
-    | `-P/-port`      | Sets the port number of the graphd service.                                                                                                                                   |
-    | `-u/-user`      | Sets the username of your Nebula Graph account.                                                                                                                               |
-    | `-p/-password`  | Sets the password of your Nebula Graph account.                                                                                                                               |
-    | `-t/-timeout`   | Sets an integer-type timeout threshold for the connection. The unit is second. The default value is 120.                                                                      |
-    | `-e/-eval`      | Sets a string-type nGQL statement. The nGQL statement is executed once the connection succeeds. The connection stops after the result is returned.                            |
-    | `-f/-file`      | Sets the path of an nGQL file. The nGQL statements in the file are executed once the connection succeeds. You'll get the return messages and the connection stops then.       |
+    | Option          | Description         |
+    | ------------    | --------------------------------------------------------------------------------------------------------------------------------------------- |
+    | `-h`            | Shows the help menu.      |
+    | `-addr/-address`| Sets the IP/HOST address of the graphd service.      |
+    | `-P/-port`      | Sets the port number of the graphd service.       |
+    | `-u/-user`      | Sets the username of your Nebula Graph account. See [authentication](https://docs.nebula-graph.io/2.0/7.data-security/1.authentication/1.authentication/).      |
+    | `-p/-password`  | Sets the password of your Nebula Graph account.   |
+    | `-t/-timeout`   | Sets an integer-type timeout threshold for the connection. The unit is second. The default value is 120.    |
+    | `-e/-eval`      | Sets a string-type nGQL statement. The nGQL statement is executed once the connection succeeds. The connection stops after the result is returned.   |
+    | `-f/-file`      | Sets the path of an nGQL file. The nGQL statements in the file are executed once the connection succeeds. You'll get the return messages and the connection stops then.      |
 
-    Check options for `./nebula-console -h`, try `./nebula-console` in interactive mode directly.
-    And try `./nebula-console -e 'show hosts'` for the direct script mode.
-    And try `./nebula-console -f demo.nGQL` for the script file mode.
+
+    E.g.,
+    ```bash
+    $./nebula-console -addr=192.168.10.111 -port 9669 -u root -p nebula
+    2021/03/15 15:21:43 [INFO] connection pool is initialized successfully
+    Welcome to Nebula Graph!
+    ```
+
+    Check options for `./nebula-console -h`:
+
+    - try `./nebula-console` in interactive mode directly.
+
+    - And try `./nebula-console -e 'show hosts'` for the direct script mode.
+
+    - And try `./nebula-console -f demo.nGQL` for the script file mode.
+
+### From Binary
+
+- Download the binaries on the [Releases page](https://github.com/vesoft-inc/nebula-console/releases)
+
+- Add execute permissions to the binary
+
+- Connect to your Nebula Graph services:
+
+```bash
+$ ./<$YOUR_BINARY> -addr <ip> -port <port> -u <username> -p <password>
+        [-t 120] [-e "nGQL_statement" | -f filename.nGQL]
+```
 
 ### Docker
 
@@ -72,7 +101,7 @@ $ docker run --rm -ti --network nebula-docker-compose_nebula-net --entrypoint=/b
 To connect to your Nebula Graph services, run the follow command in the container:
 
 ```bash
-docker> nebula-console -u <user> -p <password> --address=graphd --port=9669
+docker> nebula-console -u <user> -p <password> --address=<graphd> --port=9669
 ```
 
 
@@ -103,6 +132,30 @@ nebula> :play nba
 Start loading dataset nba...
 
 Load dataset succeeded!
+```
+
+## Wait for heartbeat
+
+```nGQL
+nebula> :sleep 3
+```
+
+e.g.
+
+```nGQL
+cat >> nba.ngql << EOF
+CREATE SPACE nba(VID_TYPE=FIXED_STRING(32));
+:sleep 3
+
+USE nba;
+CREATE TAG IF NOT EXISTS player(name string, age int);
+:sleep 3
+
+INSERT VERTEX player(name, age) VALUES "Amar'e Stoudemire": ("Amar'e Stoudemire", 36)
+EOF
+
+nebula-console -addr 127.0.0.1 -port 9669 -u root -p nebula -f nba.ngql
+
 ```
 
 ## Export .dot file
