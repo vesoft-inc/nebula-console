@@ -22,6 +22,8 @@ This repository contains the Nebula Graph Console for Nebula Graph 2.0. Nebula G
     ```bash
     $ go version
     ```
+    
+    The Go version should be newer than 1.13.
 
     Use Git to clone the source code of Nebula Graph Console to your host.
 
