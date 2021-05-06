@@ -54,7 +54,7 @@ func (p *DataSetPrinter) UnsetOutCsv() {
 }
 
 func (p *DataSetPrinter) PrintDataSet(res *nebula.ResultSet) {
-	if res.IsEmpty() {
+	if res.GetColSize() == 0 {
 		return
 	}
 
