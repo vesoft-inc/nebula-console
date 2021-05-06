@@ -19,7 +19,7 @@ import (
 
 	"github.com/vesoft-inc/nebula-console/cli"
 	"github.com/vesoft-inc/nebula-console/printer"
-	nebula "github.com/vesoft-inc/nebula-go"
+	nebula "github.com/vesoft-inc/nebula-go/v2"
 )
 
 // Console side commands
