@@ -18,10 +18,7 @@ jobs:
           - windows
         arch:
           - amd64
-          - arm
-        exclude:
-          - os: darwin
-            arch: arm
+          - arm64
     steps:
       - uses: actions/checkout@v2
       - name: setup-go 1.14
