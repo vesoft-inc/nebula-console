@@ -42,6 +42,7 @@ jobs:
         arch:
           - amd64
           - arm64
+          - arm
         exclude:
           - os: darwin
             arch: arm
