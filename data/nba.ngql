@@ -24,6 +24,16 @@ CREATE TAG INDEX IF NOT EXISTS player_age_index ON player(age);
 
 CREATE TAG INDEX IF NOT EXISTS team_name_index ON team(name(64));
 
+CREATE EDGE INDEX IF NOT EXISTS like_index ON like(likeness);
+
+CREATE EDGE INDEX IF NOT EXISTS serve_index1 ON serve(start_year);
+
+CREATE EDGE INDEX IF NOT EXISTS serve_index2 ON serve(end_year);
+
+CREATE EDGE INDEX IF NOT EXISTS teammate_index1 ON teammate(start_year);
+
+CREATE EDGE INDEX IF NOT EXISTS teammate_index2 ON teammate(end_year);
+
 :sleep 10
 
 INSERT VERTEX player(name, age) VALUES\
