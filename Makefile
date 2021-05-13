@@ -9,7 +9,7 @@ ldflags="-w -X main.gitTag=${gitTag} -X main.buildDate=${buildDate} -X main.gitC
 default: build
 
 build: clean fmt
-	go build -o nebula-console --tags netgo -ldflags ${ldflags}
+	CGO_ENABLED=0 go build -o nebula-console -ldflags ${ldflags}
 
 vendorbuild: clean fmt
 	@go mod vendor && go build -mod vendor -o nebula-console --tags netgo -ldflags ${ldflags}
