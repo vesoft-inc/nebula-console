@@ -40,10 +40,10 @@ jobs:
           fi
           echo "::set-output name=package_name::$output_name"
       - name: build
+        run: make name=${{ steps.package-name.outputs.package_name }}
         env:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
-        run: go build -o ${{ steps.package-name.outputs.package_name }}
       - name: upload release asset
         uses: actions/upload-release-asset@v1
         env:
