@@ -2,7 +2,7 @@ FROM golang:1.13.2-alpine as builder
 
 COPY . /usr/src
 
-RUN cd /usr/src && go build
+RUN cd /usr/src && make
 
 FROM alpine
 
