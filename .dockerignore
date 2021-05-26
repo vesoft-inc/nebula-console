@@ -6,5 +6,4 @@ LICENSE
 *.nGQL
 
 ci/
-.git/
 .github/

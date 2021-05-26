@@ -2,7 +2,7 @@ FROM golang:1.13.2-alpine as builder
 
 COPY . /usr/src
 
-RUN cd /usr/src && make
+RUN cd /usr/src && apk add --no-cache git make && make
 
 FROM alpine
 

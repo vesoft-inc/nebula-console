@@ -1,8 +1,9 @@
 name: docker
 
 on:
-  schedule:
-    - cron: '0 18 * * *'
+  push:
+    branches:
+      - master
 
 jobs:
   docker:
