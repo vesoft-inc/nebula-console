@@ -5,6 +5,6 @@ go 1.11
 require (
 	github.com/dutor/liner v1.2.2
 	github.com/jedib0t/go-pretty/v6 v6.0.5
-	github.com/vesoft-inc/nebula-go/v2 v2.0.0-20210519093048-4f76b90b1f4e
+	github.com/vesoft-inc/nebula-go/v2 v2.0.0-20210603033436-24ea78f90a1e
 	golang.org/x/sys v0.0.0-20201119102817-f84b799fce68 // indirect
 )
