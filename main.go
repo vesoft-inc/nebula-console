@@ -32,6 +32,7 @@ const (
 	Sleep    = 4
 	SetDot   = 5
 	UnsetDot = 6
+	Repeat   = 7
 )
 
 var dataSetPrinter = printer.NewDataSetPrinter()
@@ -41,6 +42,10 @@ var planDescPrinter = printer.NewPlanDescPrinter()
 var datasets = map[string]string{
 	"nba": "./data/nba.ngql",
 }
+
+/* Every statement will be repeatedly executed `g_repeats` times,
+in order to get the total and avearge execution time of the statement") */
+var g_repeats = 1
 
 func welcome(interactive bool) {
 	defer dataSetPrinter.UnsetOutCsv()
@@ -111,13 +116,15 @@ func isConsoleCmd(cmd string) (isLocal bool, localCmd int, args []string) {
 	}
 
 	isLocal = true
+	localCmd = Unknown
+	if plain[len(plain)-1] == ';' {
+		plain = plain[:len(plain)-1]
+	}
 	words := strings.Fields(plain[1:])
 	switch len(words) {
 	case 1:
 		if words[0] == "exit" || words[0] == "quit" {
 			localCmd = Quit
-		} else {
-			localCmd = Unknown
 		}
 	case 2:
 		if words[0] == "unset" && words[1] == "csv" {
@@ -130,8 +137,9 @@ func isConsoleCmd(cmd string) (isLocal bool, localCmd int, args []string) {
 		} else if words[0] == "play" {
 			localCmd = PlayData
 			args = []string{words[1]}
-		} else {
-			localCmd = Unknown
+		} else if words[0] == "repeat" {
+			localCmd = Repeat
+			args = []string{words[1]}
 		}
 	case 3:
 		if words[0] == "set" && words[1] == "csv" {
@@ -140,8 +148,6 @@ func isConsoleCmd(cmd string) (isLocal bool, localCmd int, args []string) {
 		} else if words[0] == "set" && words[1] == "dot" {
 			localCmd = SetDot
 			args = []string{words[2]}
-		} else {
-			localCmd = Unknown
 		}
 	default:
 		localCmd = Unknown
@@ -174,6 +180,14 @@ func executeConsoleCmd(cmd int, args []string) (newSpace string) {
 			printConsoleResp("Error: invalid integer, " + err.Error())
 		}
 		time.Sleep(time.Duration(i) * time.Second)
+	case Repeat:
+		i, err := strconv.Atoi(args[0])
+		if err != nil {
+			printConsoleResp("Error: invalid integer, " + err.Error())
+		} else if i < 1 {
+			printConsoleResp("Error: invald integer, repeats should be greater than 1")
+		}
+		g_repeats = i
 	default:
 		printConsoleResp("Error: this local command not exists!")
 	}
@@ -251,26 +265,36 @@ func loop(session *nebula.Session, c cli.Cli) error {
 			continue
 		}
 		// Server side command
-		start := time.Now()
-		res, err := session.Execute(line)
-		if err != nil {
-			return err
-		}
-		if !res.IsSucceed() && !res.IsPartialSucceed() {
-			c.SetRespError(fmt.Sprintf("[ERROR (%d)]: %s", res.GetErrorCode(), res.GetErrorMsg()))
-			if c.IsPlayingData() {
-				break
+		var t1 int32 = 0
+		var t2 int32 = 0
+		for i := 0; i < g_repeats; i++ {
+			start := time.Now()
+			res, err := session.Execute(line)
+			if err != nil {
+				return err
 			}
+			if !res.IsSucceed() && !res.IsPartialSucceed() {
+				c.SetRespError(fmt.Sprintf("an error occurred when executing: %s, [ERROR (%d)]: %s", line, res.GetErrorCode(), res.GetErrorMsg()))
+				if c.IsPlayingData() {
+					return nil
+				}
+			}
+			duration := time.Since(start)
+			t1 += res.GetLatency()
+			t2 += int32(duration / 1000)
+			if c.Output() {
+				printResultSet(res, duration)
+				fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
+				fmt.Println()
+			}
+			c.SetSpace(res.GetSpaceName())
 		}
-		duration := time.Since(start)
-		if c.Output() {
-			printResultSet(res, duration)
-			fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
+		if g_repeats > 1 {
+			fmt.Printf("Executed %v times, (total time spent %d/%d us), (average time spent %d/%d us)\n", g_repeats, t1, t2, t1/int32(g_repeats), t2/int32(g_repeats))
 			fmt.Println()
 		}
-		c.SetSpace(res.GetSpaceName())
+		g_repeats = 1
 	}
-	return nil
 }
 
 // Nebula Console version related
@@ -298,7 +322,16 @@ func init() {
 	flag.IntVar(timeout, "timeout", 0, "The Nebula Graph client connection timeout in seconds, 0 means never timeout")
 	flag.StringVar(script, "eval", "", "The nGQL directly")
 	flag.StringVar(file, "file", "", "The nGQL script file name")
-	flag.BoolVar(version, "version", false, "The Nebula Console version")
+}
+
+func isFlagPassed(name string) bool {
+	found := false
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == name {
+			found = true
+		}
+	})
+	return found
 }
 
 func validateFlags() {
