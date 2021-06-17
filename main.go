@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/vesoft-inc/nebula-console/box"
 	"github.com/vesoft-inc/nebula-console/cli"
 	"github.com/vesoft-inc/nebula-console/printer"
 	nebula "github.com/vesoft-inc/nebula-go/v2"
@@ -38,10 +39,6 @@ const (
 var dataSetPrinter = printer.NewDataSetPrinter()
 
 var planDescPrinter = printer.NewPlanDescPrinter()
-
-var datasets = map[string]string{
-	"nba": "./data/nba.ngql",
-}
 
 /* Every statement will be repeatedly executed `g_repeats` times,
 in order to get the total and avearge execution time of the statement") */
@@ -73,15 +70,13 @@ func printConsoleResp(msg string) {
 }
 
 func playData(data string) (string, error) {
-	path, exist := datasets[data]
-	if !exist {
-		return "", fmt.Errorf("dataset %s, not existed", data)
+	file := "/" + data + ".ngql"
+	if !box.Has(file) {
+		return "", fmt.Errorf("file %s not existed in embed box ./data/", file)
 	}
-	fd, err := os.Open(path)
-	if err != nil {
-		return "", err
-	}
-	c := cli.NewnCli(fd, false, "", func() { fd.Close() })
+	fileStr := string(box.Get(file))
+
+	c := cli.NewnCli(strings.NewReader(fileStr), false, "", nil)
 	c.PlayingData(true)
 	defer c.PlayingData(false)
 	fmt.Printf("Start loading dataset %s...\n", data)
