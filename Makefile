@@ -22,5 +22,6 @@ clean:
 fmt:
 	@go mod tidy && find . -path vendor -prune -o -type f -iname '*.go' -exec go fmt {} \;
 
+# generate box/blob.go
 gen:
-	@CGO_ENABLED=0 go generate ./...
+	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go generate ./...
