@@ -26,4 +26,8 @@ vendor/
 
 nebula-console
 
+# Auto generated code by `go generate`
+box/blob.go
+
+
 *.DS_Store
