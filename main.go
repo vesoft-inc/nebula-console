@@ -189,7 +189,7 @@ func executeConsoleCmd(cmd int, args []string) (newSpace string) {
 	return newSpace
 }
 
-func printResultSet(res *nebula.ResultSet, duration time.Duration) {
+func printResultSet(res *nebula.ResultSet, startTime time.Time) (duration time.Duration) {
 	if !res.IsSucceed() && !res.IsPartialSucceed() {
 		fmt.Printf("[ERROR (%d)]: %s", res.GetErrorCode(), res.GetErrorMsg())
 		fmt.Println()
@@ -200,12 +200,14 @@ func printResultSet(res *nebula.ResultSet, duration time.Duration) {
 	if res.IsSetData() {
 		dataSetPrinter.PrintDataSet(res)
 		numRows := res.GetRowSize()
+		duration = time.Since(startTime)
 		if numRows > 0 {
 			fmt.Printf("Got %d rows (time spent %d/%d us)\n", numRows, res.GetLatency(), duration/1000)
 		} else {
 			fmt.Printf("Empty set (time spent %d/%d us)\n", res.GetLatency(), duration/1000)
 		}
 	} else {
+		duration = time.Since(startTime)
 		fmt.Printf("Execution succeeded (time spent %d/%d us)\n", res.GetLatency(), duration/1000)
 	}
 
@@ -226,6 +228,8 @@ func printResultSet(res *nebula.ResultSet, duration time.Duration) {
 		planDescPrinter.PrintPlanDesc(res)
 	}
 	fmt.Println()
+
+	return
 }
 
 // Loop the request util fatal or timeout
@@ -274,11 +278,10 @@ func loop(session *nebula.Session, c cli.Cli) error {
 					return nil
 				}
 			}
-			duration := time.Since(start)
 			t1 += res.GetLatency()
-			t2 += int32(duration / 1000)
 			if c.Output() {
-				printResultSet(res, duration)
+				duration := printResultSet(res, start)
+				t2 += int32(duration / 1000)
 				fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
 				fmt.Println()
 			}
