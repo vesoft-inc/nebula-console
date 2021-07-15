@@ -39,6 +39,11 @@ jobs:
               output_name+='.exe'
           fi
           echo "::set-output name=package_name::$output_name"
+      - name: generate box/blob.go for data/nba.ngql
+        run: make gen
+        env:
+          GOOS: linux
+          GOARCH: amd64
       - name: build
         run: make name=${{ steps.package-name.outputs.package_name }}
         env:
