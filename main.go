@@ -70,13 +70,19 @@ func printConsoleResp(msg string) {
 }
 
 func playData(data string) (string, error) {
-	file := "/" + data + ".ngql"
-	if !box.Has(file) {
-		return "", fmt.Errorf("file %s not existed in embed box ./data/", file)
+	boxfilePath := "/" + data + ".ngql"
+	posixfilePath := "./data/" + data + ".ngql"
+	var c cli.Cli
+	// First find it in embeded box. If not found, then find it in the directory ./data/
+	if box.Has(boxfilePath) {
+		fileStr := string(box.Get(boxfilePath))
+		c = cli.NewnCli(strings.NewReader(fileStr), false, "", nil)
+	} else if fd, err := os.Open(posixfilePath); err == nil {
+		c = cli.NewnCli(fd, false, "", func() { fd.Close() })
+	} else {
+		return "", fmt.Errorf("file %s.ngql not existed in embed box and file directory ./data/ ", data)
 	}
-	fileStr := string(box.Get(file))
 
-	c := cli.NewnCli(strings.NewReader(fileStr), false, "", nil)
 	c.PlayingData(true)
 	defer c.PlayingData(false)
 	fmt.Printf("Start loading dataset %s...\n", data)

@@ -10,18 +10,22 @@ ldflags="-w -X main.gitTag=${gitTag} -X main.buildDate=${buildDate} -X main.gitC
 
 default: build
 
-build: clean gen fmt
+build: clean fmt
 	@CGO_ENABLED=0 go build -o ${name} -ldflags ${ldflags}
 
-vendorbuild: clean gen fmt
+vendorbuild: clean fmt
 	@CGO_ENABLED=0 go mod vendor && go build -mod vendor -o ${name} --tags netgo -ldflags ${ldflags}
 
 clean:
 	@rm -rf ${name} vendor
 
+clean_all:
+	@rm -rf ${name} vendor box/blob.go
+
 fmt:
 	@go mod tidy && find . -path vendor -prune -o -type f -iname '*.go' -exec go fmt {} \;
 
-# generate box/blob.go
+# generate box/blob.go(NOTE: `go generate` command may doesn't support cross-platform)
 gen:
-	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go generate ./...
+	@CGO_ENABLED=0 go generate ./...
+
