@@ -120,7 +120,8 @@ func (p *PlanDescPrinter) PrintPlanDesc(res *nebula.ResultSet) {
 	switch format {
 	case "row":
 		rows := res.MakePlanByRow()
-		fmt.Println(p.renderByRow(rows))
+		s = p.renderByRow(rows)
+		fmt.Println(s)
 	case "dot":
 		s = res.MakeDotGraph()
 		fmt.Println(p.renderDotGraph(s))
@@ -129,8 +130,7 @@ func (p *PlanDescPrinter) PrintPlanDesc(res *nebula.ResultSet) {
 		fmt.Println(p.renderDotGraphByStruct(s))
 	}
 
-	outputDot := format != "row"
-	if p.fd != nil && outputDot {
+	if p.fd != nil {
 		go func() {
 			p.fd.Truncate(0)
 			p.fd.Seek(0, 0)
