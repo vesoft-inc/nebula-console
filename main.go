@@ -11,10 +11,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/vesoft-inc/nebula-console/box"
@@ -73,25 +75,26 @@ func playData(data string) (string, error) {
 	boxfilePath := "/" + data + ".ngql"
 	posixfilePath := "./data/" + data + ".ngql"
 	var c cli.Cli
-	// First find it in embeded box. If not found, then find it in the directory ./data/
-	if box.Has(boxfilePath) {
+	// First find it in directory ./data/. If not found, then find it in the embeded box
+	if fd, err := os.Open(posixfilePath); err == nil {
+		c = cli.NewnCli(fd, false, "", func() { fd.Close() })
+	} else if box.Has(boxfilePath) {
 		fileStr := string(box.Get(boxfilePath))
 		c = cli.NewnCli(strings.NewReader(fileStr), false, "", nil)
-	} else if fd, err := os.Open(posixfilePath); err == nil {
-		c = cli.NewnCli(fd, false, "", func() { fd.Close() })
 	} else {
 		return "", fmt.Errorf("file %s.ngql not existed in embed box and file directory ./data/ ", data)
 	}
 
 	c.PlayingData(true)
+	playingData = true
+	defer func() {
+		playingData = false
+		loopContinue = true
+	}()
+
 	defer c.PlayingData(false)
 	fmt.Printf("Start loading dataset %s...\n", data)
-	childSession, err := pool.GetSession(*username, *password)
-	if err != nil {
-		log.Panicf("Fail to create a new session from connection pool, %s", err.Error())
-	}
-	defer childSession.Release()
-	err = loop(childSession, c)
+	err := loop(c)
 	if err != nil {
 		return "", err
 	}
@@ -241,8 +244,8 @@ func printResultSet(res *nebula.ResultSet, startTime time.Time) (duration time.D
 // Loop the request util fatal or timeout
 // We treat one line as one query
 // Add line break yourself as `SHOW \<CR>HOSTS`
-func loop(session *nebula.Session, c cli.Cli) error {
-	for {
+func loop(c cli.Cli) error {
+	for loopContinue {
 		line, exit, err := c.ReadLine()
 		if err != nil {
 			return err
@@ -251,7 +254,7 @@ func loop(session *nebula.Session, c cli.Cli) error {
 			fmt.Println()
 			return nil
 		}
-		if len(line) == 0 {
+		if len(line) == 0 { // 1). The line input is empty, or 2). user presses ctrlC so the input is truncated
 			continue
 		}
 		// Console side command
@@ -299,6 +302,7 @@ func loop(session *nebula.Session, c cli.Cli) error {
 		}
 		g_repeats = 1
 	}
+	return fmt.Errorf("loop is stoped")
 }
 
 // Nebula Console version related
@@ -328,15 +332,15 @@ func init() {
 	flag.StringVar(file, "file", "", "The nGQL script file name")
 }
 
-func isFlagPassed(name string) bool {
-	found := false
-	flag.Visit(func(f *flag.Flag) {
-		if f.Name == name {
-			found = true
-		}
-	})
-	return found
-}
+// func isFlagPassed(name string) bool {
+// 	found := false
+// 	flag.Visit(func(f *flag.Flag) {
+// 		if f.Name == name {
+// 			found = true
+// 		}
+// 	})
+// 	return found
+// }
 
 func validateFlags() {
 	if *port == -1 {
@@ -350,7 +354,53 @@ func validateFlags() {
 	}
 }
 
+// RegisterSignalHandler creates a 'listener' on a new goroutine which will notify the
+// program if it receives an interrupt from the OS. We then handle this by calling
+// our clean up procedure and exiting the program.
+func RegisterSignalHandler(cli cli.Cli, toBeKilledSessionID int64) {
+	c := make(chan os.Signal, 2)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM) // ctrlC
+
+	go func() {
+		helperSession, err := pool.GetSession(*username, *password)
+		if err != nil {
+			log.Panicf("Fail to create a new session from connection pool, %s", err.Error())
+		}
+
+		for {
+			<-c
+			fmt.Println("^C")
+			if playingData {
+				loopContinue = false
+			} else {
+				killQueryStmt := fmt.Sprintf("SHOW ALL QUERIES | YIELD $-.SessionID AS sid, "+
+					"$-.ExecutionPlanID AS eid, $-.StartTime AS st "+
+					"WHERE $-.SessionID ==  %v | ORDER BY $-.st DESC | LIMIT 1 | "+
+					"KILL QUERY(session=$-.sid, plan=$-.eid)", toBeKilledSessionID)
+				res, err := helperSession.Execute(killQueryStmt)
+				if err != nil {
+					fmt.Println(err)
+					helperSession.Release()
+					// if call os.Exit, the defer stack of main() will not be executed.
+					// But I have no idea to execute the defer stack manually here, so direcyly call os.Exit.
+					os.Exit(1)
+				}
+				if !res.IsSucceed() {
+					fmt.Printf("[ERROR (%d)]: %s", res.GetErrorCode(), res.GetErrorMsg())
+				}
+			}
+
+		}
+	}()
+}
+
 var pool *nebula.ConnectionPool
+
+var session *nebula.Session
+
+var loopContinue bool
+
+var playingData bool
 
 func main() {
 	flag.Parse()
@@ -389,7 +439,7 @@ func main() {
 	}
 	defer pool.Close()
 
-	session, err := pool.GetSession(*username, *password)
+	session, err = pool.GetSession(*username, *password)
 	if err != nil {
 		log.Panicf("Fail to create a new session from connection pool, %s", err.Error())
 	}
@@ -418,8 +468,14 @@ func main() {
 	}
 
 	defer c.Close()
-	err = loop(session, c)
+
+	RegisterSignalHandler(c, session.GetSessionID())
+
+	loopContinue = true
+	err = loop(c)
+
 	if err != nil {
 		log.Panicf("Loop error, %s", err.Error())
 	}
+
 }
