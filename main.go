@@ -11,12 +11,10 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/signal"
 	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/vesoft-inc/nebula-console/box"
@@ -86,12 +84,6 @@ func playData(data string) (string, error) {
 	}
 
 	c.PlayingData(true)
-	playingData = true
-	defer func() {
-		playingData = false
-		loopContinue = true
-	}()
-
 	defer c.PlayingData(false)
 	fmt.Printf("Start loading dataset %s...\n", data)
 	err := loop(c)
@@ -245,7 +237,7 @@ func printResultSet(res *nebula.ResultSet, startTime time.Time) (duration time.D
 // We treat one line as one query
 // Add line break yourself as `SHOW \<CR>HOSTS`
 func loop(c cli.Cli) error {
-	for loopContinue {
+	for {
 		line, exit, err := c.ReadLine()
 		if err != nil {
 			return err
@@ -302,7 +294,6 @@ func loop(c cli.Cli) error {
 		}
 		g_repeats = 1
 	}
-	return fmt.Errorf("loop is stoped")
 }
 
 // Nebula Console version related
@@ -332,16 +323,6 @@ func init() {
 	flag.StringVar(file, "file", "", "The nGQL script file name")
 }
 
-// func isFlagPassed(name string) bool {
-// 	found := false
-// 	flag.Visit(func(f *flag.Flag) {
-// 		if f.Name == name {
-// 			found = true
-// 		}
-// 	})
-// 	return found
-// }
-
 func validateFlags() {
 	if *port == -1 {
 		log.Panicf("Error: argument port is missed!")
@@ -354,53 +335,9 @@ func validateFlags() {
 	}
 }
 
-// RegisterSignalHandler creates a 'listener' on a new goroutine which will notify the
-// program if it receives an interrupt from the OS. We then handle this by calling
-// our clean up procedure and exiting the program.
-func RegisterSignalHandler(cli cli.Cli, toBeKilledSessionID int64) {
-	c := make(chan os.Signal, 2)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM) // ctrlC
-
-	go func() {
-		helperSession, err := pool.GetSession(*username, *password)
-		if err != nil {
-			log.Panicf("Fail to create a new session from connection pool, %s", err.Error())
-		}
-
-		for {
-			<-c
-			fmt.Println("^C")
-			if playingData {
-				loopContinue = false
-			} else {
-				killQueryStmt := fmt.Sprintf("SHOW ALL QUERIES | YIELD $-.SessionID AS sid, "+
-					"$-.ExecutionPlanID AS eid, $-.StartTime AS st "+
-					"WHERE $-.SessionID ==  %v | ORDER BY $-.st DESC | LIMIT 1 | "+
-					"KILL QUERY(session=$-.sid, plan=$-.eid)", toBeKilledSessionID)
-				res, err := helperSession.Execute(killQueryStmt)
-				if err != nil {
-					fmt.Println(err)
-					helperSession.Release()
-					// if call os.Exit, the defer stack of main() will not be executed.
-					// But I have no idea to execute the defer stack manually here, so direcyly call os.Exit.
-					os.Exit(1)
-				}
-				if !res.IsSucceed() {
-					fmt.Printf("[ERROR (%d)]: %s", res.GetErrorCode(), res.GetErrorMsg())
-				}
-			}
-
-		}
-	}()
-}
-
 var pool *nebula.ConnectionPool
 
 var session *nebula.Session
-
-var loopContinue bool
-
-var playingData bool
 
 func main() {
 	flag.Parse()
@@ -469,13 +406,9 @@ func main() {
 
 	defer c.Close()
 
-	RegisterSignalHandler(c, session.GetSessionID())
-
-	loopContinue = true
 	err = loop(c)
 
 	if err != nil {
 		log.Panicf("Loop error, %s", err.Error())
 	}
-
 }

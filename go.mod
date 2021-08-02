@@ -8,5 +8,3 @@ require (
 	github.com/vesoft-inc/nebula-go/v2 v2.0.0-20210701060243-a0577f67f375
 	golang.org/x/sys v0.0.0-20201119102817-f84b799fce68 // indirect
 )
-
-replace github.com/vesoft-inc/nebula-go/v2 => /home/jie.wang/nebula-go
