@@ -19,7 +19,7 @@ vendorbuild: clean fmt
 clean:
 	@rm -rf ${name} vendor
 
-clean_all:
+clean-all:
 	@rm -rf ${name} vendor box/blob.go
 
 fmt:

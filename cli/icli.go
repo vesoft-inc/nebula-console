@@ -11,7 +11,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/dutor/liner"
+	"github.com/jievince/liner"
 	"github.com/vesoft-inc/nebula-console/completer"
 )
 
@@ -38,7 +38,7 @@ func NewiCli(historyFile, user string) Cli {
 
 	f, err := os.OpenFile(historyFile, os.O_RDONLY|os.O_CREATE, 0666)
 	if err != nil {
-		log.Panicf("Open history file %s failed, %s", historyFile, err.Error())
+		log.Panicf("Open or create history file %s failed, %s", historyFile, err.Error())
 	}
 	defer f.Close()
 	c.ReadHistory(f)
@@ -121,9 +121,9 @@ func (l iCli) IsPlayingData() bool {
 
 func (l *iCli) Close() {
 	defer l.terminal.Close()
-	f, err := os.Create(l.status.historyFile)
+	f, err := os.OpenFile(l.status.historyFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		log.Panicf("Write history file %s failed, %s", l.status.historyFile, err.Error())
+		log.Panicf("Open or create history file %s failed, %s", l.status.historyFile, err.Error())
 	}
 	defer f.Close()
 	l.terminal.WriteHistory(f)
