@@ -1,38 +1,32 @@
-CREATE SPACE nba(VID_TYPE=FIXED_STRING(32));
+CREATE SPACE nba(VID_TYPE=FIXED_STRING(32));USE nba;
 
-:sleep 10
+CREATE TAG IF NOT EXISTS player(name string, age int);\
 
-USE nba;
+CREATE TAG IF NOT EXISTS team(name string);\
 
-CREATE TAG IF NOT EXISTS player(name string, age int);
+CREATE TAG IF NOT EXISTS bachelor(name string, speciality string);\
 
-CREATE TAG IF NOT EXISTS team(name string);
+CREATE EDGE IF NOT EXISTS like(likeness int);\
 
-CREATE TAG IF NOT EXISTS bachelor(name string, speciality string);
+CREATE EDGE IF NOT EXISTS serve(start_year int, end_year int);\
 
-CREATE EDGE IF NOT EXISTS like(likeness int);
+CREATE EDGE IF NOT EXISTS teammate(start_year int, end_year int);\
 
-CREATE EDGE IF NOT EXISTS serve(start_year int, end_year int);
+CREATE TAG INDEX IF NOT EXISTS player_name_index ON player(name(64));\
 
-CREATE EDGE IF NOT EXISTS teammate(start_year int, end_year int);
+CREATE TAG INDEX IF NOT EXISTS player_age_index ON player(age);\
 
-:sleep 10
+CREATE TAG INDEX IF NOT EXISTS team_name_index ON team(name(64));\
 
-CREATE TAG INDEX IF NOT EXISTS player_name_index ON player(name(64));
+CREATE EDGE INDEX IF NOT EXISTS like_index ON like(likeness);\
 
-CREATE TAG INDEX IF NOT EXISTS player_age_index ON player(age);
+CREATE EDGE INDEX IF NOT EXISTS serve_index1 ON serve(start_year);\
 
-CREATE TAG INDEX IF NOT EXISTS team_name_index ON team(name(64));
+CREATE EDGE INDEX IF NOT EXISTS serve_index2 ON serve(end_year);\
 
-CREATE EDGE INDEX IF NOT EXISTS like_index ON like(likeness);
+CREATE EDGE INDEX IF NOT EXISTS teammate_index1 ON teammate(start_year);\
 
-CREATE EDGE INDEX IF NOT EXISTS serve_index1 ON serve(start_year);
-
-CREATE EDGE INDEX IF NOT EXISTS serve_index2 ON serve(end_year);
-
-CREATE EDGE INDEX IF NOT EXISTS teammate_index1 ON teammate(start_year);
-
-CREATE EDGE INDEX IF NOT EXISTS teammate_index2 ON teammate(end_year);
+CREATE EDGE INDEX IF NOT EXISTS teammate_index2 ON teammate(end_year);\
 
 :sleep 10
 
