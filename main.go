@@ -29,8 +29,8 @@ const (
 	Quit      = 0
 	PlayData  = 1
 	Sleep     = 2
-	OutputCsv = 3
-	OutputDot = 4
+	ExportCsv = 3
+	ExportDot = 4
 	Repeat    = 5
 )
 
@@ -135,12 +135,12 @@ func isConsoleCmd(cmd string) (isLocal bool, localCmd int, args []string) {
 		}
 	case "csv":
 		{
-			localCmd = OutputCsv
+			localCmd = ExportCsv
 			args = []string{words[1]}
 		}
 	case "dot":
 		{
-			localCmd = OutputDot
+			localCmd = ExportDot
 			args = []string{words[1]}
 		}
 	}
@@ -149,10 +149,10 @@ func isConsoleCmd(cmd string) (isLocal bool, localCmd int, args []string) {
 
 func executeConsoleCmd(c cli.Cli, cmd int, args []string) {
 	switch cmd {
-	case OutputCsv:
-		dataSetPrinter.OutputCsv(args[0])
-	case OutputDot:
-		planDescPrinter.OutputDot(args[0])
+	case ExportCsv:
+		dataSetPrinter.ExportCsv(args[0])
+	case ExportDot:
+		planDescPrinter.ExportDot(args[0])
 	case PlayData:
 		newSpace, err := playData(args[0])
 		if err != nil {

@@ -29,7 +29,7 @@ func NewDataSetPrinter() DataSetPrinter {
 	}
 }
 
-func (p *DataSetPrinter) OutputCsv(filename string) {
+func (p *DataSetPrinter) ExportCsv(filename string) {
 	fd, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
 	if err != nil {
 		fmt.Printf("Open or Create file %s failed, %s", filename, err.Error())
