@@ -25,15 +25,13 @@ import (
 
 // Console side commands
 const (
-	Unknown  = -1
-	Quit     = 0
-	SetCsv   = 1
-	UnsetCsv = 2
-	PlayData = 3
-	Sleep    = 4
-	SetDot   = 5
-	UnsetDot = 6
-	Repeat   = 7
+	Unknown   = -1
+	Quit      = 0
+	PlayData  = 1
+	Sleep     = 2
+	ExportCsv = 3
+	ExportDot = 4
+	Repeat    = 5
 )
 
 var dataSetPrinter = printer.NewDataSetPrinter()
@@ -45,8 +43,6 @@ in order to get the total and avearge execution time of the statement") */
 var g_repeats = 1
 
 func welcome(interactive bool) {
-	defer dataSetPrinter.UnsetOutCsv()
-	defer planDescPrinter.UnsetOutDot()
 	if !interactive {
 		return
 	}
@@ -99,6 +95,8 @@ func playData(data string) (string, error) {
 
 // Console side cmd will not be sent to server
 func isConsoleCmd(cmd string) (isLocal bool, localCmd int, args []string) {
+	isLocal = false
+	localCmd = Unknown
 	// Currently, command "exit" and  "quit" can also exit the console
 	if cmd == "exit" || cmd == "quit" {
 		isLocal = true
@@ -112,63 +110,56 @@ func isConsoleCmd(cmd string) (isLocal bool, localCmd int, args []string) {
 	}
 
 	isLocal = true
-	localCmd = Unknown
 	if plain[len(plain)-1] == ';' {
 		plain = plain[:len(plain)-1]
 	}
 	words := strings.Fields(plain[1:])
-	switch len(words) {
-	case 1:
-		if words[0] == "exit" || words[0] == "quit" {
-			localCmd = Quit
-		}
-	case 2:
-		if words[0] == "unset" && words[1] == "csv" {
-			localCmd = UnsetCsv
-		} else if words[0] == "unset" && words[1] == "dot" {
-			localCmd = UnsetDot
-		} else if words[0] == "sleep" {
+	localCmdName := words[0]
+	switch localCmdName {
+	case "exit", "quit":
+		localCmd = Quit
+	case "sleep":
+		{
 			localCmd = Sleep
 			args = []string{words[1]}
-		} else if words[0] == "play" {
+		}
+	case "play":
+		{
 			localCmd = PlayData
 			args = []string{words[1]}
-		} else if words[0] == "repeat" {
+		}
+	case "repeat":
+		{
 			localCmd = Repeat
 			args = []string{words[1]}
 		}
-	case 3:
-		if words[0] == "set" && words[1] == "csv" {
-			localCmd = SetCsv
-			args = []string{words[2]}
-		} else if words[0] == "set" && words[1] == "dot" {
-			localCmd = SetDot
-			args = []string{words[2]}
+	case "csv":
+		{
+			localCmd = ExportCsv
+			args = []string{words[1]}
 		}
-	default:
-		localCmd = Unknown
+	case "dot":
+		{
+			localCmd = ExportDot
+			args = []string{words[1]}
+		}
 	}
-
 	return
 }
 
-func executeConsoleCmd(cmd int, args []string) (newSpace string) {
+func executeConsoleCmd(c cli.Cli, cmd int, args []string) {
 	switch cmd {
-	case SetCsv:
-		dataSetPrinter.SetOutCsv(args[0])
-	case UnsetCsv:
-		dataSetPrinter.UnsetOutCsv()
-	case SetDot:
-		planDescPrinter.SetOutDot(args[0])
-	case UnsetDot:
-		planDescPrinter.UnsetOutDot()
+	case ExportCsv:
+		dataSetPrinter.ExportCsv(args[0])
+	case ExportDot:
+		planDescPrinter.ExportDot(args[0])
 	case PlayData:
-		var err error
-		newSpace, err = playData(args[0])
+		newSpace, err := playData(args[0])
 		if err != nil {
 			printConsoleResp("Error: load dataset failed, " + err.Error())
 		} else {
 			printConsoleResp("Load dataset succeeded!")
+			c.SetSpace(newSpace)
 		}
 	case Sleep:
 		i, err := strconv.Atoi(args[0])
@@ -187,7 +178,6 @@ func executeConsoleCmd(cmd int, args []string) (newSpace string) {
 	default:
 		printConsoleResp("Error: this local command not exists!")
 	}
-	return newSpace
 }
 
 func printResultSet(res *nebula.ResultSet, startTime time.Time) (duration time.Duration) {
@@ -254,14 +244,7 @@ func loop(c cli.Cli) error {
 			if cmd == Quit {
 				return nil
 			}
-			newSpace := executeConsoleCmd(cmd, args)
-			if newSpace != "" {
-				c.SetSpace(newSpace)
-				session.Execute(fmt.Sprintf("USE %s", newSpace))
-				if err != nil {
-					return err
-				}
-			}
+			executeConsoleCmd(c, cmd, args)
 			continue
 		}
 		// Server side command

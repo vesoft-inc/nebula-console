@@ -105,27 +105,25 @@ docker> nebula-console -u <user> -p <password> --address=<graphd> --port=9669
 ```
 
 
-## Export mode for Nebula Graph Console
-
-When the export mode is enabled, Nebula Graph Console exports all the query results into a CSV file. When the export mode is disabled, the export stops. The syntax is as follows.
+## Console side commands:
 
 > **NOTE**: The following commands are case insensitive.
 
-* Enable nebula-console export mode:
+* Export the result of the following statement to a csv file:
 
 ```nGQL
-nebula> :set CSV <your_file.csv>
+nebula> :csv a.csv
 ```
 
-* Disable nebula-console export mode:
+* Export the execution plan in graphviz format to a dot file when profiling a statement with format "dot" or "dot:struct":
 
 ```nGQL
-nebula> :unset CSV
+nebula> :dot a.dot
+nebula> PROFILE FORMAT="dot" GO FROM "Tony Parker" OVER like;
 ```
+You can paste the content in the dot file to `https://dreampuf.github.io/GraphvizOnline/` to show the execution plan.
 
-## Load nba dataset
-
-To load the demonstration nba dataset, make sure that Console is connected to Nebula Graph.
+* Load the demonstration nba dataset:
 
 ```ngql
 nebula> :play nba
@@ -134,45 +132,19 @@ Start loading dataset nba...
 Load dataset succeeded!
 ```
 
-## Wait for heartbeat
+* Repeat to execute a statement n times, the average execution time will also be printed:
+
+```ngql
+nebula> :repeat 3
+```
+
+* Sleep for some seconds, it's just used in `:play nba`:
 
 ```nGQL
 nebula> :sleep 3
 ```
 
-e.g.
-
-```nGQL
-cat >> nba.ngql << EOF
-CREATE SPACE nba(VID_TYPE=FIXED_STRING(32));
-:sleep 3
-
-USE nba;
-CREATE TAG IF NOT EXISTS player(name string, age int);
-:sleep 3
-
-INSERT VERTEX player(name, age) VALUES "Amar'e Stoudemire": ("Amar'e Stoudemire", 36)
-EOF
-
-nebula-console -addr 127.0.0.1 -port 9669 -u root -p nebula -f nba.ngql
-
-```
-
-## Export .dot file
-
-To export the graviz text to a `.dot` format, run the following command:
-
-```ngql
-nebula> :set dot <filename>
-```
-
-For example:
-
-```ngql
-nebula> TODO
-```
-
-## Disconnect Nebula Graph Console from Nebula Graph
+* Exit the console
 
 You can use `:EXIT` or `:QUIT` to disconnect from Nebula Graph. For convenience, nebula-console supports using these commands in lower case without the colon (":"), such as `quit`.
 

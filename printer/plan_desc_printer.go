@@ -38,10 +38,7 @@ func NewPlanDescPrinter() PlanDescPrinter {
 	}
 }
 
-func (p *PlanDescPrinter) SetOutDot(filename string) {
-	if p.fd != nil {
-		p.UnsetOutDot()
-	}
+func (p *PlanDescPrinter) ExportDot(filename string) {
 	fd, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
 	if err != nil {
 		fmt.Printf("Open or Create file %s failed, %s", filename, err.Error())
@@ -49,17 +46,6 @@ func (p *PlanDescPrinter) SetOutDot(filename string) {
 	}
 	p.fd = fd
 	p.filename = filename
-}
-
-func (p *PlanDescPrinter) UnsetOutDot() {
-	if p.fd == nil {
-		return
-	}
-	if err := p.fd.Close(); err != nil {
-		fmt.Printf("Close file %s failed, %s", p.filename, err.Error())
-	}
-	p.fd = nil
-	p.filename = ""
 }
 
 func (p PlanDescPrinter) configWriterDotRenderStyle(renderByDot bool) {
@@ -132,9 +118,13 @@ func (p *PlanDescPrinter) PrintPlanDesc(res *nebula.ResultSet) {
 
 	if p.fd != nil {
 		go func() {
-			p.fd.Truncate(0)
-			p.fd.Seek(0, 0)
 			fmt.Fprintln(p.fd, s)
+
+			if err := p.fd.Close(); err != nil {
+				fmt.Printf("Close file %s failed, %s", p.filename, err.Error())
+			}
+			p.fd = nil
+			p.filename = ""
 		}()
 	}
 }

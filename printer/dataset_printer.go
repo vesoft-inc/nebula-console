@@ -29,10 +29,7 @@ func NewDataSetPrinter() DataSetPrinter {
 	}
 }
 
-func (p *DataSetPrinter) SetOutCsv(filename string) {
-	if p.fd != nil {
-		p.UnsetOutCsv()
-	}
+func (p *DataSetPrinter) ExportCsv(filename string) {
 	fd, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
 	if err != nil {
 		fmt.Printf("Open or Create file %s failed, %s", filename, err.Error())
@@ -40,17 +37,6 @@ func (p *DataSetPrinter) SetOutCsv(filename string) {
 	}
 	p.fd = fd
 	p.filename = filename
-}
-
-func (p *DataSetPrinter) UnsetOutCsv() {
-	if p.fd == nil {
-		return
-	}
-	if err := p.fd.Close(); err != nil {
-		fmt.Printf("Close file %s failed, %s", p.filename, err.Error())
-	}
-	p.fd = nil
-	p.filename = ""
 }
 
 func (p *DataSetPrinter) PrintDataSet(res *nebula.ResultSet) {
@@ -86,10 +72,14 @@ func (p *DataSetPrinter) PrintDataSet(res *nebula.ResultSet) {
 	fmt.Println(p.writer.Render())
 	if p.fd != nil {
 		go func() {
-			p.fd.Truncate(0)
-			p.fd.Seek(0, 0)
 			s := strings.Replace(p.writer.RenderCSV(), "\\\"", "", -1)
 			fmt.Fprintln(p.fd, s)
+
+			if err := p.fd.Close(); err != nil {
+				fmt.Printf("Close file %s failed, %s", p.filename, err.Error())
+			}
+			p.fd = nil
+			p.filename = ""
 		}()
 	}
 }
