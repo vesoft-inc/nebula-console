@@ -8,6 +8,7 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -15,6 +16,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -22,7 +24,8 @@ import (
 	"github.com/vesoft-inc/nebula-console/box"
 	"github.com/vesoft-inc/nebula-console/cli"
 	"github.com/vesoft-inc/nebula-console/printer"
-	nebula "github.com/vesoft-inc/nebula-go/v2"
+	nebulago "github.com/vesoft-inc/nebula-go/v2"
+	nebula "github.com/vesoft-inc/nebula-go/v2/nebula"
 )
 
 // Console side commands
@@ -34,7 +37,13 @@ const (
 	ExportCsv = 3
 	ExportDot = 4
 	Repeat    = 5
+	Param     = 6
+	Params    = 7
 )
+
+type ParameterMap map[string]interface{}
+
+var parameterMap ParameterMap
 
 var dataSetPrinter = printer.NewDataSetPrinter()
 
@@ -106,7 +115,7 @@ func isConsoleCmd(cmd string) (isLocal bool, localCmd int, args []string) {
 		return
 	}
 
-	plain := strings.TrimSpace(strings.ToLower(cmd))
+	plain := strings.TrimSpace(cmd)
 	if len(plain) < 1 || plain[0] != ':' {
 		return
 	}
@@ -117,9 +126,11 @@ func isConsoleCmd(cmd string) (isLocal bool, localCmd int, args []string) {
 	}
 	words := strings.Fields(plain[1:])
 	localCmdName := words[0]
-	switch localCmdName {
+	switch strings.ToLower(localCmdName) {
 	case "exit", "quit":
-		localCmd = Quit
+		{
+			localCmd = Quit
+		}
 	case "sleep":
 		{
 			localCmd = Sleep
@@ -144,6 +155,16 @@ func isConsoleCmd(cmd string) (isLocal bool, localCmd int, args []string) {
 		{
 			localCmd = ExportDot
 			args = []string{words[1]}
+		}
+	case "param":
+		{
+			localCmd = Param
+			args = []string{plain}
+		}
+	case "params":
+		{
+			localCmd = Params
+			args = []string{plain}
 		}
 	}
 	return
@@ -177,12 +198,41 @@ func executeConsoleCmd(c cli.Cli, cmd int, args []string) {
 			printConsoleResp("Error: invald integer, repeats should be greater than 1")
 		}
 		g_repeats = i
+	case Param:
+		reg := regexp.MustCompile(`^\s*:param\s+(.+?)\s*=>\s*(.+?)\s*$`)
+		if reg == nil {
+			fmt.Println("regexp err")
+			return
+		}
+		if len(args) != 1 {
+			return
+		}
+		res := reg.FindAllStringSubmatch(args[0], -1)
+		if len(res) != 1 || len(res[0]) != 3 {
+			return
+		}
+
+		tmp := make(ParameterMap)
+		param := "{\"" + res[0][1] + "\"" + ":" + res[0][2] + "}"
+		err := json.Unmarshal([]byte(param), &tmp)
+		if err != nil {
+			printConsoleResp("Error: parameter parsing failed")
+			return
+		}
+		for k, v := range tmp {
+			parameterMap[k] = v
+		}
+
+	case Params:
+		for k := range parameterMap {
+			fmt.Println(k, " => ", parameterMap[k])
+		}
 	default:
 		printConsoleResp("Error: this local command not exists!")
 	}
 }
 
-func printResultSet(res *nebula.ResultSet, startTime time.Time) (duration time.Duration) {
+func printResultSet(res *nebulago.ResultSet, startTime time.Time) (duration time.Duration) {
 	if !res.IsSucceed() && !res.IsPartialSucceed() {
 		fmt.Printf("[ERROR (%d)]: %s", res.GetErrorCode(), res.GetErrorMsg())
 		fmt.Println()
@@ -254,7 +304,18 @@ func loop(c cli.Cli) error {
 		var t2 int64 = 0
 		for i := 0; i < g_repeats; i++ {
 			start := time.Now()
-			res, err := session.Execute(line)
+			// convert interface{} to nebula.Value
+			params := make(map[string]*nebula.Value)
+			for k, v := range parameterMap {
+				value, err := Base2Value(v)
+				if err != nil {
+					printConsoleResp(err.Error())
+					return err
+				}
+				params[k] = value
+			}
+
+			res, err := session.ExecuteWithParameter(line, params)
 			if err != nil {
 				return err
 			}
@@ -388,12 +449,87 @@ func validateFlags() {
 	}
 }
 
-var pool *nebula.ConnectionPool
+// construct Slice to nebula.NList
+func Slice2Nlist(list []interface{}) (*nebula.NList, error) {
+	sv := []*nebula.Value{}
+	var ret nebula.NList
+	for _, item := range list {
+		nv, er := Base2Value(item)
+		if er != nil {
+			return nil, er
+		}
+		sv = append(sv, nv)
+	}
+	ret.Values = sv
+	return &ret, nil
+}
 
-var session *nebula.Session
+// construct map to nebula.NMap
+func Map2Nmap(m map[string]interface{}) (*nebula.NMap, error) {
+	var ret nebula.NMap
+	kvs := map[string]*nebula.Value{}
+	for k, v := range m {
+		nv, err := Base2Value(v)
+		if err != nil {
+			return nil, err
+		}
+		kvs[k] = nv
+	}
+	ret.Kvs = kvs
+	return &ret, nil
+}
+
+// construct go-type to nebula.Value
+func Base2Value(any interface{}) (value *nebula.Value, err error) {
+	value = nebula.NewValue()
+	if v, ok := any.(bool); ok {
+		value.BVal = &v
+	} else if v, ok := any.(int); ok {
+		ival := int64(v)
+		value.IVal = &ival
+	} else if v, ok := any.(float64); ok {
+		if v == float64(int64(v)) {
+			iv := int64(v)
+			value.IVal = &iv
+		} else {
+			value.FVal = &v
+		}
+	} else if v, ok := any.(float32); ok {
+		if v == float32(int64(v)) {
+			iv := int64(v)
+			value.IVal = &iv
+		} else {
+			fval := float64(v)
+			value.FVal = &fval
+		}
+	} else if v, ok := any.(string); ok {
+		value.SVal = []byte(v)
+	} else if v, ok := any.([]interface{}); ok {
+		nv, er := Slice2Nlist([]interface{}(v))
+		if er != nil {
+			err = er
+		}
+		value.LVal = nv
+	} else if v, ok := any.(map[string]interface{}); ok {
+		nv, er := Map2Nmap(map[string]interface{}(v))
+		if er != nil {
+			err = er
+		}
+		value.MVal = nv
+	} else {
+		// unsupport other Value type, use this function carefully
+		err = fmt.Errorf("Do not support convert %T to nebula.Value", any)
+	}
+	return
+}
+
+var pool *nebulago.ConnectionPool
+
+var session *nebulago.Session
 
 func main() {
 	flag.Parse()
+	parameterMap = make(ParameterMap)
 
 	if flag.NFlag() == 1 && *version {
 		fmt.Printf("nebula-console version Git: %s, Build Time: %s\n", gitCommit, buildDate)
@@ -414,9 +550,9 @@ func main() {
 		historyHome = filepath.Dir(ex) // Set to executable folder
 	}
 
-	hostAddress := nebula.HostAddress{Host: *address, Port: *port}
-	hostList := []nebula.HostAddress{hostAddress}
-	poolConfig := nebula.PoolConfig{
+	hostAddress := nebulago.HostAddress{Host: *address, Port: *port}
+	hostList := []nebulago.HostAddress{hostAddress}
+	poolConfig := nebulago.PoolConfig{
 		TimeOut:         time.Duration(*timeout) * time.Millisecond,
 		IdleTime:        0 * time.Millisecond,
 		MaxConnPoolSize: 2,
@@ -428,9 +564,9 @@ func main() {
 		if err2 != nil {
 			log.Panicf(fmt.Sprintf("Fail to generate the ssl config, ssl_root_ca_path: %s, ssl_cert_path: %s, ssl_private_key_path: %s, %s", *sslRootCAPath, *sslCertPath, *sslPrivateKeyPath, err2.Error()))
 		}
-		pool, err = nebula.NewSslConnectionPool(hostList, poolConfig, sslConfig, nebula.DefaultLogger{})
+		pool, err = nebulago.NewSslConnectionPool(hostList, poolConfig, sslConfig, nebulago.DefaultLogger{})
 	} else {
-		pool, err = nebula.NewConnectionPool(hostList, poolConfig, nebula.DefaultLogger{})
+		pool, err = nebulago.NewConnectionPool(hostList, poolConfig, nebulago.DefaultLogger{})
 	}
 	if err != nil {
 		log.Panicf(fmt.Sprintf("Fail to initialize the connection pool, host: %s, port: %d, %s", *address, *port, err.Error()))
