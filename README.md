@@ -95,7 +95,7 @@ $ ./<$YOUR_BINARY> -addr <ip> -port <port> -u <username> -p <password>
 Create a container:
 
 ```bash
-$ docker run --rm -ti --network nebula-docker-compose_nebula-net --entrypoint=/bin/sh vesoft/nebula-console:v2-nightly
+$ docker run --rm -ti --network nebula-docker-compose_nebula-net --entrypoint=/bin/sh vesoft/nebula-console:nightly
 ```
 
 To connect to your Nebula Graph services, run the follow command in the container:
