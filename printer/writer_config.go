@@ -11,7 +11,7 @@ import (
 	"github.com/jedib0t/go-pretty/v6/text"
 )
 
-func configTableWriter(writer *table.Writer) {
+func configTableWriter(writer *table.Writer, separateRows bool) {
 	(*writer).Style().Format.Header = text.FormatDefault
-	(*writer).Style().Options.SeparateRows = false
+	(*writer).Style().Options.SeparateRows = separateRows
 }

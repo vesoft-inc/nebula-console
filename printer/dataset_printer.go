@@ -23,7 +23,7 @@ type DataSetPrinter struct {
 
 func NewDataSetPrinter() DataSetPrinter {
 	writer := table.NewWriter()
-	configTableWriter(&writer)
+	configTableWriter(&writer, false)
 	return DataSetPrinter{
 		writer: writer,
 	}

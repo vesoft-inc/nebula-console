@@ -32,7 +32,7 @@ type PlanDescPrinter struct {
 
 func NewPlanDescPrinter() PlanDescPrinter {
 	writer := table.NewWriter()
-	configTableWriter(&writer)
+	configTableWriter(&writer, true)
 	return PlanDescPrinter{
 		writer: writer,
 	}
