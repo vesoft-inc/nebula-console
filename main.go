@@ -350,7 +350,7 @@ func main() {
 		TimeOut:         time.Duration(*timeout) * time.Millisecond,
 		IdleTime:        0 * time.Millisecond,
 		MaxConnPoolSize: 2,
-		MinConnPoolSize: 0,
+		MinConnPoolSize: 1,
 	}
 	var err error
 	pool, err = nebula.NewConnectionPool(hostList, poolConfig, nebula.DefaultLogger{})
