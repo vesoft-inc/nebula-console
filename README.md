@@ -64,6 +64,7 @@ This repository contains the Nebula Graph Console for Nebula Graph 2.0. Nebula G
     | `ssl_root_ca_path` | Sets the path of the certification authority file |
     | `ssl_cert_path` | Sets the path of the certificate file |
     | `ssl_private_key_path` | Sets the path of the private key file |
+    | `ssl_insecure_skip_verify` | Controls whether a client verifies the server's certificate chain and host name |
 
 
     E.g.,
