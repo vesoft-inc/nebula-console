@@ -7,8 +7,11 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -279,6 +282,56 @@ func loop(c cli.Cli) error {
 	}
 }
 
+func openAndReadFile(path string) ([]byte, error) {
+	// open file
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("unable to open file %s: %s", path, err)
+	}
+	// read file
+	b, err := ioutil.ReadAll(f)
+	if err != nil {
+		return nil, fmt.Errorf("unable to ReadAll of file %s: %s", path, err)
+	}
+	return b, nil
+}
+
+func genSslConfig(rootCAPath, certPath, privateKeyPath string) (*tls.Config, error) {
+	rootCA, err := openAndReadFile(rootCAPath)
+	if err != nil {
+		return nil, err
+	}
+	cert, err := openAndReadFile(certPath)
+	if err != nil {
+		return nil, err
+	}
+	privateKey, err := openAndReadFile(privateKeyPath)
+	if err != nil {
+		return nil, err
+	}
+
+	// generate the client certificate
+	clientCert, err := tls.X509KeyPair(cert, privateKey)
+	if err != nil {
+		return nil, err
+	}
+
+	// parse root CA pem and add into CA pool
+	rootCAPool := x509.NewCertPool()
+	ok := rootCAPool.AppendCertsFromPEM(rootCA)
+	if !ok {
+		return nil, fmt.Errorf("fail to append supplied cert into tls.Config, please make sure it is a valid certificate")
+	}
+
+	// set tls config
+	// InsecureSkipVerify is set to true for test purpose ONLY. DO NOT use it in production.
+	return &tls.Config{
+		Certificates:       []tls.Certificate{clientCert},
+		RootCAs:            rootCAPool,
+		InsecureSkipVerify: *sslInsecureSkipVerify,
+	}, nil
+}
+
 // Nebula Console version related
 var (
 	gitCommit string
@@ -286,14 +339,19 @@ var (
 )
 
 var (
-	address  *string = flag.String("addr", "127.0.0.1", "The Nebula Graph IP/HOST address")
-	port     *int    = flag.Int("P", -1, "The Nebula Graph Port")
-	username *string = flag.String("u", "", "The Nebula Graph login user name")
-	password *string = flag.String("p", "", "The Nebula Graph login password")
-	timeout  *int    = flag.Int("t", 0, "The Nebula Graph client connection timeout in seconds, 0 means never timeout")
-	script   *string = flag.String("e", "", "The nGQL directly")
-	file     *string = flag.String("f", "", "The nGQL script file name")
-	version  *bool   = flag.Bool("v", false, "The Nebula Console version")
+	address               *string = flag.String("addr", "127.0.0.1", "The Nebula Graph IP/HOST address")
+	port                  *int    = flag.Int("P", -1, "The Nebula Graph Port")
+	username              *string = flag.String("u", "", "The Nebula Graph login user name")
+	password              *string = flag.String("p", "", "The Nebula Graph login password")
+	timeout               *int    = flag.Int("t", 0, "The Nebula Graph client connection timeout in seconds, 0 means never timeout")
+	script                *string = flag.String("e", "", "The nGQL directly")
+	file                  *string = flag.String("f", "", "The nGQL script file name")
+	version               *bool   = flag.Bool("v", false, "The Nebula Console version")
+	enableSsl             *bool   = flag.Bool("enable_ssl", false, "Enable SSL when connecting to Nebula Graph")
+	sslRootCAPath         *string = flag.String("ssl_root_ca_path", "", "SSL root certification authority's file path")
+	sslCertPath           *string = flag.String("ssl_cert_path", "", "SSL certificate's file path")
+	sslPrivateKeyPath     *string = flag.String("ssl_private_key_path", "", "SSL private key's file path")
+	sslInsecureSkipVerify *bool   = flag.Bool("ssl_insecure_skip_verify", false, "Controls whether a client verifies the server's certificate chain and host name.")
 )
 
 func init() {
@@ -311,10 +369,22 @@ func validateFlags() {
 		log.Panicf("Error: argument port is missed!")
 	}
 	if len(*username) == 0 {
-		log.Panicf("Error: username is empty!")
+		log.Panicf("Error: argument username is empty!")
 	}
 	if len(*password) == 0 {
-		log.Panicf("Error: password is empty!")
+		log.Panicf("Error: argument password is empty!")
+	}
+
+	if *enableSsl {
+		if *sslRootCAPath == "" {
+			log.Panicf("Error: argument ssl_root_ca_path should be specified when enable_ssl is true")
+		}
+		if *sslCertPath == "" {
+			log.Panicf("Error: argument ssl_cert_path should be specified when enable_ssl is true")
+		}
+		if *sslPrivateKeyPath == "" {
+			log.Panicf("Error: argument ssl_private_key_path should be specified when enable_ssl is true")
+		}
 	}
 }
 
@@ -353,7 +423,15 @@ func main() {
 		MinConnPoolSize: 1,
 	}
 	var err error
-	pool, err = nebula.NewConnectionPool(hostList, poolConfig, nebula.DefaultLogger{})
+	if *enableSsl {
+		sslConfig, err2 := genSslConfig(*sslRootCAPath, *sslCertPath, *sslPrivateKeyPath)
+		if err2 != nil {
+			log.Panicf(fmt.Sprintf("Fail to generate the ssl config, ssl_root_ca_path: %s, ssl_cert_path: %s, ssl_private_key_path: %s, %s", *sslRootCAPath, *sslCertPath, *sslPrivateKeyPath, err2.Error()))
+		}
+		pool, err = nebula.NewSslConnectionPool(hostList, poolConfig, sslConfig, nebula.DefaultLogger{})
+	} else {
+		pool, err = nebula.NewConnectionPool(hostList, poolConfig, nebula.DefaultLogger{})
+	}
 	if err != nil {
 		log.Panicf(fmt.Sprintf("Fail to initialize the connection pool, host: %s, port: %d, %s", *address, *port, err.Error()))
 	}
