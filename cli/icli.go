@@ -9,38 +9,28 @@ import (
 	"io"
 	"log"
 	"os"
-
-	"github.com/jievince/liner"
-	"github.com/vesoft-inc/nebula-console/completer"
 )
 
 // interactive
 type iCli struct {
 	status
-	terminal *liner.State
+	terminal Terminal
 }
 
-func NewiCli(historyFile, user string) Cli {
-	c := liner.NewLiner()
-	c.SetCtrlCAborts(true)
-	// Two tab styles are currently available:
-	// 1.TabCircular cycles through each completion item and displays it directly on
-	// the prompt.
-	// 2.TabPrints prints the list of completion items to the screen after a second
-	// tab key is pressed. This behaves similar to GNU readline and BASH (which
-	// uses readline).
-	// TabCircular is the default style.
-	c.SetTabCompletionStyle(liner.TabPrints)
-	c.SetWordCompleter(completer.NewCompleter)
-	// SetMultiLineMode sets whether line is auto-wrapped. The default is false (single line)
-	c.SetMultiLineMode(true)
+func NewiCli(historyFile, user string, enableGoPrompt bool) Cli {
+	var t Terminal
+	if enableGoPrompt {
+		t = NewGoPromptTerminal()
+	} else {
+		t = NewLinerTerminal()
+	}
 
 	f, err := os.OpenFile(historyFile, os.O_RDONLY|os.O_CREATE, 0666)
 	if err != nil {
 		log.Panicf("Open or create history file %s failed, %s", historyFile, err.Error())
 	}
 	defer f.Close()
-	c.ReadHistory(f)
+	t.ReadHistory(f)
 
 	return &iCli{
 		status: status{
@@ -54,7 +44,7 @@ func NewiCli(historyFile, user string) Cli {
 			joinedByTripleQuotes: false,
 			joinedByBackSlash:    false,
 		},
-		terminal: c,
+		terminal: t,
 	}
 }
 
@@ -74,7 +64,7 @@ func (l *iCli) ReadLine() (string, bool, error) {
 				l.terminal.AppendHistory(l.status.line)
 			}
 			return l.status.line, false, nil
-		} else if err == liner.ErrPromptAborted {
+		} else if err == ErrPromptAborted {
 			l.status.joinedByTripleQuotes = false
 			l.status.joinedByBackSlash = false
 			return "", false, nil
