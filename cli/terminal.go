@@ -44,7 +44,7 @@ func NewLinerTerminal() Terminal {
 	// tab key is pressed. This behaves similar to GNU readline and BASH (which
 	// uses readline).
 	// TabCircular is the default style.
-	c.SetTabCompletionStyle(liner.TabPrints)
+	c.SetTabCompletionStyle(liner.TabCircular)
 	c.SetMultiLineMode(true)
 	c.SetWordCompleter(completer.NewCompleter)
 	return t
