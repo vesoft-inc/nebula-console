@@ -351,6 +351,7 @@ var (
 	sslCertPath           *string = flag.String("ssl_cert_path", "", "SSL certificate's file path")
 	sslPrivateKeyPath     *string = flag.String("ssl_private_key_path", "", "SSL private key's file path")
 	sslInsecureSkipVerify *bool   = flag.Bool("ssl_insecure_skip_verify", false, "Controls whether a client verifies the server's certificate chain and host name.")
+	goPrompt              *bool   = flag.Bool("enable_go_prompt", false, "Use go-prompt instand of liner")
 )
 
 func init() {
@@ -449,7 +450,7 @@ func main() {
 	// Loop the request
 	if interactive {
 		historyFile := path.Join(historyHome, ".nebula_history")
-		c = cli.NewiCli(historyFile, *username)
+		c = cli.NewiCli(historyFile, *username, *goPrompt)
 	} else if *script != "" {
 		c = cli.NewnCli(strings.NewReader(*script), true, *username, nil)
 	} else if *file != "" {
