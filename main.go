@@ -250,8 +250,8 @@ func loop(c cli.Cli) error {
 			continue
 		}
 		// Server side command
-		var t1 int32 = 0
-		var t2 int32 = 0
+		var t1 int64 = 0
+		var t2 int64 = 0
 		for i := 0; i < g_repeats; i++ {
 			start := time.Now()
 			res, err := session.Execute(line)
@@ -267,14 +267,14 @@ func loop(c cli.Cli) error {
 			t1 += res.GetLatency()
 			if c.Output() {
 				duration := printResultSet(res, start)
-				t2 += int32(duration / 1000)
+				t2 += int64(duration / 1000)
 				fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
 				fmt.Println()
 			}
 			c.SetSpace(res.GetSpaceName())
 		}
 		if g_repeats > 1 {
-			fmt.Printf("Executed %v times, (total time spent %d/%d us), (average time spent %d/%d us)\n", g_repeats, t1, t2, t1/int32(g_repeats), t2/int32(g_repeats))
+			fmt.Printf("Executed %v times, (total time spent %d/%d us), (average time spent %d/%d us)\n", g_repeats, t1, t2, t1/int64(g_repeats), t2/int64(g_repeats))
 			fmt.Println()
 		}
 		g_repeats = 1
