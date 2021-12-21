@@ -518,7 +518,7 @@ func Base2Value(any interface{}) (value *nebula.Value, err error) {
 		value.MVal = nv
 	} else {
 		// unsupport other Value type, use this function carefully
-		err = fmt.Errorf("Do not support convert %T to nebula.Value", any)
+		err = fmt.Errorf("Only support convert boolean/float/int/string/map/list to nebula.Value but %T", any)
 	}
 	return
 }
