@@ -105,81 +105,71 @@ func playData(data string) (string, error) {
 }
 
 func defineParams(args string) {
-	reg := regexp.MustCompile(`^\s*:param\s+\s*(.+)\s*$`)
-	if reg == nil {
-		fmt.Println("invalid regular expression")
-		return
-	}
 	argsRewritten := strings.Replace(args, "'", "\"", -1)
-	matchResult := reg.FindAllStringSubmatch(argsRewritten, -1)
-	if len(matchResult) != 1 || len(matchResult[0]) != 2 {
+	reg := regexp.MustCompile(`^\s*:param\s+(\S+)\s*=>(.*)$`)
+	if reg == nil {
+		fmt.Println("regexp err")
 		return
 	}
-	items := strings.Split(matchResult[0][1], ",")
-	for _, item := range items {
-		reg := regexp.MustCompile(`^\s*(\S+)\s*=>\s*(\S*)\s*$`)
-		if reg == nil {
-			fmt.Println("invalid regular expression")
+	matchResult := reg.FindAllStringSubmatch(argsRewritten, -1)
+	if len(matchResult) != 1 || len(matchResult[0]) != 3 {
+		fmt.Println("Wrong local command format", matchResult)
+		return
+	}
+	/*
+	 * :param p1=> -> [":param p1=>",":p1",""]
+	 * :param p2=>3 -> [":param p2=>3",":p2","3"]
+	 */
+	paramKey := matchResult[0][1]
+	paramValue := matchResult[0][2]
+	if len(paramValue) == 0 {
+		delete(parameterMap, paramKey)
+	} else {
+		paramsWithGoType := make(ParameterMap)
+		param := "{\"" + paramKey + "\"" + ":" + paramValue + "}"
+		err := json.Unmarshal([]byte(param), &paramsWithGoType)
+		if err != nil {
+			fmt.Println("Error: parameter parsing failed")
 			return
 		}
-		kv := reg.FindAllStringSubmatch(item, -1)
-		if len(kv) != 1 || len(kv[0]) != 3 {
-			return
-		}
-		if len(kv[0][2]) == 0 {
-			delete(parameterMap, kv[0][1])
-		} else {
-			paramsWithGoType := make(ParameterMap)
-			param := "{\"" + kv[0][1] + "\"" + ":" + kv[0][2] + "}"
-			err := json.Unmarshal([]byte(param), &paramsWithGoType)
-			if err != nil {
-				fmt.Println("Error: parameter parsing failed")
-				return
-			}
-			for k, v := range paramsWithGoType {
-				parameterMap[k] = v
-			}
+		for k, v := range paramsWithGoType {
+			parameterMap[k] = v
 		}
 	}
 }
 
 func ListParams(args string) {
-	reg := regexp.MustCompile(`^\s*(:params(.*))$`)
+	reg := regexp.MustCompile(`^\s*:params\s*(\S*)\s*$`)
 	if reg == nil {
 		fmt.Println("invalid regular expression")
 		return
 	}
 	matchResult := reg.FindAllStringSubmatch(args, -1)
 	if len(matchResult) != 1 {
+		fmt.Println("Wrong local command format", matchResult)
 		return
 	}
-	if len(matchResult[0]) != 3 {
+	res := matchResult[0]
+	/*
+	 * :params -> [":params",""]
+	 * :params p1 -> ["params","p1"]
+	 */
+	if len(res) != 2 {
 		return
-	}
-	if len(matchResult[0][2]) != 0 {
-		items := strings.Split(matchResult[0][2], ",")
-		for _, item := range items {
-			reg := regexp.MustCompile(`^\s*(\S+)\s*$`)
-			if reg == nil {
-				fmt.Println("invalid regular expression")
-				return
-			}
-			res := reg.FindAllStringSubmatch(item, -1)
-			if len(res) != 1 || len(res[0]) != 2 {
-				return
-			}
-			paramKey := res[0][1]
-			paramValue := parameterMap[paramKey]
-			if paramValue != nil {
-				fmt.Println(paramKey, " => ", paramValue)
-			}
-		}
 	} else {
-		for k, v := range parameterMap {
-			fmt.Println(k, " => ", v)
+		paramKey := matchResult[0][1]
+		if len(paramKey) == 0 {
+			for k, v := range parameterMap {
+				fmt.Println(k, " => ", v)
+			}
+		} else {
+			if paramValue, ok := parameterMap[paramKey]; ok {
+				fmt.Println(paramKey, " => ", paramValue)
+			} else {
+				fmt.Println("Unknown parameter: ", paramKey)
+			}
 		}
 	}
-
 }
 
 // Console side cmd will not be sent to server
