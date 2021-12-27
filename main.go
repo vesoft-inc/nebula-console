@@ -104,6 +104,84 @@ func playData(data string) (string, error) {
 	return c.GetSpace(), nil
 }
 
+func defineParams(args string) {
+	reg := regexp.MustCompile(`^\s*:param\s+\s*(.+)\s*$`)
+	if reg == nil {
+		printConsoleResp("invalid regular expression")
+		return
+	}
+	argsRewritten := strings.Replace(args, "'", "\"", -1)
+	matchResult := reg.FindAllStringSubmatch(argsRewritten, -1)
+	if len(matchResult) != 1 || len(matchResult[0]) != 2 {
+		return
+	}
+	items := strings.Split(matchResult[0][1], ",")
+	for _, item := range items {
+		reg := regexp.MustCompile(`^\s*(\S+)\s*=>\s*(\S*)\s*$`)
+		if reg == nil {
+			printConsoleResp("invalid regular expression")
+			return
+		}
+		kv := reg.FindAllStringSubmatch(item, -1)
+		if len(kv) != 1 || len(kv[0]) != 3 {
+			return
+		}
+		if len(kv[0][2]) == 0 {
+			delete(parameterMap, kv[0][1])
+		} else {
+			paramsWithGoType := make(ParameterMap)
+			param := "{\"" + kv[0][1] + "\"" + ":" + kv[0][2] + "}"
+			err := json.Unmarshal([]byte(param), &paramsWithGoType)
+			if err != nil {
+				printConsoleResp("Error: parameter parsing failed")
+				return
+			}
+			for k, v := range paramsWithGoType {
+				parameterMap[k] = v
+			}
+		}
+	}
+}
+
+func ListParams(args string) {
+	reg := regexp.MustCompile(`^\s*(:params(.*))$`)
+	if reg == nil {
+		fmt.Println("invalid regular expression")
+		return
+	}
+	matchResult := reg.FindAllStringSubmatch(args, -1)
+	if len(matchResult) != 1 {
+		return
+	}
+	if len(matchResult[0]) != 3 {
+		return
+	}
+	if len(matchResult[0][2]) != 0 {
+		items := strings.Split(matchResult[0][2], ",")
+		for _, item := range items {
+			reg := regexp.MustCompile(`^\s*(\S+)\s*$`)
+			if reg == nil {
+				fmt.Println("invalid regular expression")
+				return
+			}
+			res := reg.FindAllStringSubmatch(item, -1)
+			if len(res) != 1 || len(res[0]) != 2 {
+				return
+			}
+			paramKey := res[0][1]
+			paramValue := parameterMap[paramKey]
+			if paramValue != nil {
+				fmt.Println(paramKey, " => ", paramValue)
+			}
+		}
+	} else {
+		for k, v := range parameterMap {
+			fmt.Println(k, " => ", v)
+		}
+	}
+
+}
+
 // Console side cmd will not be sent to server
 func isConsoleCmd(cmd string) (isLocal bool, localCmd int, args []string) {
 	isLocal = false
@@ -199,34 +277,15 @@ func executeConsoleCmd(c cli.Cli, cmd int, args []string) {
 		}
 		g_repeats = i
 	case Param:
-		reg := regexp.MustCompile(`^\s*:param\s+(.+?)\s*=>\s*(.+?)\s*$`)
-		if reg == nil {
-			fmt.Println("regexp err")
-			return
-		}
 		if len(args) != 1 {
 			return
 		}
-		res := reg.FindAllStringSubmatch(args[0], -1)
-		if len(res) != 1 || len(res[0]) != 3 {
-			return
-		}
-
-		tmp := make(ParameterMap)
-		param := "{\"" + res[0][1] + "\"" + ":" + res[0][2] + "}"
-		err := json.Unmarshal([]byte(param), &tmp)
-		if err != nil {
-			printConsoleResp("Error: parameter parsing failed")
-			return
-		}
-		for k, v := range tmp {
-			parameterMap[k] = v
-		}
-
+		defineParams(args[0])
 	case Params:
-		for k := range parameterMap {
-			fmt.Println(k, " => ", parameterMap[k])
+		if len(args) != 1 {
+			return
 		}
+		ListParams(args[0])
 	default:
 		printConsoleResp("Error: this local command not exists!")
 	}
