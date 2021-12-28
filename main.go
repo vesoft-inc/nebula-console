@@ -107,7 +107,7 @@ func playData(data string) (string, error) {
 func defineParams(args string) {
 	reg := regexp.MustCompile(`^\s*:param\s+\s*(.+)\s*$`)
 	if reg == nil {
-		printConsoleResp("invalid regular expression")
+		fmt.Println("invalid regular expression")
 		return
 	}
 	argsRewritten := strings.Replace(args, "'", "\"", -1)
@@ -119,7 +119,7 @@ func defineParams(args string) {
 	for _, item := range items {
 		reg := regexp.MustCompile(`^\s*(\S+)\s*=>\s*(\S*)\s*$`)
 		if reg == nil {
-			printConsoleResp("invalid regular expression")
+			fmt.Println("invalid regular expression")
 			return
 		}
 		kv := reg.FindAllStringSubmatch(item, -1)
@@ -133,7 +133,7 @@ func defineParams(args string) {
 			param := "{\"" + kv[0][1] + "\"" + ":" + kv[0][2] + "}"
 			err := json.Unmarshal([]byte(param), &paramsWithGoType)
 			if err != nil {
-				printConsoleResp("Error: parameter parsing failed")
+				fmt.Println("Error: parameter parsing failed")
 				return
 			}
 			for k, v := range paramsWithGoType {
