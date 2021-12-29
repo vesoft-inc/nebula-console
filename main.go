@@ -553,6 +553,9 @@ func Base2Value(any interface{}) (value *nebula.Value, err error) {
 		}
 	} else if v, ok := any.(string); ok {
 		value.SVal = []byte(v)
+	} else if any == nil {
+		nval := nebula.NullType___NULL__
+		value.NVal = &nval
 	} else if v, ok := any.([]interface{}); ok {
 		nv, er := Slice2Nlist([]interface{}(v))
 		if er != nil {
