@@ -108,7 +108,7 @@ func defineParams(args string) {
 	argsRewritten := strings.Replace(args, "'", "\"", -1)
 	reg := regexp.MustCompile(`^\s*:param\s+(\S+)\s*=>(.*)$`)
 	if reg == nil {
-		fmt.Println("regexp err")
+		fmt.Println("invalid regular expression")
 		return
 	}
 	matchResult := reg.FindAllStringSubmatch(argsRewritten, -1)
