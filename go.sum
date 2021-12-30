@@ -39,8 +39,8 @@ github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5CcY=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
-github.com/vesoft-inc/nebula-go/v2 v2.5.2-0.20211228055601-b5b11a36e453 h1:1rwe3LQVuTRUJBf4Gonc47+T3dCD29EzkrRaTzkUNdw=
-github.com/vesoft-inc/nebula-go/v2 v2.5.2-0.20211228055601-b5b11a36e453/go.mod h1:YRIuog6zyRKz0SagwwTcqHXCPjJ4GfQelIl+/FgSC+Y=
+github.com/vesoft-inc/nebula-go/v2 v2.5.2-0.20211229125609-91a3d1eac8b5 h1:DMshLSon/oU1y3IealRdJ605QzrZjqQ5HIivYA97yM4=
+github.com/vesoft-inc/nebula-go/v2 v2.5.2-0.20211229125609-91a3d1eac8b5/go.mod h1:YRIuog6zyRKz0SagwwTcqHXCPjJ4GfQelIl+/FgSC+Y=
 golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sys v0.0.0-20180816055513-1c9583448a9c/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20190222072716-a9d3bda3a223/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=

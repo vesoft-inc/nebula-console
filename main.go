@@ -14,11 +14,13 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/signal"
 	"path"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/vesoft-inc/nebula-console/box"
@@ -90,8 +92,12 @@ func playData(data string) (string, error) {
 		return "", fmt.Errorf("file %s.ngql not existed in embed box and file directory ./data/ ", data)
 	}
 
-	c.PlayingData(true)
-	defer c.PlayingData(false)
+	playingData = true
+	defer func() {
+		playingData = false
+		loopContinue = true
+	}()
+
 	fmt.Printf("Start loading dataset %s...\n", data)
 	err := loop(c)
 	if err != nil {
@@ -328,8 +334,9 @@ func printResultSet(res *nebulago.ResultSet, startTime time.Time) (duration time
 // We treat one line as one query
 // Add line break yourself as `SHOW \<CR>HOSTS`
 func loop(c cli.Cli) error {
-	for {
+	for loopContinue {
 		line, exit, err := c.ReadLine()
+		fmt.Println(line)
 		if err != nil {
 			return err
 		}
@@ -370,7 +377,7 @@ func loop(c cli.Cli) error {
 			}
 			if !res.IsSucceed() && !res.IsPartialSucceed() {
 				c.SetRespError(fmt.Sprintf("an error occurred when executing: %s, [ERROR (%d)]: %s", line, res.GetErrorCode(), res.GetErrorMsg()))
-				if c.IsPlayingData() {
+				if playingData {
 					return nil
 				}
 			}
@@ -389,6 +396,7 @@ func loop(c cli.Cli) error {
 		}
 		g_repeats = 1
 	}
+	return fmt.Errorf("loop is stoped")
 }
 
 func openAndReadFile(path string) ([]byte, error) {
@@ -570,14 +578,61 @@ func Base2Value(any interface{}) (value *nebula.Value, err error) {
 		value.MVal = nv
 	} else {
 		// unsupport other Value type, use this function carefully
-		err = fmt.Errorf("Only support convert boolean/float/int/string/map/list to nebula.Value but %T", any)
+		err = fmt.Errorf("only support convert boolean/float/int/string/map/list to nebula.Value but %T", any)
 	}
 	return
+}
+
+// RegisterSignalHandler creates a 'listener' on a new goroutine which will notify the
+// program if it receives an interrupt from the OS. We then handle this by calling
+// our clean up procedure and exiting the program.
+func RegisterSignalHandler(cli cli.Cli) {
+	toBeKilledSessionID := session.GetSessionID()
+	c := make(chan os.Signal, 2)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM) // ctrlC
+
+	go func() {
+		helperSession, err := pool.GetSession(*username, *password)
+		if err != nil {
+			log.Panicf("Fail to create the helper session from connection pool, %s", err.Error())
+		}
+
+		for {
+			<-c
+			fmt.Println("^C")
+			if playingData {
+				loopContinue = false
+			} else {
+				// The blocked session will update its queries info to metad every FLAGS_session_reclaim_interval_secs,
+				// so the helperSession may not get the slow query via`SHOW QUEIRES` in time.
+				// So we may need to press ctrl+c many times to kill the query.
+				killQueryStmt := fmt.Sprintf("SHOW QUERIES | YIELD $-.SessionID AS sid, "+
+					"$-.ExecutionPlanID AS eid, $-.StartTime AS st "+
+					"WHERE $-.SessionID ==  %v | ORDER BY $-.st DESC | LIMIT 1 | "+
+					"KILL QUERY(session=$-.sid, plan=$-.eid)", toBeKilledSessionID)
+				fmt.Println(killQueryStmt)
+				res, err := session.Execute(killQueryStmt)
+				if err != nil {
+					fmt.Println(err)
+					helperSession.Release()
+					log.Panicf("Fail to kill the slow query, statement: , %s", killQueryStmt)
+				}
+				if !res.IsSucceed() {
+					fmt.Printf("[ERROR (%d)]: %s", res.GetErrorCode(), res.GetErrorMsg())
+				}
+			}
+
+		}
+	}()
 }
 
 var pool *nebulago.ConnectionPool
 
 var session *nebulago.Session
+
+var loopContinue bool = true
+
+var playingData bool = false
 
 func main() {
 	flag.Parse()
@@ -654,6 +709,8 @@ func main() {
 	}
 
 	defer c.Close()
+
+	RegisterSignalHandler(c)
 
 	err = loop(c)
 
