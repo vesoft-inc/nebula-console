@@ -1,6 +1,6 @@
 # Nebula Graph Console
 
-This repository contains the Nebula Graph Console for Nebula Graph 2.0. Nebula Graph Console (Console for short) is a console for Nebula Graph. With Console, you can create a graph schema, import the demonstration nba dataset, and retrieve data.
+This repository contains the Nebula Graph Console for Nebula Graph 2.0. Nebula Graph Console (Console for short) is a console for Nebula Graph. With Console, you can create a graph schema, import the demonstration `basketballplayer` dataset, and retrieve data.
 
 ## Features
 
@@ -128,11 +128,11 @@ nebula> PROFILE FORMAT="dot" GO FROM "Tony Parker" OVER like;
 ```
 You can paste the content in the dot file to `https://dreampuf.github.io/GraphvizOnline/` to show the execution plan.
 
-* Load the demonstration nba dataset:
+* Load the demonstration `basketballplayer` dataset:
 
 ```ngql
-nebula> :play nba
-Start loading dataset nba...
+nebula> :play basketballplayer
+Start loading dataset basketballplayer...
 
 Load dataset succeeded!
 ```
@@ -143,7 +143,7 @@ Load dataset succeeded!
 nebula> :repeat 3
 ```
 
-* Sleep for some seconds, it's just used in `:play nba`:
+* Sleep for some seconds, it's just used in `:play basketballplayer`:
 
 ```nGQL
 nebula> :sleep 3
