@@ -25,7 +25,6 @@ import (
 	"github.com/vesoft-inc/nebula-console/cli"
 	"github.com/vesoft-inc/nebula-console/printer"
 	nebulago "github.com/vesoft-inc/nebula-go/v2"
-	nebula "github.com/vesoft-inc/nebula-go/v2/nebula"
 )
 
 // Console side commands
@@ -353,18 +352,7 @@ func loop(c cli.Cli) error {
 		var t2 int64 = 0
 		for i := 0; i < g_repeats; i++ {
 			start := time.Now()
-			// convert interface{} to nebula.Value
-			params := make(map[string]*nebula.Value)
-			for k, v := range parameterMap {
-				value, err := Base2Value(v)
-				if err != nil {
-					printConsoleResp(err.Error())
-					return err
-				}
-				params[k] = value
-			}
-
-			res, err := session.ExecuteWithParameter(line, params)
+			res, err := session.ExecuteWithParameter(line, parameterMap)
 			if err != nil {
 				return err
 			}
@@ -496,83 +484,6 @@ func validateFlags() {
 			log.Panicf("Error: argument ssl_private_key_path should be specified when enable_ssl is true")
 		}
 	}
-}
-
-// construct Slice to nebula.NList
-func Slice2Nlist(list []interface{}) (*nebula.NList, error) {
-	sv := []*nebula.Value{}
-	var ret nebula.NList
-	for _, item := range list {
-		nv, er := Base2Value(item)
-		if er != nil {
-			return nil, er
-		}
-		sv = append(sv, nv)
-	}
-	ret.Values = sv
-	return &ret, nil
-}
-
-// construct map to nebula.NMap
-func Map2Nmap(m map[string]interface{}) (*nebula.NMap, error) {
-	var ret nebula.NMap
-	kvs := map[string]*nebula.Value{}
-	for k, v := range m {
-		nv, err := Base2Value(v)
-		if err != nil {
-			return nil, err
-		}
-		kvs[k] = nv
-	}
-	ret.Kvs = kvs
-	return &ret, nil
-}
-
-// construct go-type to nebula.Value
-func Base2Value(any interface{}) (value *nebula.Value, err error) {
-	value = nebula.NewValue()
-	if v, ok := any.(bool); ok {
-		value.BVal = &v
-	} else if v, ok := any.(int); ok {
-		ival := int64(v)
-		value.IVal = &ival
-	} else if v, ok := any.(float64); ok {
-		if v == float64(int64(v)) {
-			iv := int64(v)
-			value.IVal = &iv
-		} else {
-			value.FVal = &v
-		}
-	} else if v, ok := any.(float32); ok {
-		if v == float32(int64(v)) {
-			iv := int64(v)
-			value.IVal = &iv
-		} else {
-			fval := float64(v)
-			value.FVal = &fval
-		}
-	} else if v, ok := any.(string); ok {
-		value.SVal = []byte(v)
-	} else if any == nil {
-		nval := nebula.NullType___NULL__
-		value.NVal = &nval
-	} else if v, ok := any.([]interface{}); ok {
-		nv, er := Slice2Nlist([]interface{}(v))
-		if er != nil {
-			err = er
-		}
-		value.LVal = nv
-	} else if v, ok := any.(map[string]interface{}); ok {
-		nv, er := Map2Nmap(map[string]interface{}(v))
-		if er != nil {
-			err = er
-		}
-		value.MVal = nv
-	} else {
-		// unsupport other Value type, use this function carefully
-		err = fmt.Errorf("Only support convert boolean/float/int/string/map/list to nebula.Value but %T", any)
-	}
-	return
 }
 
 var pool *nebulago.ConnectionPool
