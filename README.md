@@ -61,10 +61,10 @@ This repository contains the Nebula Graph Console for Nebula Graph 2.0. Nebula G
     | `-e/-eval`      | Sets a string-type nGQL statement. The nGQL statement is executed once the connection succeeds. The connection stops after the result is returned.   |
     | `-f/-file`      | Sets the path of an nGQL file. The nGQL statements in the file are executed once the connection succeeds. You'll get the return messages and the connection stops then.      |
     | `-enable_ssl`   | Enable SSL when connecting to Nebula Graph |
-    | `ssl_root_ca_path` | Sets the path of the certification authority file |
-    | `ssl_cert_path` | Sets the path of the certificate file |
-    | `ssl_private_key_path` | Sets the path of the private key file |
-    | `ssl_insecure_skip_verify` | Controls whether a client verifies the server's certificate chain and host name |
+    | `-ssl_root_ca_path` | Sets the path of the certification authority file |
+    | `-ssl_cert_path` | Sets the path of the certificate file |
+    | `-ssl_private_key_path` | Sets the path of the private key file |
+    | `-ssl_insecure_skip_verify` | Controls whether a client verifies the server's certificate chain and host name |
 
 
     E.g.,
