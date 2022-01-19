@@ -24,7 +24,7 @@ import (
 	"github.com/vesoft-inc/nebula-console/box"
 	"github.com/vesoft-inc/nebula-console/cli"
 	"github.com/vesoft-inc/nebula-console/printer"
-	nebulago "github.com/vesoft-inc/nebula-go/v2"
+	nebulago "github.com/vesoft-inc/nebula-go/v3"
 )
 
 // Console side commands
