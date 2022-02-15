@@ -19,5 +19,5 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: vesoft/nebula-console
-          tags: nightly,v2-nightly
+          tags: nightly,v3-nightly
           add_git_labels: true
