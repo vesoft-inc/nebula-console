@@ -70,15 +70,13 @@ func (p *DataSetPrinter) PrintDataSet(res *nebula.ResultSet) {
 
 	fmt.Println(p.writer.Render())
 	if p.fd != nil {
-		go func() {
-			s := strings.Replace(p.writer.RenderCSV(), "\\\"", "", -1)
-			fmt.Fprintln(p.fd, s)
+		s := strings.Replace(p.writer.RenderCSV(), "\\\"", "", -1)
+		fmt.Fprintln(p.fd, s)
 
-			if err := p.fd.Close(); err != nil {
-				fmt.Printf("Close file %s failed, %s", p.filename, err.Error())
-			}
-			p.fd = nil
-			p.filename = ""
-		}()
+		if err := p.fd.Close(); err != nil {
+			fmt.Printf("Close file %s failed, %s", p.filename, err.Error())
+		}
+		p.fd = nil
+		p.filename = ""
 	}
 }
