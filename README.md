@@ -1,6 +1,6 @@
 # Nebula Graph Console
 
-This repository contains the Nebula Graph Console for Nebula Graph 3.0. Nebula Graph Console (Console for short) is a console for Nebula Graph. With Console, you can create a graph schema, import the demonstration `basketballplayer` dataset, and retrieve data.
+This repository contains the Nebula Graph Console for Nebula Graph 3.x. Nebula Graph Console (Console for short) is a console for Nebula Graph. With Console, you can create a graph schema, import the demonstration `basketballplayer` dataset, and retrieve data.
 
 ## Features
 
