@@ -293,13 +293,13 @@ func printResultSet(res *nebulago.ResultSet, startTime time.Time) (duration time
 		numRows := res.GetRowSize()
 		duration = time.Since(startTime)
 		if numRows > 0 {
-			fmt.Printf("Got %d rows (time spent %d/%d us)\n", numRows, res.GetLatency(), duration/1000)
+			fmt.Printf("Got %d rows (time spent %v/%v)\n", numRows, time.Duration(res.GetLatency()*1000), duration)
 		} else {
-			fmt.Printf("Empty set (time spent %d/%d us)\n", res.GetLatency(), duration/1000)
+			fmt.Printf("Empty set (time spent %v/%v)\n", time.Duration(res.GetLatency()*1000), duration)
 		}
 	} else {
 		duration = time.Since(startTime)
-		fmt.Printf("Execution succeeded (time spent %d/%d us)\n", res.GetLatency(), duration/1000)
+		fmt.Printf("Execution succeeded (time spent %v/%v)\n", time.Duration(res.GetLatency()*1000), duration)
 	}
 
 	if res.IsPartialSucceed() {
