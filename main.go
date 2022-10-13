@@ -469,9 +469,6 @@ func validateFlags() {
 	if len(*username) == 0 {
 		log.Panicf("Error: argument username is empty!")
 	}
-	if len(*password) == 0 {
-		log.Panicf("Error: argument password is empty!")
-	}
 
 	if *enableSsl {
 		if *sslRootCAPath == "" {
