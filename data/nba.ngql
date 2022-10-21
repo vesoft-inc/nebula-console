@@ -340,7 +340,7 @@ VALUES\
         "Joel Embiid" -> "Ben Simmons": (80),\
         "Damian Lillard" -> "LaMarcus Aldridge": (80),\
         "Yao Ming" -> "Tracy McGrady": (90),\
-        "Yao Ming" -> "Shaquile O'Neal": (90),\
+        "Yao Ming" -> "Shaquille O'Neal": (90),\
         "Dejounte Murray" -> "Tim Duncan": (99),\
         "Dejounte Murray" -> "Tony Parker": (99),\
         "Dejounte Murray" -> "Manu Ginobili": (99),\
@@ -365,8 +365,8 @@ VALUES\
         "Dirk Nowitzki" -> "Dwyane Wade": (10),\
         "Paul George" -> "Russell Westbrook": (95),\
         "Grant Hill" -> "Tracy McGrady": (90),\
-        "Shaquile O'Neal" -> "JaVale McGee": (100),\
-        "Shaquile O'Neal" -> "Tim Duncan": (80);
+        "Shaquille O'Neal" -> "JaVale McGee": (100),\
+        "Shaquille O'Neal" -> "Tim Duncan": (80);
 
 INSERT\
         EDGE teammate(start_year, end_year)\
