@@ -21,7 +21,7 @@ __debug_bin
 # Dependency directories (remove the comment below to include it)
 vendor/
 
-
+.idea/
 .vscode/
 
 nebula-console
