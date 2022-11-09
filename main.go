@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -340,49 +339,43 @@ func loop(c cli.Cli) error {
 		if len(line) == 0 { // 1). The line input is empty, or 2). user presses ctrlC so the input is truncated
 			continue
 		}
-		statements := strings.Split(line, ";")
-		for _, statement := range statements {
-			if statement == "" {
-				continue
+		// Console side command
+		if isLocal, cmd, args := isConsoleCmd(line); isLocal {
+			if cmd == Quit {
+				return nil
 			}
-			// Console side command
-			if isLocal, cmd, args := isConsoleCmd(statement); isLocal {
-				if cmd == Quit {
+			executeConsoleCmd(c, cmd, args)
+			continue
+		}
+		// Server side command
+		var t1 int64 = 0
+		var t2 int64 = 0
+		for i := 0; i < g_repeats; i++ {
+			start := time.Now()
+			res, err := session.ExecuteWithParameter(line, parameterMap)
+			if err != nil {
+				return err
+			}
+			if !res.IsSucceed() && !res.IsPartialSucceed() {
+				c.SetRespError(fmt.Sprintf("an error occurred when executing: %s, [ERROR (%d)]: %s", line, res.GetErrorCode(), res.GetErrorMsg()))
+				if c.IsPlayingData() {
 					return nil
 				}
-				executeConsoleCmd(c, cmd, args)
-				continue
 			}
-			// Server side command
-			var t1 int64 = 0
-			var t2 int64 = 0
-			for i := 0; i < g_repeats; i++ {
-				start := time.Now()
-				res, err := session.ExecuteWithParameter(statement, parameterMap)
-				if err != nil {
-					return err
-				}
-				if !res.IsSucceed() && !res.IsPartialSucceed() {
-					c.SetRespError(fmt.Sprintf("an error occurred when executing: %s, [ERROR (%d)]: %s", statement, res.GetErrorCode(), res.GetErrorMsg()))
-					if c.IsPlayingData() {
-						return nil
-					}
-				}
-				t1 += res.GetLatency()
-				if c.Output() {
-					duration := printResultSet(res, start)
-					t2 += int64(duration / 1000)
-					fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
-					fmt.Println()
-				}
-				c.SetSpace(res.GetSpaceName())
-			}
-			if g_repeats > 1 {
-				fmt.Printf("Executed %v times, (total time spent %d/%d us), (average time spent %d/%d us)\n", g_repeats, t1, t2, t1/int64(g_repeats), t2/int64(g_repeats))
+			t1 += res.GetLatency()
+			if c.Output() {
+				duration := printResultSet(res, start)
+				t2 += int64(duration / 1000)
+				fmt.Println(time.Now().In(time.Local).Format(time.RFC1123))
 				fmt.Println()
 			}
-			g_repeats = 1
+			c.SetSpace(res.GetSpaceName())
 		}
+		if g_repeats > 1 {
+			fmt.Printf("Executed %v times, (total time spent %d/%d us), (average time spent %d/%d us)\n", g_repeats, t1, t2, t1/int64(g_repeats), t2/int64(g_repeats))
+			fmt.Println()
+		}
+		g_repeats = 1
 	}
 }
 
@@ -506,17 +499,7 @@ func main() {
 	// Check if flags are valid
 	validateFlags()
 
-	var reader io.Reader
-	if *script != "" {
-		reader = strings.NewReader(*script)
-	} else if *file != "" {
-		fd, err := os.Open(*file)
-		if err != nil {
-			log.Panicf("Open file %s failed, %s", *file, err.Error())
-		}
-		reader = fd
-	}
-	interactive := reader == nil
+	interactive := *script == "" && *file == ""
 
 	historyHome := os.Getenv("HOME")
 	if historyHome == "" {
@@ -564,8 +547,14 @@ func main() {
 	if interactive {
 		historyFile := path.Join(historyHome, ".nebula_history")
 		c = cli.NewiCli(historyFile, *username, *goPrompt)
-	} else if reader != nil {
-		c = cli.NewnCli(reader, true, *username, nil)
+	} else if *script != "" {
+		c = cli.NewnCli(strings.NewReader(*script), true, *username, nil)
+	} else if *file != "" {
+		fd, err := os.Open(*file)
+		if err != nil {
+			log.Panicf("Open file %s failed, %s", *file, err.Error())
+		}
+		c = cli.NewnCli(fd, true, *username, func() { fd.Close() })
 	}
 
 	if c == nil {
