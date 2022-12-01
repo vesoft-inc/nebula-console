@@ -81,7 +81,7 @@ jobs:
             # git branch
             type=ref,event=branch
             # v3
-            type=semver,pattern=v{{version}}
+            type=semver,pattern=v{{major}}
             # v3.0
             type=semver,pattern=v{{major}}.{{minor}}
             # v3.0.0
