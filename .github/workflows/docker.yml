@@ -23,5 +23,5 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           platforms: linux/amd64,linux/arm64
-          tags: vesoft/nebula-console/nightly, vesoft/nebula-console/v3-nightly
+          tags: vesoft/nebula-console:nightly, vesoft/nebula-console:v3-nightly
           push: true
