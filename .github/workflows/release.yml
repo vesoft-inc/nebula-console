@@ -80,12 +80,12 @@ jobs:
             type=ref,event=tag
             # git branch
             type=ref,event=branch
+            # v3.0.0
+            type=semver,pattern=v{{version}}
             # v3
             type=semver,pattern=v{{major}}
             # v3.0
             type=semver,pattern=v{{major}}.{{minor}}
-            # v3.0.0
-            type=semver,pattern=v{{major}}.{{minor}}.{{patch}}
       - name: Log into registry
         uses: docker/login-action@v2
         with:
