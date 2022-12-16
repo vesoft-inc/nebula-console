@@ -1,6 +1,20 @@
-# Nebula Graph Console
+# NebulaGraph Console
 
-This repository contains the Nebula Graph Console for Nebula Graph 3.x. Nebula Graph Console (Console for short) is a console for Nebula Graph. With Console, you can create a graph schema, import the demonstration `basketballplayer` dataset, and retrieve data.
+This repository contains the NebulaGraph Console for NebulaGraph 3.x. NebulaGraph Console (Console for short) is a console for NebulaGraph. With Console, you can create a graph schema, import the demonstration `basketballplayer` dataset, and retrieve data.
+
+## Compatibility Matrix
+
+|                       Console version                                  | NebulaGraph Version |
+| :--------------------------------------------------------------------: | :-----------------: |
+| **[v2.0.1](https://github.com/vesoft-inc/nebula-console/tree/v2.0.1)** |        2.0.x        |
+| **[v2.5.0](https://github.com/vesoft-inc/nebula-console/tree/v2.5.0)** |        2.5.x        |
+| **[v2.6.0](https://github.com/vesoft-inc/nebula-console/tree/v2.6.0)** |        2.6.x        |
+| **[v3.0.0](https://github.com/vesoft-inc/nebula-console/tree/v3.0.0)** |         3.x         |
+| **[v3.1.x](https://github.com/vesoft-inc/nebula-console/tree/v3.1.0)** |         3.x         |
+| **[v3.2.x](https://github.com/vesoft-inc/nebula-console/tree/v3.2.0)** |         3.x         |
+| **[v3.3.x](https://github.com/vesoft-inc/nebula-console/tree/v3.3.0)** |         3.x         |
+| **[master](https://github.com/vesoft-inc/nebula-console/tree/master)** |       nightly       |
+
 
 ## Features
 
@@ -86,7 +100,7 @@ This repository contains the Nebula Graph Console for Nebula Graph 3.x. Nebula G
 
 - Download the binaries on the [Releases page](https://github.com/vesoft-inc/nebula-console/releases)
 
-- Add execute permissions to the binary
+- Add execute permissions to the binary file of NebulaGraph
 
 - Connect to your Nebula Graph services:
 
@@ -97,18 +111,27 @@ $ ./<$YOUR_BINARY> -addr <ip> -port <port> -u <username> -p <password>
 
 ### Docker
 
-Create a container:
+Assumed we would like to run console in docker attached to NebulaGraph's docker-compose network, which is by default `nebula-docker-compose_nebula-net` and we would like to use the master console version: `nightly`.
+
+> note: we could replace `nightly` with i.e. `v3.0.0` for specific console version.
+
+Option 0: we could access the container's shell with nebulagraph console installed with:
 
 ```bash
 $ docker run --rm -ti --network nebula-docker-compose_nebula-net --entrypoint=/bin/sh vesoft/nebula-console:nightly
 ```
 
-To connect to your Nebula Graph services, run the follow command in the container:
+And then call it like:
 
 ```bash
 docker> nebula-console -u <user> -p <password> --address=<graphd> --port=9669
 ```
 
+Option 1: or call console directly with:
+
+```bash
+docker run --rm -ti --network nebula-net vesoft/nebula-console:nightly -addr graphd -port 9669 -u root -p nebula
+```
 
 ## Console side commands:
 
