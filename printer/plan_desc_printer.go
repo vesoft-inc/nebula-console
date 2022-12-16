@@ -37,7 +37,7 @@ func NewPlanDescPrinter() PlanDescPrinter {
 	}
 }
 
-func (p *PlanDescPrinter) ExportDot(filename string) {
+func (p *PlanDescPrinter) ExportExecutionPlan(filename string) {
 	fd, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
 	if err != nil {
 		fmt.Printf("Open or Create file %s failed, %s", filename, err.Error())

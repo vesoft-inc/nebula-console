@@ -29,15 +29,15 @@ import (
 
 // Console side commands
 const (
-	Unknown   = -1
-	Quit      = 0
-	PlayData  = 1
-	Sleep     = 2
-	ExportCsv = 3
-	ExportDot = 4
-	Repeat    = 5
-	Param     = 6
-	Params    = 7
+	Unknown             = -1
+	Quit                = 0
+	PlayData            = 1
+	Sleep               = 2
+	ExportCsv           = 3
+	ExportExecutionPlan = 4
+	Repeat              = 5
+	Param               = 6
+	Params              = 7
 )
 
 type ParameterMap map[string]interface{}
@@ -218,9 +218,9 @@ func isConsoleCmd(cmd string) (isLocal bool, localCmd int, args []string) {
 			localCmd = ExportCsv
 			args = []string{words[1]}
 		}
-	case "dot":
+	case "dot", "profile", "explain":
 		{
-			localCmd = ExportDot
+			localCmd = ExportExecutionPlan
 			args = []string{words[1]}
 		}
 	case "param":
@@ -241,8 +241,8 @@ func executeConsoleCmd(c cli.Cli, cmd int, args []string) {
 	switch cmd {
 	case ExportCsv:
 		dataSetPrinter.ExportCsv(args[0])
-	case ExportDot:
-		planDescPrinter.ExportDot(args[0])
+	case ExportExecutionPlan:
+		planDescPrinter.ExportExecutionPlan(args[0])
 	case PlayData:
 		newSpace, err := playData(args[0])
 		if err != nil {

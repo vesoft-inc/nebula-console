@@ -147,9 +147,18 @@ nebula> :csv a.csv
 
 ```nGQL
 nebula> :dot a.dot
-nebula> PROFILE FORMAT="dot" GO FROM "Tony Parker" OVER like;
+nebula> PROFILE FORMAT="dot" GO FROM "player102" OVER serve YIELD dst(edge);
 ```
 You can paste the content in the dot file to `https://dreampuf.github.io/GraphvizOnline/` to show the execution plan.
+
+* Export the execution plan in ASCII Table to a file when profiling a statement :
+
+```nGQL
+nebula> :profile profile.log
+nebula> PROFILE GO FROM "player102" OVER serve YIELD dst(edge);
+nebula> :explain explain.log
+nebula> EXPLAIN GO FROM "player102" OVER serve YIELD dst(edge);
+```
 
 * Load the demonstration `basketballplayer` dataset:
 
