@@ -57,7 +57,7 @@ This repository contains the Nebula Graph Console for Nebula Graph 3.x. Nebula G
     | `-P/-port`      | Sets the port number of the graphd service.       |
     | `-u/-user`      | Sets the username of your Nebula Graph account. See [authentication](https://docs.nebula-graph.io/2.0/7.data-security/1.authentication/1.authentication/).      |
     | `-p/-password`  | Sets the password of your Nebula Graph account.   |
-    | `-t/-timeout`   | Sets an integer-type timeout threshold for the connection. The unit is second. The default value is 120.    |
+    | `-t/-timeout`   | Sets an integer-type timeout threshold for the connection. The unit is millisecond. The default value is 120.    |
     | `-e/-eval`      | Sets a string-type nGQL statement. The nGQL statement is executed once the connection succeeds. The connection stops after the result is returned.   |
     | `-f/-file`      | Sets the path of an nGQL file. The nGQL statements in the file are executed once the connection succeeds. You'll get the return messages and the connection stops then.      |
     | `-enable_ssl`   | Enable SSL when connecting to Nebula Graph |
