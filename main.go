@@ -48,8 +48,8 @@ var dataSetPrinter = printer.NewDataSetPrinter()
 
 var planDescPrinter = printer.NewPlanDescPrinter()
 
-/* Every statement will be repeatedly executed `g_repeats` times,
-in order to get the total and avearge execution time of the statement") */
+// Every statement will be repeatedly executed `g_repeats` times,
+// in order to get the total and avearge execution time of the statement"
 var g_repeats = 1
 
 func welcome(interactive bool) {
@@ -175,14 +175,14 @@ func ListParams(args string) {
 func isConsoleCmd(cmd string) (isLocal bool, localCmd int, args []string) {
 	isLocal = false
 	localCmd = Unknown
+	plain := strings.TrimSpace(cmd)
 	// Currently, command "exit" and  "quit" can also exit the console
-	if cmd == "exit" || cmd == "quit" {
+	if plain == "exit" || plain == "quit" {
 		isLocal = true
 		localCmd = Quit
 		return
 	}
 
-	plain := strings.TrimSpace(cmd)
 	if len(plain) < 1 || plain[0] != ':' {
 		return
 	}
