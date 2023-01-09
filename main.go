@@ -440,7 +440,7 @@ var (
 	port                  *int    = flag.Int("P", -1, "The Nebula Graph Port")
 	username              *string = flag.String("u", "", "The Nebula Graph login user name")
 	password              *string = flag.String("p", "", "The Nebula Graph login password")
-	timeout               *int    = flag.Int("t", 0, "The Nebula Graph client connection timeout in seconds, 0 means never timeout")
+	timeout               *int    = flag.Int("t", 0, "The Nebula Graph client connection timeout in millisecond, 0 means never timeout")
 	script                *string = flag.String("e", "", "The nGQL directly")
 	file                  *string = flag.String("f", "", "The nGQL script file name")
 	version               *bool   = flag.Bool("v", false, "The Nebula Console version")
@@ -457,7 +457,7 @@ func init() {
 	flag.IntVar(port, "port", -1, "The Nebula Graph Port")
 	flag.StringVar(username, "user", "", "The Nebula Graph login user name")
 	flag.StringVar(password, "password", "", "The Nebula Graph login password")
-	flag.IntVar(timeout, "timeout", 0, "The Nebula Graph client connection timeout in seconds, 0 means never timeout")
+	flag.IntVar(timeout, "timeout", 0, "The Nebula Graph client connection timeout in millisecond, 0 means never timeout")
 	flag.StringVar(script, "eval", "", "The nGQL directly")
 	flag.StringVar(file, "file", "", "The nGQL script file name")
 }
