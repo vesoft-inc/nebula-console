@@ -13,6 +13,7 @@ This repository contains the NebulaGraph Console for NebulaGraph 3.x. NebulaGrap
 | **[v3.1.x](https://github.com/vesoft-inc/nebula-console/tree/v3.1.0)** |         3.x         |
 | **[v3.2.x](https://github.com/vesoft-inc/nebula-console/tree/v3.2.0)** |         3.x         |
 | **[v3.3.x](https://github.com/vesoft-inc/nebula-console/tree/v3.3.0)** |         3.x         |
+| **[v3.4.x](https://github.com/vesoft-inc/nebula-console/tree/v3.3.0)** |         3.x         |
 | **[master](https://github.com/vesoft-inc/nebula-console/tree/master)** |       nightly       |
 
 
