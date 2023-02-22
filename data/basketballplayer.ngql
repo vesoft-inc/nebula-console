@@ -226,7 +226,7 @@ insert edge serve(start_year,end_year) values "player116"->"team216"@20032010:(2
 insert edge serve(start_year,end_year) values "player116"->"team229":(2010, 2014);
 insert edge serve(start_year,end_year) values "player116"->"team216"@20142018:(2014, 2018);
 insert edge serve(start_year,end_year) values "player116"->"team210":(2018, 2019);
-insert edge serve(start_year,end_year) values "player117"->"team200":(2009, 2019);;
+insert edge serve(start_year,end_year) values "player117"->"team200":(2009, 2019);
 insert edge serve(start_year,end_year) values "player118"->"team205":(2008, 2019);
 insert edge serve(start_year,end_year) values "player119"->"team205":(2007, 2016);
 insert edge serve(start_year,end_year) values "player119"->"team200":(2016, 2019);
