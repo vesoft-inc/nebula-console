@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/jedib0t/go-pretty/v6/text"
 	nebula "github.com/vesoft-inc/nebula-go/v3"
 )
 
@@ -99,6 +100,39 @@ func (p PlanDescPrinter) renderByRow(rows [][]interface{}) string {
 	return p.writer.Render()
 }
 
+func (p PlanDescPrinter) configWriterTckRenderStyle() {
+	p.writer.Style().Format.Header = text.FormatDefault
+	p.writer.Style().Options.SeparateRows = false
+	p.writer.Style().Options.SeparateHeader = false
+
+	p.writer.Style().Box.MiddleHorizontal = " "
+	p.writer.Style().Box.MiddleSeparator = " "
+	p.writer.Style().Box.TopLeft = " "
+	p.writer.Style().Box.TopRight = " "
+	p.writer.Style().Box.TopSeparator = " "
+	p.writer.Style().Box.BottomLeft = " "
+	p.writer.Style().Box.BottomRight = " "
+	p.writer.Style().Box.BottomSeparator = " "
+}
+
+func (p PlanDescPrinter) renderByTck(rows [][]interface{}) string {
+	p.writer.ResetHeaders()
+	p.writer.ResetRows()
+	p.configWriterTckRenderStyle()
+	p.writer.AppendHeader(table.Row{
+		"id",
+		"name",
+		"dependencies",
+		"profiling data",
+		"operator info",
+	})
+
+	for _, row := range rows {
+		p.writer.AppendRow(table.Row(row))
+	}
+	return p.writer.Render()
+}
+
 func (p *PlanDescPrinter) PrintPlanDesc(res *nebula.ResultSet) {
 	var s string
 	format := strings.ToLower(string(res.GetPlanDesc().GetFormat()))
@@ -113,6 +147,12 @@ func (p *PlanDescPrinter) PrintPlanDesc(res *nebula.ResultSet) {
 	case "dot:struct":
 		s = res.MakeDotGraphByStruct()
 		fmt.Println(p.renderDotGraphByStruct(s))
+	case "tck":
+		rows := res.MakePlanByTck()
+		s = p.renderByTck(rows)
+		// Reset the writer style
+		p.writer.SetStyle(table.StyleDefault)
+		configTableWriter(&p.writer, true)
 	}
 
 	if p.fd != nil {
