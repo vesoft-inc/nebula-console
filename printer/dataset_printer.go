@@ -62,7 +62,7 @@ func (p *DataSetPrinter) PrintDataSet(res *nebula.ResultSet) {
 	p.writer.ResetHeaders()
 	p.writer.ResetRows()
 
-	if res.IsSetPlanDesc() && res.IsSetData() && "tck" == strings.ToLower(string(res.GetPlanDesc().GetFormat())) {
+	if res.IsSetPlanDesc() && strings.ToLower(string(res.GetPlanDesc().GetFormat())) == "tck" {
 		configWriterTckStyle(&p.writer)
 	}
 
@@ -102,7 +102,7 @@ func (p *DataSetPrinter) PrintDataSet(res *nebula.ResultSet) {
 	}
 
 	// Reset the writer style
-	if res.IsSetPlanDesc() && res.IsSetData() && "tck" == strings.ToLower(string(res.GetPlanDesc().GetFormat())) {
+	if res.IsSetPlanDesc() && strings.ToLower(string(res.GetPlanDesc().GetFormat())) == "tck" {
 		p.writer.SetStyle(table.StyleDefault)
 		configTableWriter(&p.writer, false)
 	}
