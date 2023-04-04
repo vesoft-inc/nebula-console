@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/jedib0t/go-pretty/v6/text"
 	nebula "github.com/vesoft-inc/nebula-go/v3"
 )
 
@@ -38,6 +39,21 @@ func (p *DataSetPrinter) ExportCsv(filename string) {
 	p.filename = filename
 }
 
+func configWriterTckStyle(writer *table.Writer) {
+	(*writer).Style().Format.Header = text.FormatDefault
+	(*writer).Style().Options.SeparateRows = false
+	(*writer).Style().Options.SeparateHeader = false
+
+	(*writer).Style().Box.MiddleHorizontal = " "
+	(*writer).Style().Box.MiddleSeparator = " "
+	(*writer).Style().Box.TopLeft = " "
+	(*writer).Style().Box.TopRight = " "
+	(*writer).Style().Box.TopSeparator = " "
+	(*writer).Style().Box.BottomLeft = " "
+	(*writer).Style().Box.BottomRight = " "
+	(*writer).Style().Box.BottomSeparator = " "
+}
+
 func (p *DataSetPrinter) PrintDataSet(res *nebula.ResultSet) {
 	if res.GetColSize() == 0 {
 		return
@@ -45,6 +61,11 @@ func (p *DataSetPrinter) PrintDataSet(res *nebula.ResultSet) {
 
 	p.writer.ResetHeaders()
 	p.writer.ResetRows()
+
+	if res.IsSetPlanDesc() && res.IsSetData() && "tck" == strings.ToLower(string(res.GetPlanDesc().GetFormat())) {
+		configWriterTckStyle(&p.writer)
+	}
+
 	var header []interface{}
 	for _, columName := range res.GetColNames() {
 		header = append(header, string(columName))
@@ -79,4 +100,11 @@ func (p *DataSetPrinter) PrintDataSet(res *nebula.ResultSet) {
 		p.fd = nil
 		p.filename = ""
 	}
+
+	// Reset the writer style
+	if res.IsSetPlanDesc() && res.IsSetData() && "tck" == strings.ToLower(string(res.GetPlanDesc().GetFormat())) {
+		p.writer.SetStyle(table.StyleDefault)
+		configTableWriter(&p.writer, false)
+	}
+
 }
