@@ -57,7 +57,7 @@ func welcome(interactive bool) {
 		return
 	}
 	fmt.Println()
-	fmt.Printf("Welcome to Nebula Graph!\n")
+	fmt.Printf("Welcome!\n")
 	fmt.Println()
 }
 
@@ -436,15 +436,15 @@ var (
 )
 
 var (
-	address               *string = flag.String("addr", "127.0.0.1", "The Nebula Graph IP/HOST address")
-	port                  *int    = flag.Int("P", -1, "The Nebula Graph Port")
-	username              *string = flag.String("u", "", "The Nebula Graph login user name")
-	password              *string = flag.String("p", "", "The Nebula Graph login password")
-	timeout               *int    = flag.Int("t", 0, "The Nebula Graph client connection timeout in millisecond, 0 means never timeout")
+	address               *string = flag.String("addr", "127.0.0.1", "The Graph IP/HOST address")
+	port                  *int    = flag.Int("P", -1, "The Graph Port")
+	username              *string = flag.String("u", "", "The Graph login user name")
+	password              *string = flag.String("p", "", "The Graph login password")
+	timeout               *int    = flag.Int("t", 0, "The Graph client connection timeout in millisecond, 0 means never timeout")
 	script                *string = flag.String("e", "", "The nGQL directly")
 	file                  *string = flag.String("f", "", "The nGQL script file name")
-	version               *bool   = flag.Bool("v", false, "The Nebula Console version")
-	enableSsl             *bool   = flag.Bool("enable_ssl", false, "Enable SSL when connecting to Nebula Graph")
+	version               *bool   = flag.Bool("v", false, "The NebulaConsole version")
+	enableSsl             *bool   = flag.Bool("enable_ssl", false, "Enable SSL when connecting to Graph")
 	sslRootCAPath         *string = flag.String("ssl_root_ca_path", "", "SSL root certification authority's file path")
 	sslCertPath           *string = flag.String("ssl_cert_path", "", "SSL certificate's file path")
 	sslPrivateKeyPath     *string = flag.String("ssl_private_key_path", "", "SSL private key's file path")
@@ -453,11 +453,11 @@ var (
 )
 
 func init() {
-	flag.StringVar(address, "address", "127.0.0.1", "The Nebula Graph IP/HOST address")
-	flag.IntVar(port, "port", -1, "The Nebula Graph Port")
-	flag.StringVar(username, "user", "", "The Nebula Graph login user name")
-	flag.StringVar(password, "password", "", "The Nebula Graph login password")
-	flag.IntVar(timeout, "timeout", 0, "The Nebula Graph client connection timeout in millisecond, 0 means never timeout")
+	flag.StringVar(address, "address", "127.0.0.1", "The Graph IP/HOST address")
+	flag.IntVar(port, "port", -1, "The Graph Port")
+	flag.StringVar(username, "user", "", "The Graph login user name")
+	flag.StringVar(password, "password", "", "The Graph login password")
+	flag.IntVar(timeout, "timeout", 0, "The Graph client connection timeout in millisecond, 0 means never timeout")
 	flag.StringVar(script, "eval", "", "The nGQL directly")
 	flag.StringVar(file, "file", "", "The nGQL script file name")
 }

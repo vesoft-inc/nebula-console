@@ -28,9 +28,9 @@ This repository contains the NebulaGraph Console for NebulaGraph 3.x. NebulaGrap
 
 ### From Source Code
 
-1. Build Nebula Graph Console
+1. Build NebulaGraph Console
 
-    To build Nebula Graph Console, make sure that you have installed [Go](https://golang.org/doc/install).
+    To build NebulaGraph Console, make sure that you have installed [Go](https://golang.org/doc/install).
 
     > NOTE: Go version provided with apt on ubuntu is usually "outdated".
 
@@ -42,13 +42,13 @@ This repository contains the NebulaGraph Console for NebulaGraph 3.x. NebulaGrap
 
     The version should be newer than 1.13.
 
-    Use Git to clone the source code of Nebula Graph Console to your host.
+    Use Git to clone the source code of NebulaGraph Console to your host.
 
     ```bash
     $ git clone https://github.com/vesoft-inc/nebula-console
     ```
 
-    Run the following command to build Nebula Graph Console.
+    Run the following command to build NebulaGraph Console.
 
     ```bash
     $ cd nebula-console
@@ -56,7 +56,7 @@ This repository contains the NebulaGraph Console for NebulaGraph 3.x. NebulaGrap
     ```
     You can find a binary named `nebula-console`.
 
-2. Connect to Nebula Graph
+2. Connect to NebulaGraph
 
     To connect to your Nebula Graph services, use the following command.
 
@@ -70,12 +70,12 @@ This repository contains the NebulaGraph Console for NebulaGraph 3.x. NebulaGrap
     | `-h`            | Shows the help menu.      |
     | `-addr/-address`| Sets the IP/HOST address of the graphd service.      |
     | `-P/-port`      | Sets the port number of the graphd service.       |
-    | `-u/-user`      | Sets the username of your Nebula Graph account. See [authentication](https://docs.nebula-graph.io/2.0/7.data-security/1.authentication/1.authentication/).      |
-    | `-p/-password`  | Sets the password of your Nebula Graph account.   |
+    | `-u/-user`      | Sets the username of your NebulaGraph account. See [authentication](https://docs.nebula-graph.io/2.0/7.data-security/1.authentication/1.authentication/).      |
+    | `-p/-password`  | Sets the password of your NebulaGraph account.   |
     | `-t/-timeout`   | Sets an integer-type timeout threshold for the connection. The unit is millisecond. The default value is 120.    |
     | `-e/-eval`      | Sets a string-type nGQL statement. The nGQL statement is executed once the connection succeeds. The connection stops after the result is returned.   |
     | `-f/-file`      | Sets the path of an nGQL file. The nGQL statements in the file are executed once the connection succeeds. You'll get the return messages and the connection stops then.      |
-    | `-enable_ssl`   | Enable SSL when connecting to Nebula Graph |
+    | `-enable_ssl`   | Enable SSL when connecting to NebulaGraph |
     | `-ssl_root_ca_path` | Sets the path of the certification authority file |
     | `-ssl_cert_path` | Sets the path of the certificate file |
     | `-ssl_private_key_path` | Sets the path of the private key file |
@@ -86,7 +86,7 @@ This repository contains the NebulaGraph Console for NebulaGraph 3.x. NebulaGrap
     ```bash
     $./nebula-console -addr=192.168.10.111 -port 9669 -u root -p nebula
     2021/03/15 15:21:43 [INFO] connection pool is initialized successfully
-    Welcome to Nebula Graph!
+    Welcome to NebulaGraph!
     ```
 
     Check options for `./nebula-console -h`:
@@ -103,7 +103,7 @@ This repository contains the NebulaGraph Console for NebulaGraph 3.x. NebulaGrap
 
 - Add execute permissions to the binary file of NebulaGraph
 
-- Connect to your Nebula Graph services:
+- Connect to your NebulaGraph services:
 
 ```bash
 $ ./<$YOUR_BINARY> -addr <ip> -port <port> -u <username> -p <password>
@@ -184,7 +184,7 @@ nebula> :sleep 3
 
 * Exit the console
 
-You can use `:EXIT` or `:QUIT` to disconnect from Nebula Graph. For convenience, nebula-console supports using these commands in lower case without the colon (":"), such as `quit`.
+You can use `:EXIT` or `:QUIT` to disconnect from NebulaGraph. For convenience, nebula-console supports using these commands in lower case without the colon (":"), such as `quit`.
 
 ```nGQL
 nebula> :QUIT
