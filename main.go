@@ -450,6 +450,7 @@ var (
 	sslPrivateKeyPath     *string = flag.String("ssl_private_key_path", "", "SSL private key's file path")
 	sslInsecureSkipVerify *bool   = flag.Bool("ssl_insecure_skip_verify", false, "Controls whether a client verifies the server's certificate chain and host name.")
 	goPrompt              *bool   = flag.Bool("enable_go_prompt", false, "Use go-prompt instand of liner")
+	enableHttp2           *bool   = flag.Bool("enable_http2", false, "whether to enable http2")
 )
 
 func init() {
@@ -517,6 +518,7 @@ func main() {
 		IdleTime:        0 * time.Millisecond,
 		MaxConnPoolSize: 2,
 		MinConnPoolSize: 1,
+		UseHTTP2:        *enableHttp2,
 	}
 	var err error
 	if *enableSsl {
