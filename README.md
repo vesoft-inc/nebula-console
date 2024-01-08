@@ -82,6 +82,7 @@ This repository contains the NebulaGraph Console for NebulaGraph 3.x. NebulaGrap
     | `-ssl_cert_path` | Sets the path of the certificate file |
     | `-ssl_private_key_path` | Sets the path of the private key file |
     | `-ssl_insecure_skip_verify` | Controls whether a client verifies the server's certificate chain and host name |
+    | `-k` | Client handshakeKey, make sure the client handshakeKey is in the white list of NebulaGraph server client_white_list |
 
 
     E.g.,

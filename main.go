@@ -451,6 +451,7 @@ var (
 	sslInsecureSkipVerify *bool   = flag.Bool("ssl_insecure_skip_verify", false, "Controls whether a client verifies the server's certificate chain and host name.")
 	goPrompt              *bool   = flag.Bool("enable_go_prompt", false, "Use go-prompt instand of liner")
 	enableHttp2           *bool   = flag.Bool("enable_http2", false, "whether to enable http2")
+	handshakeKey          *string = flag.String("k", "", "client handshakeKey, make sure the client handshakeKey is in the white list of NebulaGraph server client_white_list")
 )
 
 func init() {
@@ -519,6 +520,7 @@ func main() {
 		MaxConnPoolSize: 2,
 		MinConnPoolSize: 1,
 		UseHTTP2:        *enableHttp2,
+		HandshakeKey:    *handshakeKey,
 	}
 	var err error
 	if *enableSsl {
