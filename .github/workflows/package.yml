@@ -29,6 +29,8 @@ jobs:
             arch: arm
           - os: windows
             arch: arm64
+    env:
+      GOPROXY: ${{ vars.GOPROXY }}
     steps:
       - uses: actions/checkout@v3
         with:
