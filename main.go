@@ -451,6 +451,8 @@ var (
 	sslInsecureSkipVerify *bool   = flag.Bool("ssl_insecure_skip_verify", false, "Controls whether a client verifies the server's certificate chain and host name.")
 	goPrompt              *bool   = flag.Bool("enable_go_prompt", false, "Use go-prompt instand of liner")
 	enableHttp2           *bool   = flag.Bool("enable_http2", false, "whether to enable http2")
+
+	customSSL = true
 )
 
 func init() {
@@ -472,14 +474,20 @@ func validateFlags() {
 	}
 
 	if *enableSsl {
-		if *sslRootCAPath == "" {
-			log.Panicf("Error: argument ssl_root_ca_path should be specified when enable_ssl is true")
+		if *sslRootCAPath == "" && *sslCertPath == "" && *sslPrivateKeyPath == "" {
+			customSSL = false
 		}
-		if *sslCertPath == "" {
-			log.Panicf("Error: argument ssl_cert_path should be specified when enable_ssl is true")
-		}
-		if *sslPrivateKeyPath == "" {
-			log.Panicf("Error: argument ssl_private_key_path should be specified when enable_ssl is true")
+
+		if customSSL {
+			if *sslRootCAPath == "" {
+				log.Panicf("Error: argument ssl_root_ca_path should be specified when enable_ssl is true")
+			}
+			if *sslCertPath == "" {
+				log.Panicf("Error: argument ssl_cert_path should be specified when enable_ssl is true")
+			}
+			if *sslPrivateKeyPath == "" {
+				log.Panicf("Error: argument ssl_private_key_path should be specified when enable_ssl is true")
+			}
 		}
 	}
 }
@@ -520,12 +528,24 @@ func main() {
 		MinConnPoolSize: 1,
 		UseHTTP2:        *enableHttp2,
 	}
-	var err error
+
+	var (
+		err, err2 error
+		sslConfig *tls.Config
+	)
+
 	if *enableSsl {
-		sslConfig, err2 := genSslConfig(*sslRootCAPath, *sslCertPath, *sslPrivateKeyPath)
-		if err2 != nil {
-			log.Panicf(fmt.Sprintf("Fail to generate the ssl config, ssl_root_ca_path: %s, ssl_cert_path: %s, ssl_private_key_path: %s, %s", *sslRootCAPath, *sslCertPath, *sslPrivateKeyPath, err2.Error()))
+		if customSSL {
+			sslConfig, err2 = genSslConfig(*sslRootCAPath, *sslCertPath, *sslPrivateKeyPath)
+			if err2 != nil {
+				log.Panicf(fmt.Sprintf("Fail to generate the ssl config, ssl_root_ca_path: %s, ssl_cert_path: %s, ssl_private_key_path: %s, %s", *sslRootCAPath, *sslCertPath, *sslPrivateKeyPath, err2.Error()))
+			}
+		} else {
+			sslConfig = &tls.Config{
+				InsecureSkipVerify: *sslInsecureSkipVerify,
+			}
 		}
+
 		pool, err = nebulago.NewSslConnectionPool(hostList, poolConfig, sslConfig, nebulago.DefaultLogger{})
 	} else {
 		pool, err = nebulago.NewConnectionPool(hostList, poolConfig, nebulago.DefaultLogger{})
