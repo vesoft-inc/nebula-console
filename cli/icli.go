@@ -27,7 +27,7 @@ func NewiCli(historyFile, user string, enableGoPrompt bool) Cli {
 
 	f, err := os.OpenFile(historyFile, os.O_RDONLY|os.O_CREATE, 0666)
 	if err != nil {
-		log.Panicf("Open or create history file %s failed, %s", historyFile, err.Error())
+		log.Fatalf("Open or create history file %s failed, %s", historyFile, err.Error())
 	}
 	defer f.Close()
 	t.ReadHistory(f)
@@ -112,7 +112,7 @@ func (l *iCli) Close() {
 	defer l.terminal.Close()
 	f, err := os.OpenFile(l.status.historyFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		log.Panicf("Open or create history file %s failed, %s", l.status.historyFile, err.Error())
+		log.Fatalf("Open or create history file %s failed, %s", l.status.historyFile, err.Error())
 	}
 	defer f.Close()
 	l.terminal.WriteHistory(f)

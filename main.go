@@ -465,31 +465,37 @@ func init() {
 	flag.StringVar(file, "file", "", "The nGQL script file name")
 }
 
-func validateFlags() {
+func validateFlags() error {
+	var missingFields []string
+
 	if *port == -1 {
-		log.Panicf("Error: argument port is missed!")
+		missingFields = append(missingFields, "port")
 	}
 	if len(*username) == 0 {
-		log.Panicf("Error: argument username is empty!")
+		missingFields = append(missingFields, "username")
 	}
 
 	if *enableSsl {
 		if *sslRootCAPath == "" && *sslCertPath == "" && *sslPrivateKeyPath == "" {
 			customSSL = false
-		}
-
-		if customSSL {
+		} else {
+			customSSL = true
 			if *sslRootCAPath == "" {
-				log.Panicf("Error: argument ssl_root_ca_path should be specified when enable_ssl is true")
+				missingFields = append(missingFields, "ssl_root_ca_path")
 			}
 			if *sslCertPath == "" {
-				log.Panicf("Error: argument ssl_cert_path should be specified when enable_ssl is true")
+				missingFields = append(missingFields, "ssl_cert_path")
 			}
 			if *sslPrivateKeyPath == "" {
-				log.Panicf("Error: argument ssl_private_key_path should be specified when enable_ssl is true")
+				missingFields = append(missingFields, "ssl_private_key_path")
 			}
 		}
 	}
+
+	if len(missingFields) > 0 {
+		return fmt.Errorf("the following required flags are missing or invalid: %s", strings.Join(missingFields, ", "))
+	}
+	return nil
 }
 
 var pool *nebulago.ConnectionPool
@@ -505,8 +511,21 @@ func main() {
 		return
 	}
 
+	// Only when no flags are set, use the default values
+	if flag.NFlag() == 0 {
+		fmt.Println("Notice: Defaulting to localhost (127.0.0.1) with port 9669 using credentials (username: root, password: nebula).")
+		*address = "127.0.0.1"
+		*port = 9669
+		*username = "root"
+		*password = "nebula"
+	}
+
 	// Check if flags are valid
-	validateFlags()
+	if err := validateFlags(); err != nil {
+		fmt.Printf("Error: Invalid flags provided: %s\n", err.Error())
+		fmt.Println("Tip: Use the --help option for guidance on correct flag usage.")
+		os.Exit(1)
+	}
 
 	interactive := *script == "" && *file == ""
 
@@ -514,7 +533,7 @@ func main() {
 	if historyHome == "" {
 		ex, err := os.Executable()
 		if err != nil {
-			log.Panicf("Get executable failed: %s", err.Error())
+			log.Fatalf("Failed to get the executable: %s\n", err.Error())
 		}
 		historyHome = filepath.Dir(ex) // Set to executable folder
 	}
@@ -538,7 +557,7 @@ func main() {
 		if customSSL {
 			sslConfig, err2 = genSslConfig(*sslRootCAPath, *sslCertPath, *sslPrivateKeyPath)
 			if err2 != nil {
-				log.Panicf(fmt.Sprintf("Fail to generate the ssl config, ssl_root_ca_path: %s, ssl_cert_path: %s, ssl_private_key_path: %s, %s", *sslRootCAPath, *sslCertPath, *sslPrivateKeyPath, err2.Error()))
+				log.Fatalf("Failed to generate the SSL configuration using the provided paths.\n\nSSL Root CA Path: %s\nSSL Certificate Path: %s\nSSL Private Key Path: %s\n\nError:\n%s\n", *sslRootCAPath, *sslCertPath, *sslPrivateKeyPath, err2.Error())
 			}
 		} else {
 			sslConfig = &tls.Config{
@@ -551,13 +570,13 @@ func main() {
 		pool, err = nebulago.NewConnectionPool(hostList, poolConfig, nebulago.DefaultLogger{})
 	}
 	if err != nil {
-		log.Panicf(fmt.Sprintf("Fail to initialize the connection pool, host: %s, port: %d, %s", *address, *port, err.Error()))
+		log.Fatalf("Failed to initialize the connection pool.\n\nAddress: %s\nPort: %d\n\nError:\n%s\n", *address, *port, err.Error())
 	}
 	defer pool.Close()
 
 	session, err = pool.GetSession(*username, *password)
 	if err != nil {
-		log.Panicf("Fail to create a new session from connection pool, %s", err.Error())
+		log.Fatalf("Fail to create a new session from connection pool\n\nError:\n%s\n", err.Error())
 	}
 	defer session.Release()
 
@@ -574,7 +593,7 @@ func main() {
 	} else if *file != "" {
 		fd, err := os.Open(*file)
 		if err != nil {
-			log.Panicf("Open file %s failed, %s", *file, err.Error())
+			log.Fatalf("Failed to open file %s: %s", *file, err.Error())
 		}
 		c = cli.NewnCli(fd, true, *username, func() { fd.Close() })
 	}
@@ -588,6 +607,6 @@ func main() {
 	err = loop(c)
 
 	if err != nil {
-		log.Panicf("Loop error, %s", err.Error())
+		log.Fatalf("Loop error, %s", err.Error())
 	}
 }
