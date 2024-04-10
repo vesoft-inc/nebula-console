@@ -526,8 +526,8 @@ func main() {
 		pw := promptui.Prompt{
 			Label:       "Password",
 			AllowEdit:   true,
-			Mask:        rune('*'),
 			HideEntered: true,
+			Mask:        rune(' '),
 		}
 		*password, err = pw.Run()
 		if err != nil {
