@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/manifoldco/promptui"
 	"github.com/vesoft-inc/nebula-console/box"
 	"github.com/vesoft-inc/nebula-console/cli"
 	"github.com/vesoft-inc/nebula-console/printer"
@@ -517,7 +518,22 @@ func main() {
 		*address = "127.0.0.1"
 		*port = 9669
 		*username = "root"
-		*password = "nebula"
+		*password = ""
+	}
+	//prompt password if there's no password
+	if *password == "" {
+		var err error
+		pw := promptui.Prompt{
+			Label:       "Password",
+			AllowEdit:   true,
+			HideEntered: true,
+			Mask:        rune(' '),
+		}
+		*password, err = pw.Run()
+		if err != nil {
+			fmt.Printf("Error: Failed to read password: %s\n", err.Error())
+			os.Exit(1)
+		}
 	}
 
 	// Check if flags are valid
