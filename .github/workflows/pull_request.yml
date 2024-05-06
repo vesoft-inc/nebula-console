@@ -8,14 +8,7 @@ on:
     paths-ignore:
       - '**.md'
       - '.gitignore'
-      
-defaults:
-  run:
-    shell: bash
-    
-env:
-  GOPROXY: ${{ vars.GOPROXY }}
-  
+
 jobs:
   lint:
     name: lint
