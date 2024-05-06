@@ -8,7 +8,10 @@ on:
     paths-ignore:
       - '**.md'
       - '.gitignore'
-
+      
+env:
+  GOPROXY: ${{ vars.GOPROXY }}
+  
 jobs:
   lint:
     name: lint
