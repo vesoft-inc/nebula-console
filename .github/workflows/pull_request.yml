@@ -56,16 +56,15 @@ jobs:
             arch: arm64
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
       - name: setup-go 1.18
         uses: actions/setup-go@v5
         with:
           go-version: 1.18
+          cache: false
       - name: set package name
         id: name
         run: |
-          output_name=nebula-console-${{ matrix.os }}-${{ matrix.arch }}-nightly
+          output_name=nebula-console-${{ matrix.os }}-${{ matrix.arch }}-pull_request
           if [ "${{ matrix.os }}" = "windows"  ]; then
               output_name+='.exe'
           fi
