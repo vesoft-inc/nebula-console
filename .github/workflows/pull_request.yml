@@ -1,4 +1,4 @@
-name: build
+name: pull_request
 
 on:
   pull_request:
@@ -16,11 +16,9 @@ jobs:
     env:
       GO111MODULE: on
     steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 1
+      - uses: actions/checkout@v4
       - name: setup-go 1.18
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v5
         with:
           go-version: 1.18
       - name: Fmt
@@ -50,20 +48,26 @@ jobs:
           - os: windows
             arch: arm64
     steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 1
+      - uses: actions/checkout@v4
       - name: setup-go 1.18
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v5
         with:
           go-version: 1.18
+      - name: set package name
+        id: name
+        run: |
+          output_name=nebula-console-${{ matrix.os }}-${{ matrix.arch }}-pull_request
+          if [ "${{ matrix.os }}" = "windows"  ]; then
+              output_name+='.exe'
+          fi
+          echo "package_name=$output_name" >> $GITHUB_OUTPUT
       - name: generate box/blob.go for data/basketballplayer.ngql
         run: make gen
         env:
           GOOS: linux
           GOARCH: amd64
       - name: build
-        run: make
+        run: make name=${{ steps.name.outputs.package_name }}
         env:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
