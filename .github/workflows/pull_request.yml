@@ -56,7 +56,7 @@ jobs:
       - name: set package name
         id: name
         run: |
-          output_name=nebula-console-${{ matrix.os }}-${{ matrix.arch }}-pull_request
+          output_name=nebula-console-${{ matrix.os }}-${{ matrix.arch }}-master
           if [ "${{ matrix.os }}" = "windows"  ]; then
               output_name+='.exe'
           fi
@@ -71,3 +71,7 @@ jobs:
         env:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.name.outputs.package_name }}
+          path: ./${{ steps.name.outputs.package_name }}
