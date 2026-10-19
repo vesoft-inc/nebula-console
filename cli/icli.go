@@ -12,8 +12,6 @@ import (
 	"regexp"
 )
 
-var passwordPattern = regexp.MustCompile(`(?i)(password|pwd)`)
-
 // interactive
 type iCli struct {
 	status
@@ -63,7 +61,8 @@ func (l *iCli) ReadLine() (string, bool, error) {
 			if l.status.joinedByTripleQuotes || l.status.joinedByBackSlash {
 				continue
 			}
-			if len(l.status.line) > 0 && !isCmdWithPassword(l.status.line) {
+			withPassword := isCmdWithPassword(l.status.line)
+			if len(l.status.line) > 0 && !withPassword {
 				l.terminal.AppendHistory(l.status.line)
 			}
 			return l.status.line, false, nil
@@ -79,8 +78,17 @@ func (l *iCli) ReadLine() (string, bool, error) {
 	}
 }
 
-func isCmdWithPassword(cmd string) bool {
-	return passwordPattern.MatchString(cmd)
+func isCmdWithPassword(cmd string) (withPassword bool) {
+	withPassword = false
+	var pattern = "(?i)(password|pwd)"
+
+	reg := regexp.MustCompile(pattern)
+	if reg.MatchString(cmd) {
+		withPassword = true
+		return
+	}
+
+	return
 }
 
 func (l *iCli) Interactive() bool {
