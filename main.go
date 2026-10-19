@@ -514,7 +514,7 @@ func main() {
 
 	// Only when no flags are set, use the default values
 	if flag.NFlag() == 0 {
-		fmt.Println("Notice: Defaulting to localhost (127.0.0.1) with port 9669 using credentials (username: root, password: nebula).")
+		fmt.Println("Notice: Defaulting to localhost (127.0.0.1) with port 9669 using credentials (username: root, password: <empty, will prompt>).")
 		*address = "127.0.0.1"
 		*port = 9669
 		*username = "root"
