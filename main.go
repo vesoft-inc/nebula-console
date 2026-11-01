@@ -262,8 +262,10 @@ func executeConsoleCmd(c cli.Cli, cmd int, args []string) {
 		i, err := strconv.Atoi(args[0])
 		if err != nil {
 			printConsoleResp("Error: invalid integer, " + err.Error())
+			return
 		} else if i < 1 {
 			printConsoleResp("Error: invalid integer, repeats should be greater than or equal to 1")
+			return
 		}
 		g_repeats = i
 	case Param:
