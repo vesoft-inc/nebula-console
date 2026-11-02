@@ -82,7 +82,8 @@ type GoPromptTerminal struct {
 
 func goPromptSuggest(d prompt.Document) []prompt.Suggest {
 	suggests := make([]prompt.Suggest, 0)
-	line, pos := d.CurrentLine(), d.CursorPositionCol()
+	line := d.CurrentLine()
+	pos := len(d.CurrentLineBeforeCursor())
 	_, completions, _ := completer.NewCompleter(line, pos)
 	for _, s := range completions {
 		suggests = append(suggests, prompt.Suggest{Text: s})
