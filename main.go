@@ -106,7 +106,7 @@ func playData(data string) (string, error) {
 
 func defineParams(args string) {
 	argsRewritten := strings.Replace(args, "'", "\"", -1)
-	reg := regexp.MustCompile(`^\s*:param\s+(\S+)\s*=>(.*)$`)
+	reg := regexp.MustCompile(`(?i)^\s*:param\s+(\S+)\s*=>(.*)$`)
 	if reg == nil {
 		fmt.Println("invalid regular expression")
 		return
@@ -139,7 +139,7 @@ func defineParams(args string) {
 }
 
 func ListParams(args string) {
-	reg := regexp.MustCompile(`^\s*:params\s*(\S*)\s*$`)
+	reg := regexp.MustCompile(`(?i)^\s*:params\s*(\S*)\s*$`)
 	if reg == nil {
 		fmt.Println("invalid regular expression")
 		return
