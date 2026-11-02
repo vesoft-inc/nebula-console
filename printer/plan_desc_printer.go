@@ -149,7 +149,8 @@ func (p *PlanDescPrinter) PrintPlanDesc(res *nebula.ResultSet) {
 		fmt.Println(p.renderDotGraphByStruct(s))
 	case "tck":
 		rows := res.MakePlanByTck()
-		fmt.Println(p.renderByTck(rows))
+		s = p.renderByTck(rows)
+		fmt.Println(s)
 		// Reset the writer style
 		p.writer.SetStyle(table.StyleDefault)
 		configTableWriter(&p.writer, true)
