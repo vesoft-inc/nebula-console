@@ -46,8 +46,8 @@ func TestIsCmdWithPassword(t *testing.T) {
 		want bool
 	}{
 		{
-			name: "password",
-			cmd:  `CREATE USER test WITH PASSWORD "secret"`,
+			name: "lowercase password",
+			cmd:  `CREATE USER test WITH password "secret"`,
 			want: true,
 		},
 		{
