@@ -173,7 +173,7 @@ func ListParams(args string) {
 }
 
 // Console side cmd will not be sent to server
-func isConsoleCmd(cmd string) (isLocal bool, localCmd int, args []string) {
+func isConsoleCmd(cmd string) (isLocal bool, localCmd int, args []string, err error) {
 	isLocal = false
 	localCmd = Unknown
 	plain := strings.TrimSpace(cmd)
@@ -193,8 +193,20 @@ func isConsoleCmd(cmd string) (isLocal bool, localCmd int, args []string) {
 		plain = plain[:len(plain)-1]
 	}
 	words := strings.Fields(plain[1:])
-	localCmdName := words[0]
-	switch strings.ToLower(localCmdName) {
+	if len(words) == 0 {
+		return true, Unknown, nil, fmt.Errorf("empty local command")
+	}
+
+	localCmdName := strings.ToLower(words[0])
+	switch localCmdName {
+	case "sleep", "play", "repeat", "csv", "dot", "profile", "explain":
+		if len(words) < 2 {
+			return true, Unknown, nil,
+				fmt.Errorf("missing required argument for local command :%s", localCmdName)
+		}
+	}
+
+	switch localCmdName {
 	case "exit", "quit":
 		{
 			localCmd = Quit
@@ -341,7 +353,11 @@ func loop(c cli.Cli) error {
 			continue
 		}
 		// Console side command
-		if isLocal, cmd, args := isConsoleCmd(line); isLocal {
+		if isLocal, cmd, args, err := isConsoleCmd(line); isLocal {
+			if err != nil {
+				printConsoleResp("Error: " + err.Error())
+				continue
+			}
 			if cmd == Quit {
 				return nil
 			}
